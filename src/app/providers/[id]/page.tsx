@@ -131,7 +131,7 @@ const ProviderDetailPage: React.FC = () => {
                 <div className="mb-6">
                   <h2 className="text-lg font-semibold text-gray-800 mb-2">Insurance Accepted</h2>
                   <div className="flex flex-wrap gap-2">
-                    {provider.insuranceAccepted.map((insurance, idx) => (
+                    {provider.insuranceAccepted.split(',').map((insurance, idx) => (
                       <span
                         key={idx}
                         className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
@@ -146,7 +146,7 @@ const ProviderDetailPage: React.FC = () => {
               {provider.languages && provider.languages.length > 0 && (
                 <div>
                   <h2 className="text-lg font-semibold text-gray-800 mb-2">Languages</h2>
-                  <p className="text-gray-600">{provider.languages.join(', ')}</p>
+                  <p className="text-gray-600">{provider.languages.split(',')}</p>
                 </div>
               )}
             </div>
