@@ -14,23 +14,41 @@ import {
 } from 'react-icons/fa';
 
 import { BookProviderModal } from '@/app/components/BookProviderModal';
-import { Provider, getProviderById } from '@/lib/providerData';
+import { Provider } from '@/lib/providerData';
+import { fetchProviderById } from '@/lib/providerService';
 
 const ProviderDetailPage: React.FC = () => {
   const params = useParams();
   const router = useRouter();
   const [provider, setProvider] = useState<Provider | null>(null);
   const [showBookModal, setShowBookModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (params.id) {
-      const providerId = params.id as string;
-      const foundProvider = getProviderById(providerId);
-      if (foundProvider) {
-        setProvider(foundProvider);
+    const loadProvider = async () => {
+      if (!params || !params.id) {
+        setError('Provider ID is missing');
+        setIsLoading(false);
+        return;
       }
-    }
-  }, [params.id]);
+      
+      try {
+        setIsLoading(true);
+        const providerId = params.id as string;
+        const data = await fetchProviderById(providerId);
+        setProvider(data);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch provider:', err);
+        setError('Provider not found or error loading provider data.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProvider();
+  }, [params]);
 
   const handleRecordAppointment = () => {
     setShowBookModal(false);
@@ -39,13 +57,23 @@ const ProviderDetailPage: React.FC = () => {
     }
   };
 
-  if (!provider) {
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-white rounded-lg shadow-md p-8 text-center">
+          <h1 className="text-xl font-semibold text-gray-800 mb-4">Loading...</h1>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !provider) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-md p-8 text-center">
           <h1 className="text-xl font-semibold text-gray-800 mb-4">Provider Not Found</h1>
           <p className="text-gray-600 mb-6">
-            The provider you&apos;re looking for doesn&apos;t exist.
+            {error || "The provider you're looking for doesn't exist."}
           </p>
           <Link
             href="/providers"
@@ -131,7 +159,7 @@ const ProviderDetailPage: React.FC = () => {
                 <div className="mb-6">
                   <h2 className="text-lg font-semibold text-gray-800 mb-2">Insurance Accepted</h2>
                   <div className="flex flex-wrap gap-2">
-                    {provider.insuranceAccepted.split(',').map((insurance, idx) => (
+                    {provider.insuranceAccepted.map((insurance, idx) => (
                       <span
                         key={idx}
                         className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
@@ -146,7 +174,7 @@ const ProviderDetailPage: React.FC = () => {
               {provider.languages && provider.languages.length > 0 && (
                 <div>
                   <h2 className="text-lg font-semibold text-gray-800 mb-2">Languages</h2>
-                  <p className="text-gray-600">{provider.languages.split(',')}</p>
+                  <p className="text-gray-600">{provider.languages.join(', ')}</p>
                 </div>
               )}
             </div>
