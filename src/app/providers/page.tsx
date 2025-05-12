@@ -2,25 +2,58 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaChevronLeft, FaPlus, FaSearch, FaUserMd } from 'react-icons/fa';
 
-import { Provider, providers, searchProviders } from '@/lib/providerData';
+import { Provider } from '@/lib/providerData';
+import { fetchProviders, searchProviders as apiSearchProviders } from '@/lib/providerService';
 
 const ProvidersPage = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [displayedProviders, setDisplayedProviders] = useState<Provider[]>(providers);
+  const [displayedProviders, setDisplayedProviders] = useState<Provider[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch providers on component mount
+  useEffect(() => {
+    const getProviders = async () => {
+      try {
+        setIsLoading(true);
+        const data = await fetchProviders();
+        setDisplayedProviders(data);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch providers:', err);
+        setError('Failed to load providers. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    getProviders();
+  }, []);
 
   // Handle search input change
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
 
-    if (value.trim() === '') {
-      setDisplayedProviders(providers);
-    } else {
-      setDisplayedProviders(searchProviders(value));
+    try {
+      setIsLoading(true);
+      if (value.trim() === '') {
+        const data = await fetchProviders();
+        setDisplayedProviders(data);
+      } else {
+        const searchResults = await apiSearchProviders(value);
+        setDisplayedProviders(searchResults);
+      }
+      setError(null);
+    } catch (err) {
+      console.error('Search failed:', err);
+      setError('Search failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -71,7 +104,15 @@ const ProvidersPage = () => {
           </Link>
         </div>
 
-        {Object.keys(groupedProviders).length === 0 ? (
+        {isLoading ? (
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <p className="text-gray-500">Loading providers...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <p className="text-red-500">{error}</p>
+          </div>
+        ) : Object.keys(groupedProviders).length === 0 ? (
           <div className="bg-white rounded-lg shadow p-6 text-center">
             <p className="text-gray-500">No providers found. Try another search term.</p>
           </div>
