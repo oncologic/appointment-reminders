@@ -36,6 +36,232 @@ export interface ScreeningResult {
   };
 }
 
+export interface Appointment {
+  id: string;
+  date: Date;
+  title: string;
+  type: 'Examination' | 'Treatment' | 'Consultation';
+  provider: string;
+  location: string;
+  notes?: string;
+  detailsPath: string;
+  completed: boolean;
+}
+
+// Create appointments for the calendar view
+export const appointments: Appointment[] = [
+  {
+    id: 'appt-1',
+    date: new Date(2025, 0, 4, 8, 0), // Jan 4, 2025, 8:00 AM
+    title: 'Annual Physical',
+    type: 'Examination',
+    provider: 'Dr. Michael Chen',
+    location: 'Primary Care Clinic, 123 Health St.',
+    notes: 'Yearly physical examination, fasting required',
+    detailsPath: '/appointments/appt-1',
+    completed: true,
+  },
+  {
+    id: 'appt-2',
+    date: new Date(2025, 0, 4, 9, 0), // Jan 4, 2025, 9:00 AM
+    title: 'Physical Therapy',
+    type: 'Treatment',
+    provider: 'Markus Jonsson, PT',
+    location: 'Rehabilitation Center, 456 Wellness Ave.',
+    notes: 'Bring exercise clothes and comfortable shoes',
+    detailsPath: '/appointments/appt-2',
+    completed: true,
+  },
+  {
+    id: 'appt-3',
+    date: new Date(2025, 0, 4, 10, 0), // Jan 4, 2025, 10:00 AM
+    title: 'Follow-up Consultation',
+    type: 'Consultation',
+    provider: 'Dr. Sarah Williams',
+    location: "Women's Health Clinic, 789 Medical Center",
+    notes: 'Discussing lab results from previous visit',
+    detailsPath: '/appointments/appt-3',
+    completed: true,
+  },
+  {
+    id: 'appt-4',
+    date: new Date(2025, 0, 7, 11, 0), // Jan 7, 2025, 11:00 AM
+    title: 'Dental Cleaning',
+    type: 'Treatment',
+    provider: 'Dr. Lisa Johnson, DDS',
+    location: 'Smile Dental, 321 Tooth Ln.',
+    notes: 'Routine cleaning and check-up',
+    detailsPath: '/appointments/appt-4',
+    completed: true,
+  },
+  {
+    id: 'appt-5',
+    date: new Date(2025, 0, 7, 10, 0), // Jan 7, 2025, 10:00 AM
+    title: 'Eye Exam',
+    type: 'Examination',
+    provider: 'Dr. John Bo, OD',
+    location: 'Clear Vision Optometry, 654 Sight Blvd.',
+    notes: 'Annual eye examination, bring current glasses',
+    detailsPath: '/appointments/appt-5',
+    completed: true,
+  },
+  {
+    id: 'appt-6',
+    date: new Date(2025, 0, 10, 11, 0), // Jan 10, 2025, 11:00 AM
+    title: 'Dermatology Check',
+    type: 'Examination',
+    provider: 'Dr. Robert Lee',
+    location: 'Pacific Dermatology Center',
+    notes: 'Annual skin cancer screening',
+    detailsPath: '/appointments/appt-6',
+    completed: true,
+  },
+  {
+    id: 'appt-7',
+    date: new Date(2025, 1, 15, 9, 30), // Feb 15, 2025, 9:30 AM
+    title: 'Mammogram',
+    type: 'Examination',
+    provider: 'Dr. Maria Rodriguez',
+    location: "Women's Imaging Center, 987 Health Pkwy.",
+    notes: 'Annual breast cancer screening',
+    detailsPath: '/appointments/appt-7',
+    completed: true,
+  },
+  {
+    id: 'appt-8',
+    date: new Date(2025, 2, 22, 14, 0), // Mar 22, 2025, 2:00 PM
+    title: 'Therapy Session',
+    type: 'Consultation',
+    provider: 'Dr. Emily Watson, PhD',
+    location: 'Mind Wellness Center, 543 Calm St.',
+    notes: 'Monthly therapy session',
+    detailsPath: '/appointments/appt-8',
+    completed: true,
+  },
+  {
+    id: 'appt-9',
+    date: new Date(2025, 3, 12, 10, 15), // Apr 12, 2025, 10:15 AM
+    title: 'Allergist Consultation',
+    type: 'Consultation',
+    provider: 'Dr. Alan Park',
+    location: 'Allergy & Asthma Specialists, 876 Respiratory Rd.',
+    notes: 'Seasonal allergy management',
+    detailsPath: '/appointments/appt-9',
+    completed: true,
+  },
+  {
+    id: 'appt-10',
+    date: new Date(2025, 4, 20, 11, 30), // May 20, 2025, 11:30 AM
+    title: 'Physical Therapy',
+    type: 'Treatment',
+    provider: 'Markus Jonsson, PT',
+    location: 'Rehabilitation Center, 456 Wellness Ave.',
+    notes: 'Follow-up session for shoulder therapy',
+    detailsPath: '/appointments/appt-10',
+    completed: true,
+  },
+  {
+    id: 'appt-11',
+    date: new Date(2025, 5, 8, 13, 45), // Jun 8, 2025, 1:45 PM
+    title: 'Dental Filling',
+    type: 'Treatment',
+    provider: 'Dr. Lisa Johnson, DDS',
+    location: 'Smile Dental, 321 Tooth Ln.',
+    notes: 'Filling for cavity on lower right molar',
+    detailsPath: '/appointments/appt-11',
+    completed: true,
+  },
+  {
+    id: 'appt-12',
+    date: new Date(2025, 6, 15, 9, 0), // Jul 15, 2025, 9:00 AM
+    title: 'Blood Work',
+    type: 'Examination',
+    provider: 'HealthFirst Labs',
+    location: 'HealthFirst Labs, 789 Test Blvd.',
+    notes: 'Fasting required for 12 hours prior',
+    detailsPath: '/appointments/appt-12',
+    completed: true,
+  },
+  {
+    id: 'appt-13',
+    date: new Date(2025, 7, 5, 10, 30), // Aug 5, 2025, 10:30 AM
+    title: 'Cardiology Check-up',
+    type: 'Examination',
+    provider: 'Dr. James Wilson',
+    location: 'Heart Center, 432 Pulse Ave.',
+    notes: 'Annual heart health check-up',
+    detailsPath: '/appointments/appt-13',
+    completed: true,
+  },
+  {
+    id: 'appt-14',
+    date: new Date(2025, 8, 18, 15, 0), // Sep 18, 2025, 3:00 PM
+    title: 'Therapy Session',
+    type: 'Consultation',
+    provider: 'Dr. Emily Watson, PhD',
+    location: 'Mind Wellness Center, 543 Calm St.',
+    notes: 'Monthly therapy session',
+    detailsPath: '/appointments/appt-14',
+    completed: true,
+  },
+  {
+    id: 'appt-15',
+    date: new Date(2025, 9, 25, 8, 30), // Oct 25, 2025, 8:30 AM
+    title: 'Flu Shot',
+    type: 'Treatment',
+    provider: 'Dr. Michael Chen',
+    location: 'Primary Care Clinic, 123 Health St.',
+    notes: 'Annual flu vaccination',
+    detailsPath: '/appointments/appt-15',
+    completed: true,
+  },
+  {
+    id: 'appt-16',
+    date: new Date(2025, 10, 13, 11, 0), // Nov 13, 2025, 11:00 AM
+    title: 'Dermatology Follow-up',
+    type: 'Examination',
+    provider: 'Dr. Robert Lee',
+    location: 'Pacific Dermatology Center',
+    notes: 'Follow-up for skin condition',
+    detailsPath: '/appointments/appt-16',
+    completed: true,
+  },
+  {
+    id: 'appt-17',
+    date: new Date(2025, 11, 7, 14, 15), // Dec 7, 2025, 2:15 PM
+    title: 'Physical Therapy',
+    type: 'Treatment',
+    provider: 'Markus Jonsson, PT',
+    location: 'Rehabilitation Center, 456 Wellness Ave.',
+    notes: 'Final session for shoulder therapy',
+    detailsPath: '/appointments/appt-17',
+    completed: true,
+  },
+  // Upcoming appointments (not completed)
+  {
+    id: 'appt-18',
+    date: new Date(2026, 0, 10, 9, 0), // Jan 10, 2026, 9:00 AM
+    title: 'Annual Physical',
+    type: 'Examination',
+    provider: 'Dr. Michael Chen',
+    location: 'Primary Care Clinic, 123 Health St.',
+    notes: 'Yearly physical examination, fasting required',
+    detailsPath: '/appointments/appt-18',
+    completed: false,
+  },
+  {
+    id: 'appt-19',
+    date: new Date(2026, 1, 20, 13, 0), // Feb 20, 2026, 1:00 PM
+    title: 'Dental Cleaning',
+    type: 'Treatment',
+    provider: 'Dr. Lisa Johnson, DDS',
+    location: 'Smile Dental, 321 Tooth Ln.',
+    notes: 'Routine cleaning and check-up',
+    detailsPath: '/appointments/appt-19',
+    completed: false,
+  },
+];
+
 export const upcomingScreenings: ScreeningRecommendation[] = [
   {
     id: 'annual-physical',
