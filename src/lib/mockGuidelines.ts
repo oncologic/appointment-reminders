@@ -12,6 +12,8 @@ export const mockGuidelines: GuidelineItem[] = [
         max: 49,
         label: '45-49',
         frequency: 'Every 1-3 years with FIT or other stool-based test',
+        frequencyMonths: 12, // Annual minimum
+        frequencyMonthsMax: 36, // Up to every 3 years
         notes: 'Starting at age 45 for average risk individuals',
       },
       {
@@ -19,6 +21,8 @@ export const mockGuidelines: GuidelineItem[] = [
         max: 75,
         label: '50-75',
         frequency: 'Every 10 years with colonoscopy, or other methods at different intervals',
+        frequencyMonths: 12, // Annual for FIT
+        frequencyMonthsMax: 120, // Up to 10 years for colonoscopy
         notes: 'High risk individuals may need more frequent screening',
       },
       {
@@ -26,6 +30,8 @@ export const mockGuidelines: GuidelineItem[] = [
         max: 85,
         label: '76-85',
         frequency: 'Based on individual health status and screening history',
+        frequencyMonths: 12, // Minimum annual for high risk
+        frequencyMonthsMax: 120, // Up to 10 years for low risk
         notes: 'Decision should be made with healthcare provider',
       },
     ],
@@ -46,6 +52,8 @@ export const mockGuidelines: GuidelineItem[] = [
         max: 39,
         label: '25-39',
         frequency: 'Clinical breast exam every 1-3 years',
+        frequencyMonths: 12, // Annual minimum
+        frequencyMonthsMax: 36, // Up to every 3 years
         notes: 'For women at average risk',
       },
       {
@@ -53,6 +61,7 @@ export const mockGuidelines: GuidelineItem[] = [
         max: 44,
         label: '40-44',
         frequency: 'Optional annual mammogram',
+        frequencyMonths: 12, // Annual
         notes: 'Consider individual risk factors and preferences',
       },
       {
@@ -60,6 +69,7 @@ export const mockGuidelines: GuidelineItem[] = [
         max: 54,
         label: '45-54',
         frequency: 'Annual mammogram recommended',
+        frequencyMonths: 12, // Annual
         notes: 'More frequent screening for high-risk individuals',
       },
       {
@@ -67,6 +77,8 @@ export const mockGuidelines: GuidelineItem[] = [
         max: 74,
         label: '55-74',
         frequency: 'Mammogram every 1-2 years',
+        frequencyMonths: 12, // Annual minimum
+        frequencyMonthsMax: 24, // Up to every 2 years
         notes: 'Based on individual preferences and risk factors',
       },
       {
@@ -74,6 +86,8 @@ export const mockGuidelines: GuidelineItem[] = [
         max: null,
         label: '75+',
         frequency: 'Based on overall health and life expectancy',
+        frequencyMonths: 12, // Annual minimum if continuing screening
+        frequencyMonthsMax: 24, // Up to every 2 years
         notes: 'Consult with healthcare provider',
       },
     ],
@@ -94,6 +108,7 @@ export const mockGuidelines: GuidelineItem[] = [
         max: 29,
         label: '21-29',
         frequency: 'Every 3 years with Pap test alone',
+        frequencyMonths: 36, // Every 3 years
         notes: 'HPV testing not recommended in this age group',
       },
       {
@@ -102,6 +117,8 @@ export const mockGuidelines: GuidelineItem[] = [
         label: '30-65',
         frequency:
           'Every 5 years with HPV and Pap co-testing, or every 3 years with Pap test alone',
+        frequencyMonths: 36, // Every 3 years minimum with Pap alone
+        frequencyMonthsMax: 60, // Up to every 5 years with co-testing
         notes: 'HPV testing alone every 5 years is also an option',
       },
       {
@@ -129,6 +146,7 @@ export const mockGuidelines: GuidelineItem[] = [
         max: 44,
         label: '40-44',
         frequency: 'Consider baseline screening for high-risk men',
+        frequencyMonths: 12, // Annual for high-risk
         notes: 'Including African American men and those with family history',
       },
       {
@@ -136,6 +154,7 @@ export const mockGuidelines: GuidelineItem[] = [
         max: 49,
         label: '45-49',
         frequency: 'Consider screening for high-risk men',
+        frequencyMonths: 12, // Annual for high-risk
         notes: 'Discuss benefits and risks with healthcare provider',
       },
       {
@@ -143,6 +162,8 @@ export const mockGuidelines: GuidelineItem[] = [
         max: 69,
         label: '50-69',
         frequency: 'Consider screening every 1-2 years',
+        frequencyMonths: 12, // Annual minimum
+        frequencyMonthsMax: 24, // Up to every 2 years
         notes: 'Based on PSA levels and individual risk assessment',
       },
       {
@@ -150,6 +171,7 @@ export const mockGuidelines: GuidelineItem[] = [
         max: null,
         label: '70+',
         frequency: 'Individualized decision based on health status',
+        frequencyMonths: 24, // Every 2 years if continuing screening
         notes: 'Limited benefit for men with less than 10-15 year life expectancy',
       },
     ],
@@ -164,6 +186,7 @@ export const mockGuidelines: GuidelineItem[] = [
     name: 'Skin Cancer Screening',
     description: 'Full body skin examination',
     frequency: 'Annual',
+    frequencyMonths: 12, // Annual
     ageRanges: [{ min: 20, max: null, label: '20+' }],
     genders: ['all'],
     category: 'Cancer Screening',
@@ -182,6 +205,8 @@ export const mockGuidelines: GuidelineItem[] = [
         max: 39,
         label: '20-39',
         frequency: 'Every 4-6 years for those at average risk',
+        frequencyMonths: 48, // Every 4 years minimum
+        frequencyMonthsMax: 72, // Up to every 6 years
         notes: 'More frequent for those with cardiovascular risk factors',
       },
       {
@@ -189,6 +214,8 @@ export const mockGuidelines: GuidelineItem[] = [
         max: 75,
         label: '40-75',
         frequency: 'Every 1-2 years',
+        frequencyMonths: 12, // Annual minimum
+        frequencyMonthsMax: 24, // Up to every 2 years
         notes: 'May be more frequent based on risk factors and previous results',
       },
       {
@@ -196,6 +223,8 @@ export const mockGuidelines: GuidelineItem[] = [
         max: null,
         label: '76+',
         frequency: 'Individualized based on health status',
+        frequencyMonths: 12, // Annual minimum if continuing screening
+        frequencyMonthsMax: 24, // Up to every 2 years
         notes: 'Discuss with healthcare provider',
       },
     ],
@@ -210,6 +239,7 @@ export const mockGuidelines: GuidelineItem[] = [
     name: 'Blood Pressure Screening',
     description: 'Measurement of blood pressure',
     frequency: 'Annual, or more frequently based on readings',
+    frequencyMonths: 12, // Annual minimum
     ageRanges: [{ min: 18, max: null, label: '18+' }],
     genders: ['all'],
     category: 'Cardiovascular Health',
@@ -222,12 +252,14 @@ export const mockGuidelines: GuidelineItem[] = [
     name: 'Lung Cancer Screening',
     description: 'Low-dose CT scan',
     frequency: 'Annual',
+    frequencyMonths: 12, // Annual
     ageRanges: [
       {
         min: 50,
         max: 80,
         label: '50-80',
         frequency: 'Annual for current smokers or those who quit within past 15 years',
+        frequencyMonths: 12, // Annual
         notes: 'With at least a 20 pack-year smoking history',
       },
     ],
@@ -242,12 +274,16 @@ export const mockGuidelines: GuidelineItem[] = [
     name: 'Diabetes Screening',
     description: 'Blood tests to measure glucose levels',
     frequency: 'Every 3 years, more frequently with risk factors',
+    frequencyMonths: 12, // Annual minimum with risk factors
+    frequencyMonthsMax: 36, // Up to every 3 years for normal weight
     ageRanges: [
       {
         min: 35,
         max: 70,
         label: '35-70',
         frequency: 'Every 3 years for those with normal weight',
+        frequencyMonths: 12, // Annual minimum with risk factors
+        frequencyMonthsMax: 36, // Up to every 3 years
         notes: 'More frequently with overweight/obesity or other risk factors',
       },
     ],

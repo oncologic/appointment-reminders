@@ -46,6 +46,7 @@ export interface UserPreferences {
 export interface UserProfile {
   name: string;
   age: number;
+  dateOfBirth?: string; // ISO date string format
   gender: 'male' | 'female' | 'other';
   riskFactors: {
     [key: string]: boolean | string;
@@ -216,124 +217,6 @@ const PersonalizedGuidelines = ({
 
   return (
     <div>
-      <div className="mb-8 bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
-          Age & Gender-Based Recommendations
-        </h2>
-        <div className="mb-4">
-          <p className="text-gray-600">
-            Personalized for:{' '}
-            <span className="font-medium">
-              {userProfile.age} year old, {userProfile.gender}
-            </span>
-          </p>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="bg-blue-50 rounded-lg p-4">
-            <h3 className="text-lg font-medium text-blue-800 mb-2">
-              Current Recommendations (Ages {Math.max(userProfile.age - 2, 18)}-{userProfile.age})
-            </h3>
-            <ul className="text-sm text-gray-700 space-y-2">
-              {relevantGuidelines.length === 0 ? (
-                <li className="text-gray-500 italic">No current recommendations</li>
-              ) : (
-                relevantGuidelines.map((guideline) => (
-                  <li key={guideline.id} className="flex items-baseline gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-600 mt-1"></div>
-                    <div className="flex-1 flex justify-between items-center">
-                      <span>{guideline.name}</span>
-                      <button
-                        onClick={() => handleToggleGuideline(guideline.id)}
-                        className={`ml-2 ${
-                          selectedGuidelineIds.includes(guideline.id)
-                            ? 'text-yellow-500 hover:text-yellow-600'
-                            : 'text-gray-400 hover:text-yellow-500'
-                        }`}
-                        title={
-                          selectedGuidelineIds.includes(guideline.id)
-                            ? 'Remove from my list'
-                            : 'Add to my list'
-                        }
-                      >
-                        <FaStar />
-                      </button>
-                    </div>
-                  </li>
-                ))
-              )}
-            </ul>
-          </div>
-          <div className="bg-green-50 rounded-lg p-4">
-            <h3 className="text-lg font-medium text-green-800 mb-2">
-              Coming Soon (Ages {userProfile.age + 1}-{userProfile.age + 5})
-            </h3>
-            <ul className="text-sm text-gray-700 space-y-2">
-              {upcomingGuidelines.length === 0 ? (
-                <li className="text-gray-500 italic">No upcoming recommendations</li>
-              ) : (
-                upcomingGuidelines.map((guideline) => (
-                  <li key={guideline.id} className="flex items-baseline gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-600 mt-1"></div>
-                    <div className="flex-1 flex justify-between items-center">
-                      <span>{guideline.name}</span>
-                      <button
-                        onClick={() => handleToggleGuideline(guideline.id)}
-                        className={`ml-2 ${
-                          selectedGuidelineIds.includes(guideline.id)
-                            ? 'text-yellow-500 hover:text-yellow-600'
-                            : 'text-gray-400 hover:text-yellow-500'
-                        }`}
-                        title={
-                          selectedGuidelineIds.includes(guideline.id)
-                            ? 'Remove from my list'
-                            : 'Add to my list'
-                        }
-                      >
-                        <FaStar />
-                      </button>
-                    </div>
-                  </li>
-                ))
-              )}
-            </ul>
-          </div>
-          <div className="bg-purple-50 rounded-lg p-4">
-            <h3 className="text-lg font-medium text-purple-800 mb-2">
-              Future Planning (Ages {userProfile.age + 6}+)
-            </h3>
-            <ul className="text-sm text-gray-700 space-y-2">
-              {futureGuidelines.length === 0 ? (
-                <li className="text-gray-500 italic">No future recommendations</li>
-              ) : (
-                futureGuidelines.map((guideline) => (
-                  <li key={guideline.id} className="flex items-baseline gap-2">
-                    <div className="w-2 h-2 rounded-full bg-purple-600 mt-1"></div>
-                    <div className="flex-1 flex justify-between items-center">
-                      <span>{guideline.name}</span>
-                      <button
-                        onClick={() => handleToggleGuideline(guideline.id)}
-                        className={`ml-2 ${
-                          selectedGuidelineIds.includes(guideline.id)
-                            ? 'text-yellow-500 hover:text-yellow-600'
-                            : 'text-gray-400 hover:text-yellow-500'
-                        }`}
-                        title={
-                          selectedGuidelineIds.includes(guideline.id)
-                            ? 'Remove from my list'
-                            : 'Add to my list'
-                        }
-                      >
-                        <FaStar />
-                      </button>
-                    </div>
-                  </li>
-                ))
-              )}
-            </ul>
-          </div>
-        </div>
-      </div>
-
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-800">Your Selected Screenings</h2>

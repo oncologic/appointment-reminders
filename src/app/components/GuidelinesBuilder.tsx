@@ -4,7 +4,7 @@ import { FaGlobe, FaLock, FaPlus, FaSave, FaTag, FaTrash, FaUndo } from 'react-i
 import GuidelineService from '../../lib/services/guidelineService';
 import { AgeRange, GuidelineItem, UserProfile } from './PersonalizedGuidelines';
 
-const CATEGORIES = [
+export const CATEGORIES = [
   'General Health',
   'Cancer Screening',
   'Preventive Care',

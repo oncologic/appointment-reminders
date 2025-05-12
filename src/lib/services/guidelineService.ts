@@ -138,6 +138,7 @@ export const INITIAL_GUIDELINES = [
 export const DEFAULT_USER_PROFILE: UserProfile = {
   name: 'Jane Doe',
   age: 38,
+  dateOfBirth: '1986-06-15', // Added DOB for a 38-year-old (as of 2024)
   gender: 'female',
   riskFactors: {
     familyHistoryBreastCancer: false,
@@ -150,7 +151,7 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
 };
 
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
-  selectedGuidelineIds: ['1', '2', '3', '8'],
+  selectedGuidelineIds: ['2', '1', '3'], // Breast cancer (2), Colorectal cancer (1), Cervical cancer (3)
 };
 
 const STORAGE_KEYS = {
@@ -167,7 +168,11 @@ const getFromStorage = <T>(key: string, defaultValue: T): T => {
 
   try {
     const storedValue = localStorage.getItem(key);
-    return storedValue ? JSON.parse(storedValue) : defaultValue;
+    if (!storedValue) {
+      return defaultValue;
+    }
+    const parsedValue = JSON.parse(storedValue);
+    return parsedValue;
   } catch (error) {
     console.error(`Error getting ${key} from localStorage:`, error);
     return defaultValue;
