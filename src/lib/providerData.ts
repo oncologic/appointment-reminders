@@ -11,8 +11,8 @@ export interface Provider {
   email?: string;
   website?: string;
   acceptingNewPatients: boolean;
-  insuranceAccepted?: string[];
-  languages?: string[];
+  insuranceAccepted?: string;
+  languages?: string;
   officeHours?: {
     day: string;
     hours: string;
@@ -35,8 +35,8 @@ export const providers: Provider[] = [
     email: 'dr.chen@primarycare.example.com',
     website: 'www.primarycareassociates.example.com',
     acceptingNewPatients: true,
-    insuranceAccepted: ['Blue Cross', 'Aetna', 'Medicare', 'United Healthcare'],
-    languages: ['English', 'Mandarin'],
+    insuranceAccepted: 'Blue Cross,Aetna,Medicare,United Healthcare',
+    languages: 'English,Mandarin',
     officeHours: [
       { day: 'Monday', hours: '9:00 AM - 5:00 PM' },
       { day: 'Tuesday', hours: '9:00 AM - 5:00 PM' },
@@ -59,8 +59,8 @@ export const providers: Provider[] = [
     email: 'dr.williams@womenshealth.example.com',
     website: 'www.womenshealthsf.example.com',
     acceptingNewPatients: true,
-    insuranceAccepted: ['Blue Cross', 'Aetna', 'Kaiser', 'United Healthcare'],
-    languages: ['English', 'Spanish'],
+    insuranceAccepted: 'Blue Cross,Aetna,Kaiser,United Healthcare',
+    languages: 'English,Spanish',
     officeHours: [
       { day: 'Monday', hours: '8:00 AM - 4:00 PM' },
       { day: 'Tuesday', hours: '10:00 AM - 6:00 PM' },
@@ -83,8 +83,8 @@ export const providers: Provider[] = [
     email: 'appointments@pacificdermatology.example.com',
     website: 'www.pacificdermatology.example.com',
     acceptingNewPatients: true,
-    insuranceAccepted: ['Blue Cross', 'Aetna', 'Medicare', 'Cigna'],
-    languages: ['English'],
+    insuranceAccepted: 'Blue Cross,Aetna,Medicare,Cigna',
+    languages: 'English',
     officeHours: [
       { day: 'Monday', hours: '9:00 AM - 5:00 PM' },
       { day: 'Tuesday', hours: '9:00 AM - 5:00 PM' },
@@ -107,8 +107,8 @@ export const providers: Provider[] = [
     email: 'info@smiledental.example.com',
     website: 'www.smiledental.example.com',
     acceptingNewPatients: true,
-    insuranceAccepted: ['Delta Dental', 'Cigna Dental', 'Guardian'],
-    languages: ['English', 'French'],
+    insuranceAccepted: 'Delta Dental,Cigna Dental,Guardian',
+    languages: 'English,French',
     officeHours: [
       { day: 'Monday', hours: '8:00 AM - 5:00 PM' },
       { day: 'Tuesday', hours: '8:00 AM - 5:00 PM' },
@@ -131,8 +131,8 @@ export const providers: Provider[] = [
     email: 'cardiology@heartcenter.example.com',
     website: 'www.sfheartcenter.example.com',
     acceptingNewPatients: true,
-    insuranceAccepted: ['Blue Cross', 'Aetna', 'Medicare', 'United Healthcare'],
-    languages: ['English'],
+    insuranceAccepted: 'Blue Cross,Aetna,Medicare,United Healthcare',
+    languages: 'English',
     officeHours: [
       { day: 'Monday', hours: '9:00 AM - 5:00 PM' },
       { day: 'Tuesday', hours: '9:00 AM - 5:00 PM' },
@@ -155,8 +155,8 @@ export const providers: Provider[] = [
     email: 'dr.watson@mindwellness.example.com',
     website: 'www.mindwellnesscenter.example.com',
     acceptingNewPatients: true,
-    insuranceAccepted: ['Blue Cross', 'Aetna', 'United Healthcare', 'Cigna'],
-    languages: ['English'],
+    insuranceAccepted: 'Blue Cross,Aetna,United Healthcare,Cigna',
+    languages: 'English',
     officeHours: [
       { day: 'Monday', hours: '10:00 AM - 6:00 PM' },
       { day: 'Tuesday', hours: '10:00 AM - 6:00 PM' },
@@ -179,8 +179,8 @@ export const providers: Provider[] = [
     email: 'appointments@clearvision.example.com',
     website: 'www.clearvisionoptometry.example.com',
     acceptingNewPatients: true,
-    insuranceAccepted: ['VSP', 'EyeMed', 'Davis Vision', 'Spectera'],
-    languages: ['English', 'Cantonese'],
+    insuranceAccepted: 'VSP,EyeMed,Davis Vision,Spectera',
+    languages: 'English,Cantonese',
     officeHours: [
       { day: 'Monday', hours: '9:00 AM - 6:00 PM' },
       { day: 'Tuesday', hours: '9:00 AM - 6:00 PM' },
@@ -204,8 +204,8 @@ export const providers: Provider[] = [
     email: 'therapy@rehabcenter.example.com',
     website: 'www.sfrehab.example.com',
     acceptingNewPatients: true,
-    insuranceAccepted: ['Blue Cross', 'Aetna', 'Medicare', 'Workers Comp'],
-    languages: ['English', 'Swedish'],
+    insuranceAccepted: 'Blue Cross,Aetna,Medicare,Workers Comp',
+    languages: 'English,Swedish',
     officeHours: [
       { day: 'Monday', hours: '7:00 AM - 7:00 PM' },
       { day: 'Tuesday', hours: '7:00 AM - 7:00 PM' },
@@ -228,8 +228,8 @@ export const providers: Provider[] = [
     email: 'info@allergyspecialists.example.com',
     website: 'www.allergyasthmaspecialists.example.com',
     acceptingNewPatients: true,
-    insuranceAccepted: ['Blue Cross', 'Aetna', 'Medicare', 'Kaiser'],
-    languages: ['English', 'Korean'],
+    insuranceAccepted: 'Blue Cross,Aetna,Medicare,Kaiser',
+    languages: 'English,Korean',
     officeHours: [
       { day: 'Monday', hours: '8:30 AM - 5:00 PM' },
       { day: 'Tuesday', hours: '8:30 AM - 5:00 PM' },
@@ -252,8 +252,8 @@ export const providers: Provider[] = [
     email: 'appointments@womensimaging.example.com',
     website: 'www.womensimaging.example.com',
     acceptingNewPatients: true,
-    insuranceAccepted: ['Blue Cross', 'Aetna', 'Medicare', 'United Healthcare'],
-    languages: ['English', 'Spanish'],
+    insuranceAccepted: 'Blue Cross,Aetna,Medicare,United Healthcare',
+    languages: 'English,Spanish',
     officeHours: [
       { day: 'Monday', hours: '8:00 AM - 5:00 PM' },
       { day: 'Tuesday', hours: '8:00 AM - 5:00 PM' },
@@ -276,8 +276,8 @@ export const providers: Provider[] = [
     email: 'appointments@bayareacancer.example.com',
     website: 'www.bayareacancercenter.example.com',
     acceptingNewPatients: true,
-    insuranceAccepted: ['Blue Cross', 'Aetna', 'Medicare', 'United Healthcare', 'Cigna'],
-    languages: ['English', 'German'],
+    insuranceAccepted: 'Blue Cross,Aetna,Medicare,United Healthcare,Cigna',
+    languages: 'English,German',
     officeHours: [
       { day: 'Monday', hours: '8:00 AM - 5:00 PM' },
       { day: 'Tuesday', hours: '8:00 AM - 5:00 PM' },
