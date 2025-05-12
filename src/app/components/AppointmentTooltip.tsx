@@ -1,87 +1,114 @@
 'use client';
 
 import React from 'react';
-import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaUserMd } from 'react-icons/fa';
+import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaNotesMedical, FaUserMd } from 'react-icons/fa';
 
 import { Appointment } from '@/lib/mockData';
 
 interface AppointmentTooltipProps {
   appointment: Appointment;
-  position?: { top: number; left: number };
+  position: {
+    top: number;
+    left: number;
+  };
 }
 
 const AppointmentTooltip: React.FC<AppointmentTooltipProps> = ({ appointment, position }) => {
-  const formattedTime = appointment.date.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-  const formattedDate = appointment.date.toLocaleDateString([], {
+  // Adjust position to ensure tooltip is visible within viewport
+  const adjustedPosition = {
+    top: position.top,
+    left: Math.min(position.left, window.innerWidth - 320), // Prevent overflow from right edge
+  };
+
+  // Format date
+  const formattedDate = appointment.date.toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
     year: 'numeric',
   });
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'Examination':
-        return 'bg-blue-100 text-blue-800';
-      case 'Treatment':
-        return 'bg-green-100 text-green-800';
-      case 'Consultation':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  // Format time
+  const formattedTime = appointment.date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
 
   return (
     <div
-      className="absolute bg-white shadow-lg rounded-lg p-4 w-72 z-50"
+      className="absolute z-20 bg-white shadow-lg rounded-md p-4 border border-blue-100 w-72 animate-fadeIn tooltip-container"
       style={{
-        top: position?.top || 0,
-        left: position?.left || 0,
+        top: `${adjustedPosition.top}px`,
+        left: `${adjustedPosition.left}px`,
+        maxWidth: '320px',
+        transform: 'translateY(5px)',
       }}
+      // Allow tooltip to be hovered over to maintain visibility
+      onMouseEnter={(e) => e.stopPropagation()}
+      onMouseLeave={(e) => e.stopPropagation()}
     >
-      <div className="mb-2">
+      <div className="flex items-start justify-between mb-1">
+        <h3 className="font-medium text-gray-900">{appointment.title}</h3>
         <span
-          className={`text-xs font-medium px-2 py-1 rounded-full ${getTypeColor(appointment.type)}`}
+          className={`px-2 py-1 text-xs rounded-full ${
+            appointment.completed ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+          }`}
         >
-          {appointment.type}
+          {appointment.completed ? 'Completed' : 'Scheduled'}
         </span>
-        {appointment.completed && (
-          <span className="ml-2 text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-800">
-            Completed
-          </span>
-        )}
       </div>
-      <h4 className="font-semibold text-gray-800 text-lg mb-2">{appointment.title}</h4>
 
-      <div className="flex items-start mb-2">
-        <FaCalendarAlt className="text-gray-500 mt-1 mr-2" />
-        <div>
-          <p className="text-gray-700">{formattedDate}</p>
-          <div className="flex items-center text-gray-600">
-            <FaClock className="mr-1" size={12} />
-            <span className="text-sm">{formattedTime}</span>
-          </div>
+      {appointment.notes && <p className="text-sm text-gray-500 mt-1">{appointment.notes}</p>}
+
+      <div className="mt-3 space-y-2">
+        <div className="flex items-center text-xs text-gray-600">
+          <FaCalendarAlt className="mr-2 text-blue-600" />
+          <span>{formattedDate}</span>
+        </div>
+        <div className="flex items-center text-xs text-gray-600">
+          <FaClock className="mr-2 text-blue-600" />
+          <span>{formattedTime}</span>
+        </div>
+        <div className="flex items-center text-xs text-gray-600">
+          <FaUserMd className="mr-2 text-blue-600" />
+          <span>{appointment.provider}</span>
+        </div>
+        <div className="flex items-center text-xs text-gray-600">
+          <FaMapMarkerAlt className="mr-2 text-blue-600" />
+          <span>{appointment.location}</span>
         </div>
       </div>
 
-      <div className="flex items-start mb-2">
-        <FaUserMd className="text-gray-500 mt-1 mr-2" />
-        <p className="text-gray-700">{appointment.provider}</p>
-      </div>
+      {!appointment.completed && (
+        <div className="mt-4 flex flex-col space-y-2">
+          <a
+            href={appointment.detailsPath}
+            className="text-xs border border-blue-200 rounded-md px-3 py-1.5 bg-blue-50 flex items-center text-blue-600 font-medium hover:bg-blue-100 transition-colors"
+          >
+            <FaCalendarAlt className="mr-1.5" />
+            View appointment details
+          </a>
 
-      <div className="flex items-start mb-2">
-        <FaMapMarkerAlt className="text-gray-500 mt-1 mr-2" />
-        <p className="text-gray-700">{appointment.location}</p>
-      </div>
+          <a
+            href={`/appointments/reschedule/${appointment.id}`}
+            className="text-xs border border-gray-200 rounded-md px-3 py-1.5 bg-gray-50 flex items-center text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            <FaNotesMedical className="mr-1.5" />
+            Reschedule appointment
+          </a>
+        </div>
+      )}
 
-      {appointment.notes && (
-        <div className="mt-3 pt-3 border-t border-gray-100">
-          <p className="text-xs font-medium text-gray-500 uppercase mb-1">Notes</p>
-          <p className="text-gray-700 text-sm">{appointment.notes}</p>
+      {appointment.completed && (
+        <div className="mt-4">
+          <a
+            href={appointment.detailsPath}
+            className="text-xs border border-green-200 rounded-md px-3 py-1.5 bg-green-50 flex items-center text-green-600 font-medium hover:bg-green-100 transition-colors w-full"
+          >
+            <FaNotesMedical className="mr-1.5" />
+            View results
+          </a>
         </div>
       )}
     </div>

@@ -3,9 +3,16 @@
 import Link from 'next/link';
 import React, { useState } from 'react';
 
-import { Appointment } from '@/lib/mockData';
+import {
+  Appointment,
+  ScreeningRecommendation,
+  futureScreenings,
+  upcomingScreenings,
+} from '@/lib/mockData';
 
 import AppointmentTooltip from './AppointmentTooltip';
+import ScreeningCalendarItem from './ScreeningCalendarItem';
+import ScreeningTooltip from './ScreeningTooltip';
 
 interface MonthCalendarProps {
   month: number;
@@ -13,8 +20,36 @@ interface MonthCalendarProps {
   appointments: Appointment[];
 }
 
+// Helper function to map screenings to suggested months
+const getSuggestedMonth = (screening: ScreeningRecommendation): number => {
+  // Simple mapping based on status and title
+  if (screening.status === 'overdue') {
+    return new Date().getMonth(); // Current month for overdue
+  } else if (screening.status === 'due') {
+    return (new Date().getMonth() + 1) % 12; // Next month for due
+  } else if (screening.title.includes('Physical')) {
+    return 0; // January
+  } else if (screening.title.includes('Mammogram')) {
+    return 9; // October (breast cancer awareness month)
+  } else if (screening.title.includes('Colonoscopy')) {
+    return 2; // March (colorectal cancer awareness month)
+  } else if (screening.title.includes('Cholesterol')) {
+    return 8; // September
+  } else if (screening.title.includes('Cervical')) {
+    return 0; // January (cervical health awareness month)
+  } else if (screening.title.includes('Skin')) {
+    return 4; // May (skin cancer awareness month)
+  } else if (screening.title.includes('Breast')) {
+    return 9; // October
+  }
+
+  // Default: distribute evenly throughout the year
+  return Math.floor(Math.random() * 12);
+};
+
 const MonthCalendar: React.FC<MonthCalendarProps> = ({ month, year, appointments }) => {
   const [hoveredAppointment, setHoveredAppointment] = useState<Appointment | null>(null);
+  const [hoveredScreening, setHoveredScreening] = useState<ScreeningRecommendation | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(
     null
   );
@@ -40,6 +75,38 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({ month, year, appointments
     (appt) => appt.date.getMonth() === month && appt.date.getFullYear() === year
   );
 
+  // Filter screenings for this month
+  const allScreenings = [...upcomingScreenings, ...futureScreenings];
+  const monthScreenings = allScreenings.filter(
+    (screening) => screening.status !== 'completed' && getSuggestedMonth(screening) === month
+  );
+
+  // Helper function to check if a screening should be shown in this year
+  const shouldShowScreeningInYear = (screening: ScreeningRecommendation): boolean => {
+    if (screening.status === 'completed') return false;
+
+    // Extract year from statusText if it has one
+    const yearMatch = screening.statusText.match(/\(\s*age\s+(\d+)\s*\)/i);
+    const ageYear = yearMatch ? parseInt(yearMatch[1]) : null;
+
+    if (ageYear) {
+      // Show in the year when the age would be reached
+      const currentYear = new Date().getFullYear();
+      const userAge = 38; // From the user data in page.tsx
+      const yearWhenDue = currentYear + (ageYear - userAge);
+      return year === yearWhenDue;
+    }
+
+    // If due soon or overdue, always show in current year and next year
+    if (screening.status === 'overdue' || screening.status === 'due') {
+      return year === new Date().getFullYear() || year === new Date().getFullYear() + 1;
+    }
+
+    // For upcoming with no specific age, show in the next few years
+    const currentYear = new Date().getFullYear();
+    return year >= currentYear && year <= currentYear + 3;
+  };
+
   // Group appointments by day
   const appointmentsByDay: Record<number, Appointment[]> = {};
   monthAppointments.forEach((appt) => {
@@ -49,6 +116,40 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({ month, year, appointments
     }
     appointmentsByDay[day].push(appt);
   });
+
+  // Group screenings by day (distribute evenly through the month)
+  const screeningsByDay: Record<number, ScreeningRecommendation[]> = {};
+  monthScreenings
+    .filter((screening) => shouldShowScreeningInYear(screening))
+    .forEach((screening, index) => {
+      // Distribute screenings evenly through the month, avoiding weekends
+      // and starting from day 5 to avoid cluttering the beginning of the month
+      const day = 5 + ((index * 4) % (daysInMonth - 10)); // Increased spacing between screenings
+      const dayOfWeek = new Date(year, month, day).getDay();
+
+      // Skip weekends and avoid days with existing appointments if possible
+      let adjustedDay = day;
+      if (dayOfWeek === 0) adjustedDay = day + 1; // Sunday -> Monday
+      if (dayOfWeek === 6) adjustedDay = day + 2; // Saturday -> Monday
+
+      // Try to avoid putting screenings on days that already have 2 or more appointments
+      if (appointmentsByDay[adjustedDay] && appointmentsByDay[adjustedDay].length >= 2) {
+        if (adjustedDay < daysInMonth - 1) {
+          adjustedDay += 1;
+        } else if (adjustedDay > 1) {
+          adjustedDay -= 1;
+        }
+      }
+
+      if (!screeningsByDay[adjustedDay]) {
+        screeningsByDay[adjustedDay] = [];
+      }
+
+      // Limit to max 2 screenings per day to prevent overflow
+      if (screeningsByDay[adjustedDay].length < 2) {
+        screeningsByDay[adjustedDay].push(screening);
+      }
+    });
 
   // Helper function to get type color
   const getTypeColor = (type: string) => {
@@ -71,14 +172,37 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({ month, year, appointments
   ) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setHoveredAppointment(appointment);
+    setHoveredScreening(null);
     setTooltipPosition({
       top: rect.bottom + window.scrollY + 5,
       left: rect.left + window.scrollX,
     });
   };
 
-  const handleAppointmentMouseLeave = () => {
+  // Handle screening hover
+  const handleScreeningMouseEnter = (
+    e: React.MouseEvent<HTMLDivElement>,
+    screening: ScreeningRecommendation
+  ) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setHoveredScreening(screening);
     setHoveredAppointment(null);
+    setTooltipPosition({
+      top: rect.bottom + window.scrollY + 5,
+      left: rect.left + window.scrollX,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    // We'll only clear tooltips if we're not hovering on the tooltip
+    // The actual clearing now happens in a timeout to check if tooltip is being hovered
+    setTimeout(() => {
+      const tooltipElement = document.querySelector('.tooltip-container:hover');
+      if (!tooltipElement) {
+        setHoveredAppointment(null);
+        setHoveredScreening(null);
+      }
+    }, 100);
   };
 
   // Generate calendar grid
@@ -94,6 +218,7 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({ month, year, appointments
   // Add cells for each day of the month
   for (let day = 1; day <= daysInMonth; day++) {
     const dayAppointments = appointmentsByDay[day] || [];
+    const dayScreenings = screeningsByDay[day] || [];
     const isToday =
       new Date().getDate() === day &&
       new Date().getMonth() === month &&
@@ -116,7 +241,8 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({ month, year, appointments
           </span>
         </div>
 
-        <div className="space-y-1 overflow-y-auto max-h-16">
+        <div className="space-y-1 overflow-y-auto max-h-[calc(100%-20px)]">
+          {/* Appointments first */}
           {dayAppointments.map((appt) => (
             <Link href={appt.detailsPath} key={appt.id} className="block">
               <div
@@ -124,12 +250,32 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({ month, year, appointments
                   appt.completed ? 'opacity-70' : ''
                 }`}
                 onMouseEnter={(e) => handleAppointmentMouseEnter(e, appt)}
-                onMouseLeave={handleAppointmentMouseLeave}
+                onMouseLeave={handleMouseLeave}
               >
                 {appt.title}
               </div>
             </Link>
           ))}
+
+          {/* Render suggested screenings with a small divider if both exist */}
+          {dayAppointments.length > 0 && dayScreenings.length > 0 && (
+            <div className="border-t border-dashed border-gray-200 my-1 mx-1"></div>
+          )}
+
+          {/* Render suggested screenings */}
+          {dayScreenings.length > 0 && (
+            <div className="screenings-container">
+              {dayScreenings.map((screening) => (
+                <ScreeningCalendarItem
+                  key={screening.id}
+                  screening={screening}
+                  handleMouseEnter={handleScreeningMouseEnter}
+                  handleMouseLeave={handleMouseLeave}
+                  year={year}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -167,9 +313,14 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({ month, year, appointments
         {calendarDays}
       </div>
 
-      {/* Tooltip */}
+      {/* Appointment Tooltip */}
       {hoveredAppointment && tooltipPosition && (
         <AppointmentTooltip appointment={hoveredAppointment} position={tooltipPosition} />
+      )}
+
+      {/* Screening Tooltip */}
+      {hoveredScreening && tooltipPosition && (
+        <ScreeningTooltip screening={hoveredScreening} position={tooltipPosition} />
       )}
     </div>
   );

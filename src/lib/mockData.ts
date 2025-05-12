@@ -46,10 +46,21 @@ export interface Appointment {
   notes?: string;
   detailsPath: string;
   completed: boolean;
+  // Additional fields for tooltip display
+  description?: string;
+  startTime?: string;
+  endTime?: string;
+  doctor?: string;
+  result?: {
+    status: string;
+    notes: string;
+    date: string;
+  };
 }
 
 // Create appointments for the calendar view
 export const appointments: Appointment[] = [
+  // Previous appointments (before May 12, 2025)
   {
     id: 'appt-1',
     date: new Date(2025, 0, 4, 8, 0), // Jan 4, 2025, 8:00 AM
@@ -60,6 +71,12 @@ export const appointments: Appointment[] = [
     notes: 'Yearly physical examination, fasting required',
     detailsPath: '/appointments/appt-1',
     completed: true,
+    result: {
+      status: 'clear',
+      notes:
+        'All tests within normal range. Blood pressure: 120/75. Cholesterol: 180mg/dL. Blood glucose: 90mg/dL. Continue regular exercise and balanced diet. Next check-up in 12 months.',
+      date: '2025-01-04',
+    },
   },
   {
     id: 'appt-2',
@@ -71,6 +88,12 @@ export const appointments: Appointment[] = [
     notes: 'Bring exercise clothes and comfortable shoes',
     detailsPath: '/appointments/appt-2',
     completed: true,
+    result: {
+      status: 'clear',
+      notes:
+        'Good progress on shoulder mobility. Range of motion improved by 15 degrees. Continue home exercises 3x daily. Follow-up in 1 month.',
+      date: '2025-01-04',
+    },
   },
   {
     id: 'appt-3',
@@ -82,6 +105,12 @@ export const appointments: Appointment[] = [
     notes: 'Discussing lab results from previous visit',
     detailsPath: '/appointments/appt-3',
     completed: true,
+    result: {
+      status: 'abnormal',
+      notes:
+        'Slightly elevated hormone levels. Additional blood work ordered. Schedule follow-up in 3 months. Adjust medication dosage as discussed.',
+      date: '2025-01-04',
+    },
   },
   {
     id: 'appt-4',
@@ -93,6 +122,12 @@ export const appointments: Appointment[] = [
     notes: 'Routine cleaning and check-up',
     detailsPath: '/appointments/appt-4',
     completed: true,
+    result: {
+      status: 'clear',
+      notes:
+        'No cavities found. Gums healthy. Professional cleaning completed. Continue brushing twice daily and flossing. Next cleaning in 6 months.',
+      date: '2025-01-07',
+    },
   },
   {
     id: 'appt-5',
@@ -104,6 +139,12 @@ export const appointments: Appointment[] = [
     notes: 'Annual eye examination, bring current glasses',
     detailsPath: '/appointments/appt-5',
     completed: true,
+    result: {
+      status: 'followup',
+      notes:
+        'Slight change in prescription. Small increase in astigmatism in left eye. New glasses or contacts recommended. Follow up next year.',
+      date: '2025-01-07',
+    },
   },
   {
     id: 'appt-6',
@@ -115,6 +156,12 @@ export const appointments: Appointment[] = [
     notes: 'Annual skin cancer screening',
     detailsPath: '/appointments/appt-6',
     completed: true,
+    result: {
+      status: 'clear',
+      notes:
+        'No suspicious moles or lesions found. Skin appears healthy. Continue using SPF 30+ sunscreen daily. Next screening in 12 months.',
+      date: '2025-01-10',
+    },
   },
   {
     id: 'appt-7',
@@ -126,6 +173,12 @@ export const appointments: Appointment[] = [
     notes: 'Annual breast cancer screening',
     detailsPath: '/appointments/appt-7',
     completed: true,
+    result: {
+      status: 'followup',
+      notes:
+        'Dense breast tissue noted. Additional ultrasound recommended for complete evaluation. Schedule follow-up ultrasound within 2 weeks.',
+      date: '2025-02-15',
+    },
   },
   {
     id: 'appt-8',
@@ -137,6 +190,12 @@ export const appointments: Appointment[] = [
     notes: 'Monthly therapy session',
     detailsPath: '/appointments/appt-8',
     completed: true,
+    result: {
+      status: 'clear',
+      notes:
+        'Discussed work-related stress management techniques and progress with mindfulness practice. Continue daily mindfulness exercises. Next session in 4 weeks.',
+      date: '2025-03-22',
+    },
   },
   {
     id: 'appt-9',
@@ -148,10 +207,16 @@ export const appointments: Appointment[] = [
     notes: 'Seasonal allergy management',
     detailsPath: '/appointments/appt-9',
     completed: true,
+    result: {
+      status: 'abnormal',
+      notes:
+        'New allergens identified: birch pollen and cat dander. Allergy testing completed. Start prescribed antihistamine. Consider immunotherapy for long-term management.',
+      date: '2025-04-12',
+    },
   },
   {
     id: 'appt-10',
-    date: new Date(2025, 4, 20, 11, 30), // May 20, 2025, 11:30 AM
+    date: new Date(2025, 4, 7, 11, 30), // May 7, 2025, 11:30 AM
     title: 'Physical Therapy',
     type: 'Treatment',
     provider: 'Markus Jonsson, PT',
@@ -159,7 +224,14 @@ export const appointments: Appointment[] = [
     notes: 'Follow-up session for shoulder therapy',
     detailsPath: '/appointments/appt-10',
     completed: true,
+    result: {
+      status: 'clear',
+      notes:
+        'Significant improvement in shoulder mobility and strength. Completed full exercise regimen. Continue home exercises. Final follow-up in one month.',
+      date: '2025-05-07',
+    },
   },
+  // After today (May 12, 2025) appointments should not be completed
   {
     id: 'appt-11',
     date: new Date(2025, 5, 8, 13, 45), // Jun 8, 2025, 1:45 PM
@@ -169,7 +241,7 @@ export const appointments: Appointment[] = [
     location: 'Smile Dental, 321 Tooth Ln.',
     notes: 'Filling for cavity on lower right molar',
     detailsPath: '/appointments/appt-11',
-    completed: true,
+    completed: false,
   },
   {
     id: 'appt-12',
@@ -180,7 +252,7 @@ export const appointments: Appointment[] = [
     location: 'HealthFirst Labs, 789 Test Blvd.',
     notes: 'Fasting required for 12 hours prior',
     detailsPath: '/appointments/appt-12',
-    completed: true,
+    completed: false,
   },
   {
     id: 'appt-13',
@@ -191,7 +263,7 @@ export const appointments: Appointment[] = [
     location: 'Heart Center, 432 Pulse Ave.',
     notes: 'Annual heart health check-up',
     detailsPath: '/appointments/appt-13',
-    completed: true,
+    completed: false,
   },
   {
     id: 'appt-14',
@@ -202,7 +274,7 @@ export const appointments: Appointment[] = [
     location: 'Mind Wellness Center, 543 Calm St.',
     notes: 'Monthly therapy session',
     detailsPath: '/appointments/appt-14',
-    completed: true,
+    completed: false,
   },
   {
     id: 'appt-15',
@@ -213,7 +285,7 @@ export const appointments: Appointment[] = [
     location: 'Primary Care Clinic, 123 Health St.',
     notes: 'Annual flu vaccination',
     detailsPath: '/appointments/appt-15',
-    completed: true,
+    completed: false,
   },
   {
     id: 'appt-16',
@@ -224,7 +296,7 @@ export const appointments: Appointment[] = [
     location: 'Pacific Dermatology Center',
     notes: 'Follow-up for skin condition',
     detailsPath: '/appointments/appt-16',
-    completed: true,
+    completed: false,
   },
   {
     id: 'appt-17',
@@ -235,29 +307,6 @@ export const appointments: Appointment[] = [
     location: 'Rehabilitation Center, 456 Wellness Ave.',
     notes: 'Final session for shoulder therapy',
     detailsPath: '/appointments/appt-17',
-    completed: true,
-  },
-  // Upcoming appointments (not completed)
-  {
-    id: 'appt-18',
-    date: new Date(2026, 0, 10, 9, 0), // Jan 10, 2026, 9:00 AM
-    title: 'Annual Physical',
-    type: 'Examination',
-    provider: 'Dr. Michael Chen',
-    location: 'Primary Care Clinic, 123 Health St.',
-    notes: 'Yearly physical examination, fasting required',
-    detailsPath: '/appointments/appt-18',
-    completed: false,
-  },
-  {
-    id: 'appt-19',
-    date: new Date(2026, 1, 20, 13, 0), // Feb 20, 2026, 1:00 PM
-    title: 'Dental Cleaning',
-    type: 'Treatment',
-    provider: 'Dr. Lisa Johnson, DDS',
-    location: 'Smile Dental, 321 Tooth Ln.',
-    notes: 'Routine cleaning and check-up',
-    detailsPath: '/appointments/appt-19',
     completed: false,
   },
 ];
