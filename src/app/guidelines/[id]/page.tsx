@@ -5,9 +5,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FaArrowLeft } from 'react-icons/fa';
 
-import { getToolsAndResourcesForGuideline } from '../../../lib/mockRiskTools';
+import { getToolsAndResourcesForGuideline } from '../../../lib/mockData';
 import GuidelineService from '../../../lib/services/guidelineService';
-import GuidelineDetail from '../../components/GuidelineDetail';
+import GuidelineDetail, {
+  GuidelineResource,
+  RiskAssessmentTool,
+} from '../../components/GuidelineDetail';
 import { GuidelineItem, UserProfile } from '../../components/PersonalizedGuidelines';
 
 const GuidelinePage = () => {
