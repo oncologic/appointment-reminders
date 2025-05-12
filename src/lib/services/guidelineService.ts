@@ -3,7 +3,23 @@ import {
   UserPreferences,
   UserProfile,
 } from '../../app/components/PersonalizedGuidelines';
-import mockGuidelines from '../mockGuidelines';
+import { getToolsAndResourcesForGuideline } from '../mockData';
+
+// Type definitions for a guideline
+export interface AgeRange {
+  min: number;
+  max: number | null;
+  label: string;
+  frequency?: string;
+  frequencyMonths?: number;
+}
+
+export interface GuidelineResource {
+  name: string;
+  url: string;
+  description?: string;
+  type: 'risk' | 'resource';
+}
 
 // Initial set of health guidelines as examples
 export const INITIAL_GUIDELINES = [
@@ -58,11 +74,13 @@ export const INITIAL_GUIDELINES = [
         url: 'https://www.pcpcc.org/tools/prostate-cancer-risk-calculator',
         description:
           'Assessment tool to help determine individual risk of prostate cancer based on multiple factors',
+        type: 'risk' as 'risk',
       },
       {
         name: 'American Cancer Society Guidelines',
         url: 'https://www.cancer.org/cancer/prostate-cancer/detection-diagnosis-staging/acs-recommendations.html',
         description: 'Official screening recommendations from the American Cancer Society',
+        type: 'resource' as 'resource',
       },
     ],
   },
@@ -117,21 +135,23 @@ export const INITIAL_GUIDELINES = [
         url: 'https://bcrisktool.cancer.gov/',
         description:
           'Calculate your five-year and lifetime risks of developing invasive breast cancer',
+        type: 'risk' as 'risk',
       },
       {
         name: 'Dense Breast Tissue Information',
         url: 'https://www.cancer.gov/types/breast/breast-changes/dense-breasts',
         description:
           'Information about dense breast tissue and additional screening considerations',
+        type: 'resource' as 'resource',
       },
       {
         name: 'Mammogram Preparation Guidelines',
         url: 'https://www.cdc.gov/cancer/breast/basic_info/mammograms.htm',
         description: 'How to prepare for your mammogram screening appointment',
+        type: 'resource' as 'resource',
       },
     ],
   },
-  ...mockGuidelines,
 ];
 
 // Initial user profile
@@ -380,12 +400,15 @@ export const GuidelineService = {
    * @returns The new personalized guideline
    */
   createPersonalizedGuideline: (guidelineId: string, userId: string): GuidelineItem => {
-    const allGuidelines = GuidelineService.getGuidelines();
-    const originalGuideline = allGuidelines.find((g) => g.id === guidelineId);
+    // Find the original guideline
+    const originalGuideline = GuidelineService.getGuidelines().find((g) => g.id === guidelineId);
 
     if (!originalGuideline) {
       throw new Error('Original guideline not found');
     }
+
+    // Get any resources and risk tools from the mock data
+    const { tools: riskTools, resources } = getToolsAndResourcesForGuideline(guidelineId);
 
     // Create a new guideline based on the original
     const personalizedGuideline: GuidelineItem = {
@@ -395,6 +418,24 @@ export const GuidelineService = {
       visibility: 'private',
       createdBy: userId,
       originalGuidelineId: originalGuideline.id,
+      // Ensure resources are properly copied over
+      resources: [
+        ...(originalGuideline.resources || []),
+        // Convert from GuidelineResource format to simplified resource format
+        ...resources.map((r) => ({
+          name: r.title,
+          url: r.url,
+          description: r.description,
+          type: 'resource',
+        })),
+        // Convert from RiskAssessmentTool format to simplified resource format
+        ...riskTools.map((r) => ({
+          name: r.name,
+          url: r.url,
+          description: r.description,
+          type: 'risk',
+        })),
+      ],
     };
 
     // Add to guidelines

@@ -10,6 +10,7 @@ interface GuidelineSearchProps {
   resultsCount: number;
   totalCount: number;
   onClearFilters: () => void;
+  showTips: boolean;
 }
 
 const GuidelineSearch: React.FC<GuidelineSearchProps> = ({
@@ -21,6 +22,7 @@ const GuidelineSearch: React.FC<GuidelineSearchProps> = ({
   resultsCount,
   totalCount,
   onClearFilters,
+  showTips,
 }) => {
   return (
     <>
@@ -34,7 +36,11 @@ const GuidelineSearch: React.FC<GuidelineSearchProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search guidelines..."
+            placeholder={
+              showTips
+                ? 'Try &quot;blood pressure&quot;, &quot;mammogram&quot;, or &quot;diabetes&quot;'
+                : 'Search guidelines and screenings'
+            }
             className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>

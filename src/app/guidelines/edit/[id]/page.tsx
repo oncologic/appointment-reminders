@@ -797,7 +797,9 @@ const EditGuidelinePage = () => {
             </div>
 
             <div>
-              <div className="block text-sm font-medium text-gray-700 mb-1">Resources</div>
+              <div className="block text-sm font-medium text-gray-700 mb-1">
+                Resources & Risk Tools
+              </div>
 
               {/* Display current resources */}
               <div className="space-y-2 mb-4">
@@ -834,10 +836,10 @@ const EditGuidelinePage = () => {
               {originalGuideline &&
                 originalGuideline.resources &&
                 originalGuideline.resources.length > 0 && (
-                  <div className="mb-4 p-3 border border-blue-100 rounded-md bg-blue-50">
-                    <h4 className="text-sm font-medium text-blue-800 mb-2">
-                      Resources from Original Guideline
-                    </h4>
+                  <div className="p-3 bg-blue-50 border border-blue-100 rounded-md mb-4">
+                    <h5 className="text-sm font-medium text-blue-800 mb-2">
+                      Resources & Risk Tools from Original Guideline
+                    </h5>
                     <div className="space-y-2">
                       {originalGuideline.resources.map((resource, index) => (
                         <div key={index} className="p-2 border border-blue-200 rounded bg-white">

@@ -23,6 +23,7 @@ export interface GuidelineItem {
   description: string;
   frequency?: string;
   frequencyMonths?: number; // Default frequency in months if not specified in age ranges
+  frequencyMonthsMax?: number; // Maximum frequency in months
   category: string;
   genders: ('male' | 'female' | 'all')[];
   ageRanges: AgeRange[];
@@ -34,6 +35,7 @@ export interface GuidelineItem {
     name: string;
     url: string;
     description?: string;
+    type: 'risk' | 'resource';
   }[];
   lastCompletedDate?: string; // ISO date string when this screening was last completed
   nextDueDate?: string; // ISO date string when this screening is next due

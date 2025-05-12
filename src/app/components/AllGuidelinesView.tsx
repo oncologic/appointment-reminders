@@ -49,6 +49,15 @@ const AllGuidelinesView: React.FC<AllGuidelinesViewProps> = ({
         </Link>
       </div>
 
+      {/* General Guidelines Notice */}
+      <div className="bg-yellow-50 border border-yellow-100 rounded-md p-3 mb-4">
+        <p className="text-sm text-yellow-700">
+          These are based on general guidelines. For more accurate risk assessments and personalized
+          recommendations, use the Personalize option on any guideline to tailor it to your specific
+          circumstances.
+        </p>
+      </div>
+
       <GuidelineSearch
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}

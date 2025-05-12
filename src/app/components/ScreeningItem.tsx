@@ -2,10 +2,9 @@ import Link from 'next/link';
 import React from 'react';
 import {
   FaCalendarPlus,
+  FaChartLine,
   FaExclamationTriangle,
-  FaFileAlt,
   FaInfoCircle,
-  FaTools,
   FaTrash,
 } from 'react-icons/fa';
 
@@ -62,8 +61,10 @@ const ScreeningItem: React.FC<ScreeningItemProps> = ({ screening, onRemove, user
   const currentRecommendation = getCurrentAgeRecommendation();
 
   // Mock data for resources and risk tools - in a real app, these would come from props or a service
-  const hasRiskTools = screening.id.includes('cancer') || screening.id.includes('heart');
-  const hasResources = screening.description.length > 50; // Just a mock condition
+  const hasResourcesOrRiskTools =
+    screening.id.includes('cancer') ||
+    screening.id.includes('heart') ||
+    screening.description.length > 50;
 
   return (
     <div
@@ -78,25 +79,15 @@ const ScreeningItem: React.FC<ScreeningItemProps> = ({ screening, onRemove, user
             <div className="ml-3">
               <StatusBadge status={screening.status} />
             </div>
-            {/* Show icons for available features with links */}
+            {/* Show icon for available resources & risk tools */}
             <div className="ml-auto flex gap-1">
-              {hasRiskTools && (
+              {hasResourcesOrRiskTools && (
                 <Link href={`/guidelines/${screening.id}`}>
                   <span
                     className="text-gray-500 hover:text-blue-600 tooltip cursor-pointer"
-                    title="Risk Assessment Tools Available"
+                    title="Resources & Risk Tools Available"
                   >
-                    <FaTools className="text-sm" />
-                  </span>
-                </Link>
-              )}
-              {hasResources && (
-                <Link href={`/guidelines/${screening.id}`}>
-                  <span
-                    className="text-gray-500 hover:text-blue-600 tooltip cursor-pointer"
-                    title="Resources Available"
-                  >
-                    <FaFileAlt className="text-sm" />
+                    <FaChartLine className="text-sm" />
                   </span>
                 </Link>
               )}

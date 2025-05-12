@@ -209,20 +209,6 @@ const GuidelineDetail = ({
           )}
         </div>
 
-        {/* Tags */}
-        {guideline.tags && guideline.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6">
-            {guideline.tags.map((tag) => (
-              <span
-                key={tag}
-                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center"
-              >
-                <FaTag className="mr-1 text-xs" /> {tag}
-              </span>
-            ))}
-          </div>
-        )}
-
         {/* Current age-specific recommendation */}
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-3">
@@ -305,36 +291,36 @@ const GuidelineDetail = ({
           )}
         </div>
 
-        {/* Risk Assessment Tools */}
-        {riskTools.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-3">Risk Assessment Tools</h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {riskTools.map((tool) => (
-                <div
-                  key={tool.id}
-                  className="border border-gray-200 rounded-lg p-4 transition-all hover:shadow-md"
-                >
-                  <h3 className="font-medium text-gray-800 mb-1">{tool.name}</h3>
-                  <p className="text-gray-600 text-sm mb-2">{tool.description}</p>
-                  <p className="text-xs text-gray-500 mb-3">Source: {tool.organization}</p>
-                  <a
-                    href={tool.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    Go to assessment tool <FaExternalLinkAlt className="ml-1 text-xs" />
-                  </a>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Resources */}
+        {/* Risk Assessment Tools and Resources Section */}
         <div className="mt-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Resources</h2>
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Resources & Risk Assessments</h2>
+
+          {/* Risk Assessment Tools */}
+          {riskTools.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-medium text-gray-700 mb-3">Risk Assessment Tools</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                {riskTools.map((tool) => (
+                  <div
+                    key={tool.id}
+                    className="border border-gray-200 rounded-lg p-4 transition-all hover:shadow-md"
+                  >
+                    <h3 className="font-medium text-gray-800 mb-1">{tool.name}</h3>
+                    <p className="text-gray-600 text-sm mb-2">{tool.description}</p>
+                    <p className="text-xs text-gray-500 mb-3">Source: {tool.organization}</p>
+                    <a
+                      href={tool.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Go to assessment tool <FaExternalLinkAlt className="ml-1 text-xs" />
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Guideline resources */}
           {guideline.resources && guideline.resources.length > 0 && (
@@ -396,9 +382,10 @@ const GuidelineDetail = ({
             )}
 
           {(!guideline.resources || guideline.resources.length === 0) &&
-            (!originalGuideline?.resources || originalGuideline.resources.length === 0) && (
+            (!originalGuideline?.resources || originalGuideline.resources.length === 0) &&
+            riskTools.length === 0 && (
               <p className="text-gray-500 italic">
-                No specific resources available for this guideline.
+                No resources or risk assessment tools available for this guideline.
               </p>
             )}
         </div>
