@@ -10,13 +10,13 @@ const HealthScreenings: React.FC = () => {
       <ScreeningList
         title="Upcoming health screenings"
         screenings={upcomingScreenings}
-        viewAllLink="/recommendations"
+        viewAllLink="/guidelines"
       />
 
       <ScreeningList
         title="Future recommended screenings"
         screenings={futureScreenings}
-        viewAllLink="/recommendations"
+        viewAllLink="/guidelines"
       />
     </div>
   );

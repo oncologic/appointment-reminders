@@ -64,10 +64,7 @@ const ScreeningCard: React.FC<ScreeningCardProps> = ({ screening }) => {
       </Link>
       {screening.friendRecommendations.length > 0 && (
         <div className="mt-2 pl-14 flex space-x-4">
-          <Link
-            href={`/recommendations/providers?screening=${screening.id}`}
-            className="text-xs text-blue-600 flex items-center"
-          >
+          <Link href="/friend-recommendations" className="text-xs text-blue-600 flex items-center">
             <FaUsers className="mr-1" /> Get recommendations
           </Link>
         </div>

@@ -40,7 +40,8 @@ const navItems = [
   { label: 'Home', icon: <FaHome />, href: '/' },
   { label: 'Search', icon: <FaSearch />, href: '#' },
   { label: 'Appointments', icon: <FaCalendarAlt />, href: '/appointments' },
-  { label: 'Recommendations', icon: <FaClipboardCheck />, href: '/recommendations' },
+  { label: 'Guidelines', icon: <FaClipboardCheck />, href: '/guidelines' },
+  { label: 'Friend Recommendations', icon: <FaUsers />, href: '/friend-recommendations' },
 ];
 
 const appointmentsBooked = 7;
@@ -198,7 +199,7 @@ const Home: React.FC = () => {
       {/* Mobile Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white shadow-lg border-t border-gray-200">
         <div className="flex justify-around py-2">
-          {navItems.map((item, idx) => (
+          {navItems.slice(0, 4).map((item, idx) => (
             <Link
               key={idx}
               href={item.href}

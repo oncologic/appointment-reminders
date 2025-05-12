@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import React, { useState } from 'react';
-import { FaCalendarAlt, FaChevronLeft, FaList, FaPlus } from 'react-icons/fa';
+import { FaCalendarAlt, FaChevronLeft, FaList, FaPlus, FaUserMd } from 'react-icons/fa';
 
 import { appointments } from '@/lib/mockData';
 
@@ -48,13 +48,22 @@ const AppointmentsPage: React.FC = () => {
             </div>
           </div>
 
-          <Link
-            href="/appointments/new"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
-          >
-            <FaPlus className="mr-2" />
-            New appointment
-          </Link>
+          <div className="flex items-center space-x-3">
+            <Link
+              href="/providers"
+              className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg flex items-center hover:bg-gray-50"
+            >
+              <FaUserMd className="mr-2" />
+              Providers
+            </Link>
+            <Link
+              href="/appointments/new"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
+            >
+              <FaPlus className="mr-2" />
+              New appointment
+            </Link>
+          </div>
         </div>
 
         {viewMode === 'calendar' ? (
