@@ -239,7 +239,7 @@ const GuidelinesPage = () => {
         const frequency =
           isCurrent && relevantAgeRange?.frequency
             ? relevantAgeRange.frequency
-            : nextAgeRange?.frequency || guideline.frequency;
+            : nextAgeRange?.frequency || guideline.frequency || '';
 
         // Get frequency in months for display
         const minFrequencyMonths =
@@ -254,7 +254,7 @@ const GuidelinesPage = () => {
 
         // Format the frequency text to include the range when available
         const frequencyText =
-          frequency +
+          (frequency ? frequency : '') +
           (minFrequencyMonths && maxFrequencyMonths
             ? ` (${minFrequencyMonths}-${maxFrequencyMonths} months)`
             : minFrequencyMonths

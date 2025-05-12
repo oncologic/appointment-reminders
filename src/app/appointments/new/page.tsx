@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { FaArrowLeft, FaCalendarAlt, FaRegClock, FaRegComment, FaUserMd } from 'react-icons/fa';
 
 interface Doctor {
@@ -17,8 +17,21 @@ interface ServiceType {
   name: string;
   description: string;
   duration: string;
-  relevantForAge?: number[];
+  relevantForAge?: [number, number]; // [minAge, maxAge]
 }
+
+// Create a wrapper component for the page that uses useSearchParams
+const NewAppointmentPageWrapper = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>
+      }
+    >
+      <NewAppointmentPage />
+    </Suspense>
+  );
+};
 
 const NewAppointmentPage = () => {
   const searchParams = useSearchParams();
@@ -510,4 +523,4 @@ const NewAppointmentPage = () => {
   );
 };
 
-export default NewAppointmentPage;
+export default NewAppointmentPageWrapper;

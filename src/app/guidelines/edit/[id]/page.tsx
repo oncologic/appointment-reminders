@@ -113,7 +113,7 @@ const EditGuidelinePage = () => {
       // Populate form fields
       setName(foundGuideline.name);
       setDescription(foundGuideline.description);
-      setFrequency(foundGuideline.frequency);
+      setFrequency(foundGuideline.frequency || '');
       setFrequencyMonths(foundGuideline.frequencyMonths);
       setCategory(foundGuideline.category);
       setGenders(foundGuideline.genders);
