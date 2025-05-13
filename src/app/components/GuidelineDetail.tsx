@@ -222,7 +222,7 @@ const GuidelineDetail = ({
                   <FaCheckCircle className="ml-2 inline-block text-green-600" />
                 </h3>
                 <span className="text-sm font-medium bg-white text-blue-800 px-3 py-1 rounded-full">
-                  Applies to you
+                  Your Age Group
                 </span>
               </div>
               <p className="text-gray-700">
