@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import React from 'react';
-import { FaChevronRight, FaClock, FaUsers } from 'react-icons/fa';
+import { FaCalendarAlt, FaChevronRight, FaClock, FaUsers } from 'react-icons/fa';
 import * as Icons from 'react-icons/fa';
 
 import { ScreeningRecommendation as DBScreeningRecommendation } from '@/app/components/types';
@@ -21,6 +21,10 @@ interface ScreeningCardProps {
     schedulePath?: string;
     detailsPath?: string;
     friendRecommendations?: Array<unknown>;
+    // Date related fields
+    dueDate?: string;
+    dueDateFormatted?: string;
+    durationText?: string;
     // Optional fields from DBScreeningRecommendation
     ageRange?: any[];
     ageRangeDetails?: any[];
@@ -102,6 +106,15 @@ const ScreeningCard: React.FC<ScreeningCardProps> = ({ screening }) => {
                 )}
               </p>
               <p className="text-gray-500 text-xs">{screening.description}</p>
+              {screening.dueDateFormatted && (
+                <p className="text-gray-500 text-xs mt-1 flex items-center">
+                  <FaCalendarAlt className="mr-1" size={10} />
+                  Due: {screening.dueDateFormatted}
+                  {screening.durationText && (
+                    <span className="text-gray-400 ml-1">{screening.durationText}</span>
+                  )}
+                </p>
+              )}
             </div>
             <div className={`font-medium text-sm ${getStatusStyle(screening.status)}`}>
               {screening.statusText || screening.status}

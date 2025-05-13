@@ -20,15 +20,19 @@ import {
   FaUsers,
 } from 'react-icons/fa';
 
+import { fetchAppointments } from '@/lib/appointmentService';
+import { UserProfile } from '@/lib/types';
+
 import HealthScreenings from './components/HealthScreenings';
+import UpcomingAppointments from './components/UpcomingAppointments';
 import useUser from './hooks/useUser';
 
 // Placeholder user for when data is not yet loaded
 const defaultUser = {
-  firstName: 'Guest',
-  lastName: 'User',
+  name: 'Guest User',
   age: 0,
   gender: 'other',
+  id: 'guest',
 };
 
 const quickActions = [
@@ -47,14 +51,49 @@ const navItems = [
   { label: 'Friend Recommendations', icon: <FaUsers />, href: '/friend-recommendations' },
 ];
 
-const appointmentsBooked = 7;
 const appointmentsGoal = 10;
+
+// Helper function to get first name from full name
+const getFirstName = (name?: string): string => {
+  if (!name) return '';
+  return name.split(' ')[0] || name;
+};
+
+// Helper function to get last name from full name
+const getLastName = (name?: string): string => {
+  if (!name) return '';
+  const nameParts = name.split(' ');
+  return nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+};
 
 const Home: React.FC = () => {
   const { user, isLoading, error, isAuthenticated } = useUser();
+  const [appointmentsBooked, setAppointmentsBooked] = useState<number>(0);
+  const [isAppointmentsLoading, setIsAppointmentsLoading] = useState<boolean>(true);
 
   // Use the API user data or fall back to the default user
   const userData = user || defaultUser;
+
+  // Fetch appointments count
+  useEffect(() => {
+    const getAppointmentsCount = async () => {
+      try {
+        setIsAppointmentsLoading(true);
+        const appointments = await fetchAppointments();
+
+        // Count both completed and upcoming appointments
+        setAppointmentsBooked(appointments.length);
+      } catch (error) {
+        console.error('Error fetching appointments count:', error);
+      } finally {
+        setIsAppointmentsLoading(false);
+      }
+    };
+
+    if (isAuthenticated) {
+      getAppointmentsCount();
+    }
+  }, [isAuthenticated]);
 
   // Show loader while fetching user data
   if (isLoading) {
@@ -102,9 +141,7 @@ const Home: React.FC = () => {
             <div className="flex items-center gap-3">
               <img src="/avatar.png" alt="avatar" className="w-8 h-8 rounded-full object-cover" />
               <div className="hidden sm:block">
-                <p className="font-semibold text-gray-800">
-                  {userData.firstName} {userData.lastName}
-                </p>
+                <p className="font-semibold text-gray-800">{userData?.name || 'User'}</p>
               </div>
             </div>
           </div>
@@ -125,7 +162,7 @@ const Home: React.FC = () => {
                 <div>
                   <p className="text-xs text-gray-500">Welcome back,</p>
                   <p className="font-semibold text-gray-800">
-                    {userData.firstName} {userData.lastName}
+                    {getFirstName(userData?.name) || 'User'}
                   </p>
                 </div>
               </div>
@@ -155,7 +192,11 @@ const Home: React.FC = () => {
                 <div className="flex-1">
                   <h3 className="text-gray-600 font-medium mb-1">Appointments this year</h3>
                   <div className="flex items-center">
-                    <span className="text-3xl font-bold text-blue-700">{appointmentsBooked}</span>
+                    {isAppointmentsLoading ? (
+                      <FaSpinner className="animate-spin text-blue-600 mr-2" />
+                    ) : (
+                      <span className="text-3xl font-bold text-blue-700">{appointmentsBooked}</span>
+                    )}
                     <span className="text-lg text-gray-400 ml-2">/ {appointmentsGoal}</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
@@ -169,62 +210,7 @@ const Home: React.FC = () => {
             </div>
 
             {/* Appointments */}
-            <div className="bg-white rounded-lg shadow-sm mb-6">
-              <div className="flex justify-between items-center p-5 border-b">
-                <h2 className="text-xl font-semibold text-gray-800">Upcoming Appointments</h2>
-                <Link
-                  href="/appointments"
-                  className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                >
-                  View all
-                  <FaChevronRight className="text-sm" />
-                </Link>
-              </div>
-              <div className="p-5">
-                <div className="border border-gray-100 rounded-lg p-4 mb-4 hover:bg-blue-50 transition">
-                  <div className="flex items-center">
-                    <img
-                      src="/doctor-avatar.png"
-                      alt="doctor"
-                      className="w-12 h-12 rounded-full object-cover mr-4"
-                    />
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-800">Aaron David Supratman, MD</p>
-                      <p className="text-gray-500 text-sm">Gastroenterology</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="bg-blue-100 text-blue-800 text-xs rounded px-2 py-1">
-                          Monday, May 9, 2022
-                        </span>
-                        <span className="bg-blue-100 text-blue-800 text-xs rounded px-2 py-1">
-                          8:00 - 8:45 am
-                        </span>
-                      </div>
-                    </div>
-                    <FaChevronRight className="text-gray-400" />
-                  </div>
-                </div>
-                <div className="border border-gray-100 rounded-lg p-4 hover:bg-blue-50 transition">
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4">
-                      <FaTooth className="text-green-600 text-xl" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-800">Dental Cleaning</p>
-                      <p className="text-gray-500 text-sm">Dr. Sarah Johnson</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="bg-blue-100 text-blue-800 text-xs rounded px-2 py-1">
-                          Wednesday, May 18, 2022
-                        </span>
-                        <span className="bg-blue-100 text-blue-800 text-xs rounded px-2 py-1">
-                          10:30 - 11:30 am
-                        </span>
-                      </div>
-                    </div>
-                    <FaChevronRight className="text-gray-400" />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <UpcomingAppointments limit={2} />
           </div>
 
           {/* Right column - Health Screenings */}

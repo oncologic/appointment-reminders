@@ -1,16 +1,17 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { useAuth } from '@/components/auth/AuthProvider'
+import Link from 'next/link';
+
+import { useAuth } from '@/components/auth/AuthProvider';
 
 export default function Home() {
-  const { user, isLoading, signOut } = useAuth()
+  const { user, isLoading, signOut } = useAuth();
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-gray-50">
       <div className="max-w-lg w-full bg-white p-8 rounded-lg shadow-md">
         <h1 className="text-3xl font-bold text-center mb-8">Appointment Reminders</h1>
-        
+
         <div className="space-y-6">
           {isLoading ? (
             <div className="flex justify-center">
@@ -23,7 +24,7 @@ export default function Home() {
               </p>
               <div className="flex flex-col gap-4">
                 <Link
-                  href="/dashboard"
+                  href="/"
                   className="block w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-center transition"
                 >
                   Go to Dashboard
@@ -52,5 +53,5 @@ export default function Home() {
         </div>
       </div>
     </div>
-  )
+  );
 }

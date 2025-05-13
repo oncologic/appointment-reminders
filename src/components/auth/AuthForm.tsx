@@ -41,7 +41,7 @@ export default function AuthForm({ next = '/' }: AuthFormProps) {
 
         // Try automatic redirect
         setTimeout(() => {
-          router.push('/dashboard');
+          router.push('/');
         }, 1000);
       }
     });
@@ -62,7 +62,7 @@ export default function AuthForm({ next = '/' }: AuthFormProps) {
             If you&apos;re not automatically redirected, please click the button below.
           </p>
           <button
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push('/')}
             className="block w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-center transition"
           >
             Go to Dashboard
@@ -76,7 +76,7 @@ export default function AuthForm({ next = '/' }: AuthFormProps) {
           theme="dark"
           showLinks={true}
           providers={['google']}
-          redirectTo={`${origin}/dashboard`}
+          redirectTo={`${origin}/`}
           onlyThirdPartyProviders={false}
         />
       )}

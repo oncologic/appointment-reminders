@@ -604,7 +604,7 @@ const NewAppointmentPage = () => {
     <div className="min-h-screen bg-gray-50 pt-8 pb-12">
       <div className="max-w-4xl mx-auto px-4">
         <div className="mb-6">
-          <Link href="/dashboard" className="flex items-center text-blue-600 hover:text-blue-800">
+          <Link href="/" className="flex items-center text-blue-600 hover:text-blue-800">
             <FaArrowLeft className="mr-2" /> Back to Dashboard
           </Link>
         </div>
