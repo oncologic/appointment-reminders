@@ -19,6 +19,7 @@ import { IoLogoMicrosoft } from 'react-icons/io5';
 import ScreeningsServicesList from '@/app/components/ScreeningsServicesList';
 import { ScreeningRecommendation } from '@/app/components/types';
 import { useGuidelines } from '@/app/hooks/useGuidelines';
+import { createAppointment } from '@/lib/appointmentService';
 import { fetchProviders } from '@/lib/providerService';
 import GuidelineService from '@/lib/services/guidelineService';
 import { UserProfile } from '@/lib/types';
@@ -548,21 +549,55 @@ const NewAppointmentPage = () => {
   };
 
   // Record appointment
-  const recordAppointment = () => {
-    // In a real app, this would save to a database
-    console.log('Recording appointment:', {
-      service: showCustomService ? customService : getSelectedServiceName(),
-      doctor: showCustomDoctor ? customDoctor.name : getSelectedDoctorName(),
-      date: selectedDate,
-      time: selectedTime,
-      notes,
-      isPastAppointment,
-      isCompleted,
-      result: isCompleted ? appointmentResult : null,
-    });
+  const recordAppointment = async () => {
+    try {
+      // Format appointment data
+      const appointmentTime = selectedTime ? selectedTime.split(' ')[0] : '';
+      const [hours, minutes] = appointmentTime.split(':');
+      const appointmentDate = new Date(selectedDate!);
 
-    // Redirect to calendar or dashboard
-    window.location.href = '/calendar';
+      // Set time if available
+      if (hours && minutes) {
+        // Parse time (convert from 12hr to 24hr if needed)
+        const isPM = selectedTime?.includes('PM') && hours !== '12';
+        const isAM = selectedTime?.includes('AM') && hours === '12';
+        const hour = isPM ? parseInt(hours) + 12 : isAM ? 0 : parseInt(hours);
+        appointmentDate.setHours(hour, parseInt(minutes), 0, 0);
+      }
+
+      // Get provider details
+      const provider = selectedDoctor ? doctors.find((doc) => doc.id === selectedDoctor) : null;
+
+      // Create appointment data
+      const appointmentData = {
+        title: showCustomService ? customService : getSelectedServiceName(),
+        type: 'Consultation' as const, // Default to consultation, can be inferred from service if needed
+        provider: showCustomDoctor ? customDoctor.name : getSelectedDoctorName(),
+        providerId: selectedDoctor || undefined,
+        location: provider?.location || 'Not specified',
+        date: appointmentDate,
+        notes: notes,
+        completed: isPastAppointment && isCompleted,
+        result:
+          isPastAppointment && isCompleted && appointmentResult
+            ? {
+                status: appointmentResult,
+                notes: notes || 'No result notes provided',
+                date: appointmentDate.toISOString().split('T')[0],
+              }
+            : undefined,
+      };
+
+      // Save to API
+      await createAppointment(appointmentData);
+      console.log('Appointment recorded successfully');
+
+      // Redirect to appointments page
+      window.location.href = '/appointments';
+    } catch (error) {
+      console.error('Error recording appointment:', error);
+      alert('Failed to record appointment. Please try again.');
+    }
   };
 
   return (
