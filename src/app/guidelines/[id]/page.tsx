@@ -44,6 +44,7 @@ const GuidelinePage = () => {
 
         // Load guidelines
         const allGuidelines = await GuidelineService.getGuidelines(profile.userId);
+        //todo: this is hacky, should make the call just for the inividual guideline
         const foundGuideline = allGuidelines.find((g) => g.id === guidelineId);
 
         if (!foundGuideline) {
