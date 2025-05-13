@@ -101,8 +101,8 @@ const Home: React.FC = () => {
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
             <FaUserMd className="text-2xl text-blue-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to HealthTracker</h2>
-          <p className="text-gray-600 mb-6">Please sign in to access your health dashboard</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Appointment Reminders</h2>
+          <p className="text-gray-600 mb-6">Please sign in to access your dashboard</p>
           <Link
             href="/login"
             className="w-full block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-medium"
