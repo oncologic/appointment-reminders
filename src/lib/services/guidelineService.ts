@@ -1,8 +1,8 @@
 import {
   GuidelineItem,
   UserPreferences,
-  UserProfile,
 } from '../../app/components/PersonalizedGuidelines';
+import { UserProfile } from '../types';
 import { getToolsAndResourcesForGuideline } from '../mockData';
 
 // Type definitions for a guideline
@@ -154,22 +154,6 @@ export const INITIAL_GUIDELINES = [
   },
 ];
 
-// Initial user profile
-export const DEFAULT_USER_PROFILE: UserProfile = {
-  name: 'Jane Doe',
-  age: 38,
-  dateOfBirth: '1986-06-15', // Added DOB for a 38-year-old (as of 2024)
-  gender: 'female',
-  riskFactors: {
-    familyHistoryBreastCancer: false,
-    familyHistoryColonCancer: false,
-    smoking: false,
-    sunExposure: 'moderate',
-  },
-  isAdmin: false,
-  userId: 'user_default',
-};
-
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   selectedGuidelineIds: ['2', '1', '3'], // Breast cancer (2), Colorectal cancer (1), Cervical cancer (3)
 };
@@ -312,7 +296,7 @@ export const GuidelineService = {
 
   // Get user profile
   getUserProfile: (): UserProfile => {
-    return getFromStorage<UserProfile>(STORAGE_KEYS.USER_PROFILE, DEFAULT_USER_PROFILE);
+    return getFromStorage<UserProfile>(STORAGE_KEYS.USER_PROFILE, null);
   },
 
   // Save user profile
@@ -333,7 +317,7 @@ export const GuidelineService = {
   // Reset all data to defaults
   resetToDefaults: (): void => {
     GuidelineService.saveGuidelines(INITIAL_GUIDELINES);
-    GuidelineService.saveUserProfile(DEFAULT_USER_PROFILE);
+    GuidelineService.saveUserProfile(null);
     GuidelineService.saveUserPreferences(DEFAULT_USER_PREFERENCES);
   },
 

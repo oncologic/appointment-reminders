@@ -4,13 +4,13 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { FaArrowLeft, FaCog, FaUser } from 'react-icons/fa';
 
-import GuidelineService from '../../../lib/services/guidelineService';
 import GuidelinesBuilder from '../../components/GuidelinesBuilder';
 import PersonalizedGuidelines, {
   GuidelineItem,
   UserPreferences,
-  UserProfile,
 } from '../../components/PersonalizedGuidelines';
+import useUser from '../../hooks/useUser';
+import { UserProfile } from '@/lib/types';
 
 enum View {
   PersonalizedView,
@@ -21,59 +21,146 @@ enum View {
 
 const ManageGuidelinesPage = () => {
   const [guidelines, setGuidelines] = useState<GuidelineItem[]>([]);
-  const [userProfile, setUserProfile] = useState<UserProfile>({} as UserProfile);
-  const [userPreferences, setUserPreferences] = useState<UserPreferences>({} as UserPreferences);
+  const [userPreferences, setUserPreferences] = useState<UserPreferences>({ selectedGuidelineIds: [] });
   const [currentView, setCurrentView] = useState<View>(View.PersonalizedView);
-  const [isLoading, setIsLoading] = useState(true);
+  const [localUserProfile, setLocalUserProfile] = useState<UserProfile | null>(null);
+  
+  // Use the user hook to fetch the user profile from the API
+  const { user: apiUserProfile, isLoading, error, refetch } = useUser();
 
-  // Load data from service on mount
+  // Fetch guidelines from the API
+  const fetchGuidelines = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/guidelines?userId=${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setGuidelines(data);
+      } else {
+        console.error('Failed to fetch guidelines:', await response.text());
+        setGuidelines([]);
+      }
+    } catch (error) {
+      console.error('Error fetching guidelines:', error);
+      setGuidelines([]);
+    }
+  };
+
+  // Fetch user preferences from the API
+  const fetchUserPreferences = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/users/${userId}/preferences`);
+      if (response.ok) {
+        const data = await response.json();
+        setUserPreferences(data);
+      } else {
+        console.error('Failed to fetch user preferences:', await response.text());
+        setUserPreferences({ selectedGuidelineIds: [] });
+      }
+    } catch (error) {
+      console.error('Error fetching user preferences:', error);
+      setUserPreferences({ selectedGuidelineIds: [] });
+    }
+  };
+
+  // Initialize data when user profile is loaded from API
   useEffect(() => {
-    setIsLoading(true);
+    if (apiUserProfile) {
+      setLocalUserProfile(apiUserProfile);
+      fetchGuidelines(apiUserProfile.userId);
+      fetchUserPreferences(apiUserProfile.userId);
+    }
+  }, [apiUserProfile]);
 
-    const profile = GuidelineService.getUserProfile() || {
-      name: 'Jane Doe',
-      age: 38,
-      gender: 'female',
-      riskFactors: {
-        familyHistoryBreastCancer: false,
-        familyHistoryColonCancer: false,
-        smoking: false,
-        sunExposure: 'moderate',
-      },
-      isAdmin: false,
-      userId: 'user_default',
-    };
-    setUserProfile(profile);
-
-    // Load guidelines based on user permissions
-    setGuidelines(GuidelineService.getGuidelines(profile.userId));
-
-    const prefs = GuidelineService.getUserPreferences() || { selectedGuidelineIds: [] };
-    setUserPreferences(prefs);
-
-    setIsLoading(false);
-  }, []);
-
-  const handleSavePreferences = (preferences: UserPreferences) => {
+  const handleSavePreferences = async (preferences: UserPreferences) => {
     setUserPreferences(preferences);
-    GuidelineService.saveUserPreferences(preferences);
+    
+    if (localUserProfile) {
+      try {
+        const response = await fetch(`/api/users/${localUserProfile.userId}/preferences`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(preferences),
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to save preferences:', await response.text());
+        }
+      } catch (error) {
+        console.error('Error saving preferences:', error);
+      }
+    }
   };
 
-  const handleSaveGuidelines = (updatedGuidelines: GuidelineItem[]) => {
-    // We don't need to call saveGuidelines directly - the methods in GuidelineService
-    // handle this internally based on permissions
-    setGuidelines(GuidelineService.getGuidelines(userProfile.userId));
+  const handleSaveGuidelines = async () => {
+    if (localUserProfile) {
+      await fetchGuidelines(localUserProfile.userId);
+    }
   };
 
-  const handleSaveUserProfile = (updatedProfile: UserProfile) => {
-    setUserProfile(updatedProfile);
-    GuidelineService.saveUserProfile(updatedProfile);
-
-    // Reload guidelines with the updated userId in case it changed
-    setGuidelines(GuidelineService.getGuidelines(updatedProfile.userId));
+  const handleSaveUserProfile = async (updatedProfile: UserProfile) => {
+    setLocalUserProfile(updatedProfile);
+    
+    // Save updated profile to the API
+    try {
+      if (updatedProfile.userId) {
+        // Convert to the format expected by the API (matching UserProfileDB)
+        const nameParts = updatedProfile.name.split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
+        // Risk factors may need to be separately saved depending on API structure
+        const apiUpdateData = {
+          first_name: firstName,
+          last_name: lastName,
+          gender: updatedProfile.gender,
+          // Add other fields as needed
+        };
+        
+        const response = await fetch(`/api/users/${updatedProfile.userId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(apiUpdateData),
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to update user profile:', await response.text());
+        } else {
+          // Refresh user data after successful update
+          await refetch();
+        }
+        
+        // Risk factors might need a separate API call
+        if (updatedProfile.riskFactors) {
+          try {
+            const riskResponse = await fetch(`/api/users/${updatedProfile.userId}/risk-factors`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(updatedProfile.riskFactors),
+            });
+            
+            if (!riskResponse.ok) {
+              console.error('Failed to update risk factors:', await riskResponse.text());
+            }
+          } catch (error) {
+            console.error('Error updating risk factors:', error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+    }
   };
 
+  // Render the user profile form
   const renderUserProfileForm = () => {
+    if (!localUserProfile) return null;
+    
     return (
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Update Your Profile</h2>
@@ -86,8 +173,8 @@ const ManageGuidelinesPage = () => {
             <input
               type="text"
               id="userName"
-              value={userProfile.name}
-              onChange={(e) => setUserProfile({ ...userProfile, name: e.target.value })}
+              value={localUserProfile.name}
+              onChange={(e) => setLocalUserProfile({ ...localUserProfile, name: e.target.value })}
               className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
             />
           </div>
@@ -99,9 +186,9 @@ const ManageGuidelinesPage = () => {
             <input
               type="number"
               id="userAge"
-              value={userProfile.age}
+              value={localUserProfile.age}
               onChange={(e) =>
-                setUserProfile({ ...userProfile, age: parseInt(e.target.value) || 0 })
+                setLocalUserProfile({ ...localUserProfile, age: parseInt(e.target.value) || 0 })
               }
               className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
               min="0"
@@ -114,8 +201,8 @@ const ManageGuidelinesPage = () => {
               <label className="inline-flex items-center">
                 <input
                   type="radio"
-                  checked={userProfile.gender === 'male'}
-                  onChange={() => setUserProfile({ ...userProfile, gender: 'male' })}
+                  checked={localUserProfile.gender === 'male'}
+                  onChange={() => setLocalUserProfile({ ...localUserProfile, gender: 'male' })}
                   className="h-4 w-4 text-blue-600"
                 />
                 <span className="ml-2 text-sm text-gray-700">Male</span>
@@ -123,8 +210,8 @@ const ManageGuidelinesPage = () => {
               <label className="inline-flex items-center">
                 <input
                   type="radio"
-                  checked={userProfile.gender === 'female'}
-                  onChange={() => setUserProfile({ ...userProfile, gender: 'female' })}
+                  checked={localUserProfile.gender === 'female'}
+                  onChange={() => setLocalUserProfile({ ...localUserProfile, gender: 'female' })}
                   className="h-4 w-4 text-blue-600"
                 />
                 <span className="ml-2 text-sm text-gray-700">Female</span>
@@ -132,8 +219,8 @@ const ManageGuidelinesPage = () => {
               <label className="inline-flex items-center">
                 <input
                   type="radio"
-                  checked={userProfile.gender === 'other'}
-                  onChange={() => setUserProfile({ ...userProfile, gender: 'other' })}
+                  checked={localUserProfile.gender === 'other'}
+                  onChange={() => setLocalUserProfile({ ...localUserProfile, gender: 'other' })}
                   className="h-4 w-4 text-blue-600"
                 />
                 <span className="ml-2 text-sm text-gray-700">Other</span>
@@ -147,12 +234,12 @@ const ManageGuidelinesPage = () => {
               <label className="inline-flex items-center">
                 <input
                   type="checkbox"
-                  checked={Boolean(userProfile.riskFactors?.familyHistoryBreastCancer)}
+                  checked={Boolean(localUserProfile.riskFactors?.familyHistoryBreastCancer)}
                   onChange={(e) =>
-                    setUserProfile({
-                      ...userProfile,
+                    setLocalUserProfile({
+                      ...localUserProfile,
                       riskFactors: {
-                        ...userProfile.riskFactors,
+                        ...localUserProfile.riskFactors,
                         familyHistoryBreastCancer: e.target.checked,
                       },
                     })
@@ -164,12 +251,12 @@ const ManageGuidelinesPage = () => {
               <label className="inline-flex items-center">
                 <input
                   type="checkbox"
-                  checked={Boolean(userProfile.riskFactors?.familyHistoryColonCancer)}
+                  checked={Boolean(localUserProfile.riskFactors?.familyHistoryColonCancer)}
                   onChange={(e) =>
-                    setUserProfile({
-                      ...userProfile,
+                    setLocalUserProfile({
+                      ...localUserProfile,
                       riskFactors: {
-                        ...userProfile.riskFactors,
+                        ...localUserProfile.riskFactors,
                         familyHistoryColonCancer: e.target.checked,
                       },
                     })
@@ -181,12 +268,12 @@ const ManageGuidelinesPage = () => {
               <label className="inline-flex items-center">
                 <input
                   type="checkbox"
-                  checked={Boolean(userProfile.riskFactors?.smoking)}
+                  checked={Boolean(localUserProfile.riskFactors?.smoking)}
                   onChange={(e) =>
-                    setUserProfile({
-                      ...userProfile,
+                    setLocalUserProfile({
+                      ...localUserProfile,
                       riskFactors: {
-                        ...userProfile.riskFactors,
+                        ...localUserProfile.riskFactors,
                         smoking: e.target.checked,
                       },
                     })
@@ -198,49 +285,10 @@ const ManageGuidelinesPage = () => {
             </div>
           </div>
 
-          {/* Admin settings - only shown for development/testing purposes */}
-          <div className="border-t border-gray-200 pt-4 mt-2">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Developer Settings</h3>
-            <div className="space-y-2">
-              <label className="inline-flex items-center">
-                <input
-                  type="checkbox"
-                  checked={Boolean(userProfile.isAdmin)}
-                  onChange={(e) =>
-                    setUserProfile({
-                      ...userProfile,
-                      isAdmin: e.target.checked,
-                    })
-                  }
-                  className="h-4 w-4 text-blue-600 rounded"
-                />
-                <span className="ml-2 text-sm text-gray-700">Administrator Access</span>
-              </label>
-              <div>
-                <label htmlFor="userId" className="block text-xs text-gray-500 mb-1">
-                  User ID (for testing different users)
-                </label>
-                <input
-                  type="text"
-                  id="userId"
-                  value={userProfile.userId}
-                  onChange={(e) =>
-                    setUserProfile({
-                      ...userProfile,
-                      userId: e.target.value || 'user_default',
-                    })
-                  }
-                  className="w-full border border-gray-300 rounded-md p-2 text-gray-700 text-sm"
-                  placeholder="user_default"
-                />
-              </div>
-            </div>
-          </div>
-
           <div className="pt-4">
             <button
               onClick={() => {
-                handleSaveUserProfile(userProfile);
+                handleSaveUserProfile(localUserProfile);
                 setCurrentView(View.PersonalizedView);
               }}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -259,7 +307,7 @@ const ManageGuidelinesPage = () => {
 
     // Filter guidelines to only show public ones or ones created by the current user
     const visibleGuidelines = guidelines.filter(
-      (g) => g.visibility === 'public' || g.createdBy === userProfile.userId
+      (g) => g.visibility === 'public' || (g.createdBy === localUserProfile?.userId)
     );
 
     visibleGuidelines.forEach((guideline) => {
@@ -320,11 +368,40 @@ const ManageGuidelinesPage = () => {
     );
   };
 
+  // Show loading state while data is being fetched
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="bg-white p-6 rounded-lg shadow-sm">
-          <p className="text-gray-700">Loading guidelines...</p>
+          <p className="text-gray-700">Loading user profile and guidelines...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if API request failed
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <p className="text-red-500">Error loading user profile. Please try again later.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Require authentication to view this page
+  if (!localUserProfile) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <p className="text-gray-700">Please sign in to view this page.</p>
+          <button
+            onClick={() => window.location.href = '/login'}
+            className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Sign In
+          </button>
         </div>
       </div>
     );
@@ -389,16 +466,18 @@ const ManageGuidelinesPage = () => {
         {currentView === View.PersonalizedView && (
           <PersonalizedGuidelines
             guidelines={guidelines.filter(
-              (g) => g.visibility === 'public' || g.createdBy === userProfile.userId
+              (g) => g.visibility === 'public' || g.createdBy === localUserProfile.userId
             )}
-            userProfile={userProfile}
+            userProfile={localUserProfile}
             userPreferences={userPreferences}
             onSavePreferences={handleSavePreferences}
           />
         )}
 
         {currentView === View.AllGuidelines && renderAllGuidelines()}
-        {currentView === View.ManageGuidelines && <GuidelinesBuilder userProfile={userProfile} />}
+        {currentView === View.ManageGuidelines && (
+          <GuidelinesBuilder userProfile={localUserProfile} />
+        )}
         {currentView === View.UserProfile && renderUserProfileForm()}
       </div>
     </div>
