@@ -74,7 +74,7 @@ const GuidelinesPage = () => {
     }
   };
 
-  // Save user profile - this will update both local storage and API
+  // Save user profile - this will update the database
   const handleSaveUserProfile = async (profile: UserProfile) => {
     setUserProfile(profile);
     await GuidelineService.saveUserProfile(profile);
@@ -94,8 +94,7 @@ const GuidelinesPage = () => {
   const filteredGuidelines = getFilteredGuidelines(searchQuery, selectedCategory);
 
   // Check if user has selected any guidelines
-  const hasSelectedGuidelines =
-    userPreferences.selectedGuidelineIds && userPreferences.selectedGuidelineIds.length > 0;
+  const hasSelectedGuidelines = screenings.length > 0;
 
   // Add handlers for edit and delete guidelines
   const handleEditGuideline = (guideline: any) => {
@@ -105,34 +104,19 @@ const GuidelinesPage = () => {
   };
 
   const handleDeleteGuideline = async (guidelineId: string) => {
-    // Check if userProfile exists
-    if (!userProfile) {
-      toast.error('User profile not found. Please log in again.');
-      return;
-    }
-
-    // Confirm deletion with the user
-    if (
-      window.confirm(
-        'Are you sure you want to delete this guideline? This action cannot be undone.'
-      )
-    ) {
+    if (confirm('Are you sure you want to delete this guideline?')) {
       try {
-        // Call the service to delete the guideline
+        // Pass the required parameters to the deleteGuideline method
         await GuidelineService.deleteGuideline(
           guidelineId,
-          userProfile.userId,
-          userProfile.isAdmin
+          userProfile?.userId || '',
+          userProfile?.isAdmin || false
         );
-
-        // Show success toast
-        toast.success('Guideline deleted successfully');
-
-        // Refresh guidelines data after deletion
-        window.location.reload();
+        // Refresh the guidelines list
+        // This is usually handled by the hook, but you can trigger a refresh here as well
       } catch (error) {
         console.error('Error deleting guideline:', error);
-        toast.error('Failed to delete guideline. Please try again later.');
+        alert('There was an error deleting the guideline.');
       }
     }
   };

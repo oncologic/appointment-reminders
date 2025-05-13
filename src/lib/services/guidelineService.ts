@@ -782,6 +782,144 @@ export const GuidelineService = {
       return [];
     }
   },
+
+  // Add a screening for a user with custom frequency
+  addScreeningForUser: async (
+    guidelineId: string,
+    userId: string,
+    frequencyMonths?: number
+  ): Promise<boolean> => {
+    try {
+      // Find the guideline to get its details
+      const guidelines = await GuidelineService.getGuidelines();
+      const guideline = guidelines.find((g) => g.id === guidelineId);
+
+      if (!guideline) {
+        throw new Error('Guideline not found');
+      }
+
+      // Calculate the next due date based on frequency
+      const now = new Date();
+      const nextDueDate = new Date();
+      nextDueDate.setMonth(now.getMonth() + (frequencyMonths || guideline.frequencyMonths || 12));
+
+      // Create the screening record payload
+      const screeningPayload = {
+        guideline_id: guidelineId,
+        user_id: userId,
+        personalized: false,
+        frequency: frequencyMonths || guideline.frequencyMonths || 12,
+        status: 'due',
+        next_due_date: nextDueDate.toISOString(),
+        notes: '',
+      };
+
+      console.log('Sending screening payload:', screeningPayload);
+
+      // Create the screening record
+      const response = await fetch('/api/screenings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(screeningPayload),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        console.error('Failed to create screening:', response.status, responseData);
+        throw new Error(
+          `Failed to create screening: ${response.status} - ${JSON.stringify(responseData)}`
+        );
+      }
+
+      console.log('Screening created successfully:', responseData);
+      return true;
+    } catch (error) {
+      console.error('Error adding screening for user:', error);
+      return false;
+    }
+  },
+
+  // Get user screenings from the database
+  getUserScreenings: async (userId: string): Promise<ScreeningRecommendation[]> => {
+    try {
+      const response = await fetch(`/api/screenings?userId=${userId}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch user screenings: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const screenings = data.screenings || [];
+
+      // Map the database records to ScreeningRecommendation format
+      return screenings.map((screening: any) => {
+        const guideline = screening.guidelines;
+
+        // Determine status based on due date and completed date
+        let status: 'due' | 'upcoming' | 'overdue' | 'completed' = screening.status || 'due';
+
+        if (screening.last_completed_date) {
+          const lastCompletedDate = new Date(screening.last_completed_date);
+          const nextDueDate = new Date(screening.next_due_date || '');
+          const now = new Date();
+
+          if (status !== 'completed') {
+            if (nextDueDate > now) {
+              status = 'upcoming';
+            } else {
+              status = 'overdue';
+            }
+          }
+        }
+
+        return {
+          id: screening.guideline_id,
+          name: guideline?.name || 'Unknown Screening',
+          description: guideline?.description || '',
+          frequency: guideline?.frequency || 'As recommended',
+          frequencyMonths: screening.frequency || guideline?.frequency_months,
+          ageRange: guideline?.guideline_age_ranges || [],
+          ageRangeDetails: guideline?.guideline_age_ranges || [],
+          status,
+          dueDate: screening.next_due_date || new Date().toISOString(),
+          lastCompleted: screening.last_completed_date,
+          notes: screening.notes,
+          tags: guideline?.tags || [],
+          previousResults: [],
+        };
+      });
+    } catch (error) {
+      console.error('Error fetching user screenings:', error);
+      return [];
+    }
+  },
+
+  // Remove a screening from the database
+  removeUserScreening: async (userId: string, guidelineId: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/screenings/${guidelineId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to remove screening: ${response.status}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error removing user screening:', error);
+      return false;
+    }
+  },
 };
 
 export default GuidelineService;

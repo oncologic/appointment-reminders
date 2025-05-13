@@ -15,7 +15,7 @@ interface AllGuidelinesViewProps {
   selectedCategory: string;
   setSelectedCategory: (category: string) => void;
   filteredGuidelines: GuidelineItem[];
-  handleAddToRecommended: (id: string) => void;
+  handleAddToRecommended: (id: string, frequencyMonths?: number) => void;
 }
 
 const AllGuidelinesView: React.FC<AllGuidelinesViewProps> = ({

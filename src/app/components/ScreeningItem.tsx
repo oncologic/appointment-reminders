@@ -7,6 +7,7 @@ import {
   FaCheckCircle,
   FaChevronDown,
   FaChevronUp,
+  FaClock,
   FaExclamationTriangle,
   FaInfoCircle,
   FaTrash,
@@ -99,6 +100,41 @@ const ScreeningItem: React.FC<ScreeningItemProps> = ({ screening, onRemove, user
     }
   };
 
+  // Format frequency for display
+  const getFrequencyDisplay = () => {
+    if (!screening.frequency && !screening.frequencyMonths) return null;
+
+    const frequencyText = screening.frequency || '';
+    const months = screening.frequencyMonths || 0;
+
+    let periodText = '';
+    if (months) {
+      if (months === 1) {
+        periodText = 'Monthly';
+      } else if (months === 3) {
+        periodText = 'Quarterly';
+      } else if (months === 6) {
+        periodText = 'Bi-annually';
+      } else if (months === 12) {
+        periodText = 'Annually';
+      } else if (months === 24) {
+        periodText = 'Every 2 years';
+      } else if (months === 36) {
+        periodText = 'Every 3 years';
+      } else if (months === 60) {
+        periodText = 'Every 5 years';
+      } else {
+        periodText = `Every ${months} months`;
+      }
+    }
+
+    return (
+      <div className="inline-flex items-center text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md text-sm ml-2">
+        <FaClock className="mr-1" /> {periodText || frequencyText}
+      </div>
+    );
+  };
+
   return (
     <div
       className={`p-6 hover:bg-gray-50 ${
@@ -112,6 +148,7 @@ const ScreeningItem: React.FC<ScreeningItemProps> = ({ screening, onRemove, user
             <div className="ml-3">
               <StatusBadge status={screening.status} />
             </div>
+            {screening.frequencyMonths && getFrequencyDisplay()}
             {/* Show icon for available resources & risk tools */}
             <div className="ml-auto flex gap-1">
               {hasResourcesOrRiskTools && (
@@ -144,6 +181,12 @@ const ScreeningItem: React.FC<ScreeningItemProps> = ({ screening, onRemove, user
           <div className="text-sm text-gray-500 space-y-1">
             {screening.lastCompleted && <p>Last completed: {screening.lastCompleted}</p>}
             <p>Next due: {screening.dueDate}</p>
+            {screening.frequencyMonths && (
+              <p className="flex items-center">
+                <FaClock className="mr-1" />
+                Repeat every: {screening.frequencyMonths} months
+              </p>
+            )}
 
             {screening.status === 'overdue' && (
               <p className="flex items-center text-red-600">

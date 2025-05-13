@@ -25,6 +25,7 @@ export interface ScreeningRecommendation {
   name: string;
   description: string;
   frequency: string;
+  frequencyMonths?: number;
   ageRange: AgeRange[];
   ageRangeDetails: AgeRange[];
   tags?: string[];

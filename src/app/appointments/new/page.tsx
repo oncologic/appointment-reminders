@@ -18,6 +18,8 @@ import { IoLogoMicrosoft } from 'react-icons/io5';
 
 import ScreeningsServicesList from '@/app/components/ScreeningsServicesList';
 import { ScreeningRecommendation } from '@/app/components/types';
+import GuidelineService from '@/lib/services/guidelineService';
+import { UserProfile } from '@/lib/types';
 
 import { BookProviderModal } from '../../components/BookProviderModal';
 
@@ -84,6 +86,32 @@ const NewAppointmentPage = () => {
 
   // State for search filters
   const [searchFilter, setSearchFilter] = useState<'all' | 'providers' | 'screenings'>('all');
+
+  // State variables
+  const [step, setStep] = useState<'service' | 'provider' | 'datetime' | 'notes' | 'confirm'>(
+    'service'
+  );
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [showCustomServiceInput, setShowCustomServiceInput] = useState(false);
+  const [user, setUser] = useState<UserProfile | null>(null);
+
+  // Load user profile
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const profileData = await GuidelineService.getUserProfile();
+        if (profileData) {
+          setUser(profileData);
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   // Mock data - tailored for a 38-year-old female
   const serviceTypes: ServiceType[] = [
@@ -159,49 +187,46 @@ const NewAppointmentPage = () => {
     },
   ];
 
-  // Try to load user's selected screenings from local storage
+  // Load user's selected screenings from the database
   useEffect(() => {
-    try {
-      const userPreferences = localStorage.getItem('user_preferences');
-      if (userPreferences) {
-        const { selectedGuidelineIds } = JSON.parse(userPreferences);
-        if (selectedGuidelineIds && selectedGuidelineIds.length > 0) {
-          // In a real app, you would fetch these from an API using the IDs
-          // For now, we'll just assume these are the user's selected screenings
-          const userScreenings = [
-            {
-              id: '100',
-              name: 'Breast Cancer Screening',
-              description: 'Mammogram screening for early breast cancer detection',
-              duration: '30 minutes',
-              relevantForAge: [40, 74] as [number, number],
-            },
-            {
-              id: '101',
-              name: 'Cervical Cancer Screening',
-              description: 'Pap test for cervical cancer detection',
-              duration: '30 minutes',
-              relevantForAge: [21, 65] as [number, number],
-            },
-            {
-              id: '102',
-              name: 'Cholesterol Screening',
-              description: 'Blood test to check cholesterol levels',
-              duration: '15 minutes',
-              relevantForAge: [20, 120] as [number, number],
-            },
-          ];
-          setMyScreenings(userScreenings);
-        }
+    const loadUserScreenings = async () => {
+      try {
+        if (!user?.userId) return;
+
+        // Load screenings from the database
+        const userScreeningsData = await GuidelineService.getUserScreenings(user.userId);
+
+        // Convert screenings to ServiceType format for the appointment form
+        const convertedScreenings = userScreeningsData.map(
+          (screening: ScreeningRecommendation) => ({
+            id: screening.id,
+            name: screening.name,
+            description: screening.description,
+            duration: '30 minutes', // Default duration
+            relevantForAge:
+              screening.ageRange &&
+              Array.isArray(screening.ageRange) &&
+              screening.ageRange.length > 0
+                ? ([screening.ageRange[0].min, screening.ageRange[0].max || 120] as [
+                    number,
+                    number,
+                  ])
+                : undefined,
+          })
+        );
+
+        setMyScreenings(convertedScreenings);
+      } catch (error) {
+        console.error('Error loading user screenings:', error);
       }
-    } catch (error) {
-      console.error('Error loading user screenings:', error);
-    }
-  }, []);
+    };
+
+    loadUserScreenings();
+  }, [user]);
 
   // Define user age for relevance filtering
-  const userAge = 38;
-  const userGender = 'female';
+  const userAge = user?.age || 35;
+  const userGender = user?.gender || 'female';
 
   // Filter service types by age relevance
   const relevantServiceTypes = serviceTypes.filter((service) => {
@@ -335,8 +360,14 @@ const NewAppointmentPage = () => {
       description: service.description,
       frequency: service.duration || 'As needed',
       ageRange: service.relevantForAge
-        ? `${service.relevantForAge[0]}-${service.relevantForAge[1] || 'older'}`
-        : 'All ages',
+        ? [
+            {
+              min: service.relevantForAge[0],
+              max: service.relevantForAge[1] || null,
+              label: `${service.relevantForAge[0]}-${service.relevantForAge[1] || 'older'}`,
+            },
+          ]
+        : [],
       ageRangeDetails: service.relevantForAge
         ? [
             {
