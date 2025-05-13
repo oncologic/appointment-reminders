@@ -2,7 +2,7 @@ import Link from 'next/link';
 import React from 'react';
 import { FaChevronRight } from 'react-icons/fa';
 
-import { UserProfile } from './PersonalizedGuidelines';
+import { UserProfile } from '../../lib/types';
 import { ScreeningRecommendation } from './types';
 
 interface AgeBasedRecommendationsProps {

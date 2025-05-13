@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaExclamationCircle, FaPlus } from 'react-icons/fa';
 
-import { UserProfile } from './PersonalizedGuidelines';
+import { UserProfile } from '../../lib/types';
 import ScreeningItem from './ScreeningItem';
 import { ScreeningRecommendation } from './types';
 

@@ -2,9 +2,10 @@ import Link from 'next/link';
 import React from 'react';
 import { FaPlus } from 'react-icons/fa';
 
+import { UserProfile } from '../../lib/types';
 import GuidelineCard from './GuidelineCard';
 import GuidelineSearch from './GuidelineSearch';
-import { GuidelineItem, UserProfile } from './PersonalizedGuidelines';
+import { GuidelineItem } from './PersonalizedGuidelines';
 
 interface AllGuidelinesViewProps {
   guidelines: GuidelineItem[];

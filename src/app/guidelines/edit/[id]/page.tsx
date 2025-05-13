@@ -5,8 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FaArrowLeft, FaSave } from 'react-icons/fa';
 
-import GuidelineService, { AgeRange } from '../../../../lib/services/guidelineService';
 import { UserProfile } from '@/lib/types';
+
+import GuidelineService, { AgeRange } from '../../../../lib/services/guidelineService';
 import { GuidelineItem } from '../../../components/PersonalizedGuidelines';
 
 const CATEGORIES = [
@@ -58,22 +59,22 @@ const EditGuidelinePage = () => {
     max: string;
     frequency: string;
     frequencyMonths: string;
-    notes: string;
   }>({
     min: '',
     max: '',
     frequency: '',
     frequencyMonths: '',
-    notes: '',
   });
 
   const [editingResource, setEditingResource] = useState<number | null>(null);
-  const [resources, setResources] = useState<{
-    name: string;
-    url: string;
-    description?: string;
-    type: 'risk' | 'resource';
-  }[]>([]);
+  const [resources, setResources] = useState<
+    {
+      name: string;
+      url: string;
+      description?: string;
+      type: 'risk' | 'resource';
+    }[]
+  >([]);
   const [resourceName, setResourceName] = useState('');
   const [resourceUrl, setResourceUrl] = useState('');
   const [resourceDescription, setResourceDescription] = useState('');
@@ -199,10 +200,6 @@ const EditGuidelinePage = () => {
       ageRange.frequencyMonths = parseInt(newAgeRange.frequencyMonths);
     }
 
-    if (newAgeRange.notes) {
-      ageRange.notes = newAgeRange.notes;
-    }
-
     setAgeRanges([...ageRanges, ageRange]);
     setNewAgeRange({
       min: '',
@@ -313,7 +310,6 @@ const EditGuidelinePage = () => {
       max: range.max ? range.max.toString() : '',
       frequency: range.frequency || '',
       frequencyMonths: range.frequencyMonths ? range.frequencyMonths.toString() : '',
-      notes: range.notes || '',
     });
   };
 
@@ -343,10 +339,6 @@ const EditGuidelinePage = () => {
       updatedRange.frequencyMonths = parseInt(editingAgeRange.frequencyMonths);
     }
 
-    if (editingAgeRange.notes) {
-      updatedRange.notes = editingAgeRange.notes;
-    }
-
     const newAgeRanges = [...ageRanges];
     newAgeRanges[editingAgeRangeIndex] = updatedRange;
 
@@ -357,7 +349,6 @@ const EditGuidelinePage = () => {
       max: '',
       frequency: '',
       frequencyMonths: '',
-      notes: '',
     });
   };
 
@@ -368,7 +359,6 @@ const EditGuidelinePage = () => {
       max: '',
       frequency: '',
       frequencyMonths: '',
-      notes: '',
     });
   };
 
@@ -607,18 +597,18 @@ const EditGuidelinePage = () => {
                             />
                           </div>
                         </div>
-                        <div>
+                        {/* <div>
                           <label className="block text-xs text-gray-500 mb-1">Notes</label>
                           <input
                             type="text"
-                            value={editingAgeRange.notes}
+                            value={editingAgeRange}
                             onChange={(e) =>
                               setEditingAgeRange({ ...editingAgeRange, notes: e.target.value })
                             }
                             className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
                             placeholder="e.g. More frequent for high-risk individuals"
                           />
-                        </div>
+                        </div> */}
                         <div className="flex gap-2 justify-end">
                           <button
                             onClick={handleCancelEdit}
@@ -661,11 +651,11 @@ const EditGuidelinePage = () => {
                             {range.frequencyMonths && ` (${range.frequencyMonths} months)`}
                           </span>
                         )}
-                        {range.notes && (
+                        {/* {range.notes && (
                           <span className="text-sm text-gray-500 italic block">
                             Note: {range.notes}
                           </span>
-                        )}
+                        )} */}
                       </>
                     )}
                   </div>

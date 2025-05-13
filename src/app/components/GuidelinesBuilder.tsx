@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { FaGlobe, FaLock, FaPlus, FaSave, FaTag, FaTrash, FaUndo } from 'react-icons/fa';
 
 import GuidelineService from '../../lib/services/guidelineService';
-import { AgeRange, GuidelineItem, UserProfile } from './PersonalizedGuidelines';
+import { UserProfile } from '../../lib/types';
+import { AgeRange, GuidelineItem } from './PersonalizedGuidelines';
 
 export const CATEGORIES = [
   'General Health',

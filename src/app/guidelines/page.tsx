@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { FaArrowLeft } from 'react-icons/fa';
 
+import { UserProfile } from '@/lib/types';
+
 import GuidelineService from '../../lib/services/guidelineService';
 import AgeBasedRecommendations from '../components/AgeBasedRecommendations';
 import AllGuidelinesView from '../components/AllGuidelinesView';
@@ -15,13 +17,12 @@ import UserProfileForm from '../components/UserProfileForm';
 import { GuidelineView } from '../components/types';
 import useGuidelines from '../hooks/useGuidelines';
 import useUser from '../hooks/useUser';
-import { UserProfile } from '@/lib/types';
 
 const GuidelinesPage = () => {
   const { user, isLoading: isUserLoading, error: userError, refetch: refetchUser } = useUser();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  
-  const [currentView, setCurrentView] = useState<GuidelineView>(GuidelineView.RecommendedView);
+
+  const [currentView, setCurrentView] = useState<GuidelineView>(GuidelineView.MyScreenings);
   const [filterStatus, setFilterStatus] = useState<string[]>([
     'due',
     'overdue',
@@ -46,7 +47,7 @@ const GuidelinesPage = () => {
         }
       }
     };
-    
+
     fetchUserProfile();
   }, [user, isUserLoading]);
 
@@ -75,7 +76,7 @@ const GuidelinesPage = () => {
   const handleSaveUserProfile = async (profile: UserProfile) => {
     setUserProfile(profile);
     await GuidelineService.saveUserProfile(profile);
-    
+
     // After saving, refetch from the API to ensure consistency
     await refetchUser();
   };
@@ -104,8 +105,8 @@ const GuidelinesPage = () => {
             {isLoading
               ? 'Loading user and guidelines...'
               : userError
-              ? `Error loading user data: ${userError.message}`
-              : 'No user profile found. Please set up your profile first.'}
+                ? `Error loading user data: ${userError.message}`
+                : 'No user profile found. Please set up your profile first.'}
           </p>
           {!isLoading && !userProfile && (
             <div className="mt-4">
@@ -179,7 +180,8 @@ const GuidelinesPage = () => {
 
           <div className="flex items-center gap-2">
             <span className="text-gray-600">
-              Welcome, {userProfile.firstName} {userProfile.lastName} ({userProfile.age}, {userProfile.gender})
+              Welcome, {userProfile.firstName} {userProfile.lastName} ({userProfile.age},{' '}
+              {userProfile.gender})
             </span>
           </div>
         </div>

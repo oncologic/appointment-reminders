@@ -5,7 +5,8 @@ import { FaChartLine, FaClipboardList, FaEdit } from 'react-icons/fa';
 
 import { getToolsAndResourcesForGuideline } from '../../lib/mockData';
 import GuidelineService from '../../lib/services/guidelineService';
-import { GuidelineItem, UserProfile } from './PersonalizedGuidelines';
+import { UserProfile } from '../../lib/types';
+import { GuidelineItem } from './PersonalizedGuidelines';
 
 interface GuidelineCardProps {
   guideline: GuidelineItem;

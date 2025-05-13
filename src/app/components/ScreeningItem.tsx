@@ -13,7 +13,7 @@ import {
   FaUserMd,
 } from 'react-icons/fa';
 
-import { UserProfile } from './PersonalizedGuidelines';
+import { UserProfile } from '../../lib/types';
 import StatusBadge from './StatusBadge';
 import { ScreeningRecommendation, ScreeningResult } from './types';
 

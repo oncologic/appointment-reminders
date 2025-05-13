@@ -11,7 +11,8 @@ import {
 } from 'react-icons/fa';
 
 import GuidelineService from '../../lib/services/guidelineService';
-import { AgeRange, GuidelineItem, UserProfile } from './PersonalizedGuidelines';
+import { UserProfile } from '../../lib/types';
+import { AgeRange, GuidelineItem } from './PersonalizedGuidelines';
 
 export interface RiskAssessmentTool {
   id: string;
@@ -82,8 +83,8 @@ const GuidelineDetail = ({
   };
 
   // Handle marking a guideline as completed
-  const handleMarkCompleted = () => {
-    const result = GuidelineService.markGuidelineCompleted(updatedGuideline.id);
+  const handleMarkCompleted = async () => {
+    const result = await GuidelineService.markGuidelineCompleted(updatedGuideline.id);
     if (result) {
       setUpdatedGuideline(result);
       setCompletedMessage(

@@ -1,9 +1,7 @@
-import {
-  GuidelineItem,
-  UserPreferences,
-} from '../../app/components/PersonalizedGuidelines';
+import { GuidelineItem, UserPreferences } from '../../app/components/PersonalizedGuidelines';
+import { ScreeningRecommendation } from '../../app/components/types';
+import { getToolsAndResourcesForGuideline, upcomingScreenings } from '../mockData';
 import { UserProfile } from '../types';
-import { getToolsAndResourcesForGuideline } from '../mockData';
 
 // Type definitions for a guideline
 export interface AgeRange {
@@ -169,14 +167,14 @@ export const GuidelineService = {
   getUserProfile: async (): Promise<UserProfile | null> => {
     try {
       const response = await fetch('/api/users/me');
-      
+
       if (!response.ok) {
         if (response.status === 401) {
           return null; // Not authenticated
         }
         throw new Error(`Error fetching user profile: ${response.status}`);
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('Error getting user profile:', error);
@@ -190,7 +188,7 @@ export const GuidelineService = {
       console.error('Invalid user profile data');
       return false;
     }
-    
+
     try {
       const response = await fetch(`/api/users/${profile.userId}`, {
         method: 'PATCH',
@@ -199,11 +197,11 @@ export const GuidelineService = {
         },
         body: JSON.stringify(profile),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Error updating user profile: ${response.status}`);
       }
-      
+
       return true;
     } catch (error) {
       console.error('Error saving user profile:', error);
@@ -236,18 +234,18 @@ export const GuidelineService = {
       if (!userProfile) {
         return [];
       }
-      
+
       const { age, gender } = userProfile;
       const guidelines = GuidelineService.getGuidelines(userId);
-  
+
       return guidelines.filter((guideline) => {
         // Check gender relevance
         const genderRelevant =
           guideline.genders.includes('all') ||
           guideline.genders.includes(gender as 'male' | 'female');
-  
+
         if (!genderRelevant) return false;
-  
+
         // Check age ranges
         let ageRelevant = false;
         for (const range of guideline.ageRanges) {
@@ -256,7 +254,7 @@ export const GuidelineService = {
             break;
           }
         }
-  
+
         return ageRelevant;
       });
     } catch (error) {
@@ -273,24 +271,24 @@ export const GuidelineService = {
       if (!userProfile) {
         return [];
       }
-      
+
       const { age, gender } = userProfile;
       const guidelines = GuidelineService.getGuidelines(userId);
       const relevantNow = await GuidelineService.getRelevantGuidelines(userId);
-  
+
       return guidelines.filter((guideline) => {
         // Skip if already relevant
         if (relevantNow.some((g) => g.id === guideline.id)) {
           return false;
         }
-  
+
         // Check gender relevance
         const genderRelevant =
           guideline.genders.includes('all') ||
           guideline.genders.includes(gender as 'male' | 'female');
-  
+
         if (!genderRelevant) return false;
-  
+
         // Check if it will be relevant in the next X years
         let comingSoon = false;
         for (const range of guideline.ageRanges) {
@@ -299,7 +297,7 @@ export const GuidelineService = {
             break;
           }
         }
-  
+
         return comingSoon;
       });
     } catch (error) {
@@ -397,7 +395,10 @@ export const GuidelineService = {
    * @param fromDate The date to calculate from (defaults to today)
    * @returns ISO date string for when the guideline will next be due
    */
-  calculateNextDueDate: async (guideline: GuidelineItem, fromDate = new Date()): Promise<string> => {
+  calculateNextDueDate: async (
+    guideline: GuidelineItem,
+    fromDate = new Date()
+  ): Promise<string> => {
     const userProfile = await GuidelineService.getUserProfile();
     if (!userProfile) {
       // If no user profile, just use default frequency
@@ -440,7 +441,8 @@ export const GuidelineService = {
       // Get the matching screening from the mock data if available
       // This is used for demo purposes to show completed screenings with results
       const mockUpcomingScreening = upcomingScreenings.find(
-        (s) => s.id === guideline.id || s.title.toLowerCase() === guideline.name.toLowerCase()
+        (s: { id: string; title: string }) =>
+          s.id === guideline.id || s.title.toLowerCase() === guideline.name.toLowerCase()
       );
 
       const status = 'due';
