@@ -2,8 +2,17 @@
 
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
-import { FaCalendarAlt, FaChevronLeft, FaList, FaPlus, FaUserMd } from 'react-icons/fa';
+import {
+  FaCalendarAlt,
+  FaCalendarPlus,
+  FaChevronLeft,
+  FaList,
+  FaPlus,
+  FaUserMd,
+} from 'react-icons/fa';
 
+import { useGuidelines } from '@/app/hooks/useGuidelines';
+import { useUser } from '@/app/hooks/useUser';
 import { fetchAppointments } from '@/lib/appointmentService';
 import { Appointment } from '@/lib/types';
 
@@ -16,6 +25,10 @@ const AppointmentsPage: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Get user profile and screenings from the database
+  const { user } = useUser();
+  const { screenings } = useGuidelines(user);
 
   // Fetch appointments from the API
   useEffect(() => {
@@ -44,6 +57,11 @@ const AppointmentsPage: React.FC = () => {
 
     loadAppointments();
   }, []);
+
+  // Filter overdue and due screenings for list view
+  const dueScreenings = screenings.filter(
+    (screening) => screening.status === 'overdue' || screening.status === 'due'
+  );
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -123,7 +141,7 @@ const AppointmentsPage: React.FC = () => {
         ) : (
           <div className="bg-white rounded-lg shadow-sm p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Your Appointments</h2>
-            {appointments.length === 0 ? (
+            {appointments.length === 0 && dueScreenings.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-500 mb-4">You don&apos;t have any appointments yet.</p>
                 <Link
@@ -136,6 +154,7 @@ const AppointmentsPage: React.FC = () => {
               </div>
             ) : (
               <div className="divide-y">
+                {/* Booked Appointments */}
                 {appointments
                   .sort((a, b) => b.date.getTime() - a.date.getTime())
                   .map((appointment) => (
@@ -177,6 +196,53 @@ const AppointmentsPage: React.FC = () => {
                       </div>
                     </Link>
                   ))}
+
+                {/* Due and Overdue Screenings */}
+                {dueScreenings.length > 0 && (
+                  <>
+                    {appointments.length > 0 && (
+                      <div className="py-4">
+                        <h3 className="font-semibold text-gray-800 mb-2">Recommended Screenings</h3>
+                        <p className="text-sm text-gray-500">
+                          These screenings need to be scheduled
+                        </p>
+                      </div>
+                    )}
+
+                    {dueScreenings.map((screening) => (
+                      <Link key={screening.id} href={`/appointments/new?screening=${screening.id}`}>
+                        <div className="py-4 flex items-start hover:bg-gray-50 transition px-2 rounded">
+                          <div
+                            className={`w-2 h-2 rounded-full mt-2 mr-3 ${
+                              screening.status === 'overdue' ? 'bg-red-500' : 'bg-orange-400'
+                            }`}
+                          ></div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <h3 className="font-semibold text-gray-800">{screening.name}</h3>
+                              <span
+                                className={`text-sm ${
+                                  screening.status === 'overdue'
+                                    ? 'text-red-600 font-medium'
+                                    : 'text-orange-500 font-medium'
+                                }`}
+                              >
+                                {screening.status === 'overdue' ? 'Overdue' : 'Due Soon'}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 text-sm mt-1">{screening.description}</p>
+                            <div className="mt-2">
+                              <button className="text-xs text-blue-600 flex items-center">
+                                <FaCalendarPlus className="mr-1" />
+                                Schedule Now
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </>
+                )}
               </div>
             )}
           </div>

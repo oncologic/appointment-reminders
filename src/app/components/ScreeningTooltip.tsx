@@ -1,19 +1,23 @@
 import React from 'react';
 import { FaCalendarPlus, FaClipboardCheck, FaStar, FaUserFriends } from 'react-icons/fa';
 
-// Remove this import and create a local interface instead
-interface ScreeningRecommendation {
+// Use a compatible interface with MonthCalendar
+interface CalendarScreeningRecommendation {
   id: string;
   title: string;
   description: string;
+  name?: string;
   status: 'due' | 'overdue' | 'completed' | 'upcoming';
   statusText: string;
   schedulePath: string;
   friendRecommendations: any[];
+  // Optional additional fields
+  ageRange?: any[];
+  ageRangeDetails?: any[];
 }
 
 interface ScreeningTooltipProps {
-  screening: ScreeningRecommendation;
+  screening: CalendarScreeningRecommendation;
   position: {
     top: number;
     left: number;

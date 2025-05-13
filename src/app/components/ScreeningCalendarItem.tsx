@@ -2,21 +2,26 @@ import Link from 'next/link';
 import React from 'react';
 import { FaCalendarPlus, FaUserFriends } from 'react-icons/fa';
 
-// Remove this import and create a local interface instead
-interface ScreeningRecommendation {
+// Use a more compatible interface for both screening types
+interface CalendarScreeningRecommendation {
   id: string;
   title: string;
+  name?: string;
   status: 'due' | 'overdue' | 'completed' | 'upcoming';
   statusText: string;
   schedulePath: string;
   friendRecommendations: any[];
+  // Optional additional fields
+  description?: string;
+  ageRange?: any[];
+  ageRangeDetails?: any[];
 }
 
 interface ScreeningCalendarItemProps {
-  screening: ScreeningRecommendation;
+  screening: CalendarScreeningRecommendation;
   handleMouseEnter: (
     e: React.MouseEvent<HTMLDivElement>,
-    screening: ScreeningRecommendation
+    screening: CalendarScreeningRecommendation
   ) => void;
   handleMouseLeave: () => void;
   year: number;
