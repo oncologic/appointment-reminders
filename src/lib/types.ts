@@ -1,5 +1,6 @@
 export interface UserProfile {
-  name: string;
+  firstName: string;
+  lastName: string;
   age: number;
   dateOfBirth?: string; // ISO date string format
   gender: 'male' | 'female' | 'other';

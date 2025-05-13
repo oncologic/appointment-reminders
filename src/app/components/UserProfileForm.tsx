@@ -79,8 +79,8 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({
       
       // Prepare data for API
       const userData = {
-        first_name: userProfile.name.split(' ')[0],
-        last_name: userProfile.name.split(' ').slice(1).join(' '),
+        first_name: userProfile.firstName,
+        last_name: userProfile.lastName,
         date_of_birth: userProfile.dateOfBirth,
         gender: userProfile.gender
       };
@@ -123,17 +123,33 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({
       )}
 
       <form onSubmit={saveProfile} className="space-y-6">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-            Name
-          </label>
-          <input
-            type="text"
-            id="name"
-            value={userProfile.name}
-            onChange={(e) => setUserProfile({ ...userProfile, name: e.target.value })}
-            className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+              First Name
+            </label>
+            <input
+              type="text"
+              id="firstName"
+              value={userProfile.firstName}
+              onChange={(e) => setUserProfile({ ...userProfile, firstName: e.target.value })}
+              className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+              Last Name
+            </label>
+            <input
+              type="text"
+              id="lastName"
+              value={userProfile.lastName}
+              onChange={(e) => setUserProfile({ ...userProfile, lastName: e.target.value })}
+              className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
+              required
+            />
+          </div>
         </div>
 
         <div>
@@ -185,6 +201,15 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({
                 className="h-4 w-4 text-blue-600"
               />
               <span className="ml-2 text-sm text-gray-700">Female</span>
+            </label>
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                checked={userProfile.gender === 'other'}
+                onChange={() => setUserProfile({ ...userProfile, gender: 'other' })}
+                className="h-4 w-4 text-blue-600"
+              />
+              <span className="ml-2 text-sm text-gray-700">Other</span>
             </label>
           </div>
         </div>

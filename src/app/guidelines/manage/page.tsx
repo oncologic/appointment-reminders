@@ -106,14 +106,9 @@ const ManageGuidelinesPage = () => {
     try {
       if (updatedProfile.userId) {
         // Convert to the format expected by the API (matching UserProfileDB)
-        const nameParts = updatedProfile.name.split(' ');
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
-        
-        // Risk factors may need to be separately saved depending on API structure
         const apiUpdateData = {
-          first_name: firstName,
-          last_name: lastName,
+          first_name: updatedProfile.firstName,
+          last_name: updatedProfile.lastName,
           gender: updatedProfile.gender,
           // Add other fields as needed
         };
@@ -166,17 +161,31 @@ const ManageGuidelinesPage = () => {
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Update Your Profile</h2>
 
         <div className="space-y-4">
-          <div>
-            <label htmlFor="userName" className="block text-sm font-medium text-gray-700 mb-1">
-              Name
-            </label>
-            <input
-              type="text"
-              id="userName"
-              value={localUserProfile.name}
-              onChange={(e) => setLocalUserProfile({ ...localUserProfile, name: e.target.value })}
-              className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="userFirstName" className="block text-sm font-medium text-gray-700 mb-1">
+                First Name
+              </label>
+              <input
+                type="text"
+                id="userFirstName"
+                value={localUserProfile.firstName}
+                onChange={(e) => setLocalUserProfile({ ...localUserProfile, firstName: e.target.value })}
+                className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
+              />
+            </div>
+            <div>
+              <label htmlFor="userLastName" className="block text-sm font-medium text-gray-700 mb-1">
+                Last Name
+              </label>
+              <input
+                type="text"
+                id="userLastName"
+                value={localUserProfile.lastName}
+                onChange={(e) => setLocalUserProfile({ ...localUserProfile, lastName: e.target.value })}
+                className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
+              />
+            </div>
           </div>
 
           <div>

@@ -5,8 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FaArrowLeft, FaSave } from 'react-icons/fa';
 
-import GuidelineService from '../../../../lib/services/guidelineService';
-import { AgeRange, GuidelineItem, UserProfile } from '../../../components/PersonalizedGuidelines';
+import GuidelineService, { AgeRange } from '../../../../lib/services/guidelineService';
+import { UserProfile } from '@/lib/types';
+import { GuidelineItem } from '../../../components/PersonalizedGuidelines';
 
 const CATEGORIES = [
   'General Health',
@@ -66,77 +67,86 @@ const EditGuidelinePage = () => {
     notes: '',
   });
 
-  const [resources, setResources] = useState<{ name: string; url: string; description?: string }[]>(
-    []
-  );
+  const [editingResource, setEditingResource] = useState<number | null>(null);
+  const [resources, setResources] = useState<{
+    name: string;
+    url: string;
+    description?: string;
+    type: 'risk' | 'resource';
+  }[]>([]);
   const [resourceName, setResourceName] = useState('');
   const [resourceUrl, setResourceUrl] = useState('');
   const [resourceDescription, setResourceDescription] = useState('');
+  const [resourceType, setResourceType] = useState<'risk' | 'resource'>('resource');
   const [originalGuideline, setOriginalGuideline] = useState<GuidelineItem | null>(null);
 
   useEffect(() => {
-    try {
-      setIsLoading(true);
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
 
-      // Load user profile
-      const profile = GuidelineService.getUserProfile();
-      if (!profile) {
-        setError('User profile not found. Please set up your profile first.');
-        setIsLoading(false);
-        return;
-      }
-      setUserProfile(profile);
-
-      // Load guideline
-      const allGuidelines = GuidelineService.getGuidelines(profile.userId);
-      const foundGuideline = allGuidelines.find((g) => g.id === guidelineId);
-
-      if (!foundGuideline) {
-        setError('Guideline not found.');
-        setIsLoading(false);
-        return;
-      }
-
-      // Check if user has permission to edit
-      if (
-        !profile.isAdmin &&
-        foundGuideline.createdBy !== profile.userId &&
-        foundGuideline.visibility === 'public'
-      ) {
-        setError("You don't have permission to edit this guideline.");
-        setIsLoading(false);
-        return;
-      }
-
-      setGuideline(foundGuideline);
-
-      // Populate form fields
-      setName(foundGuideline.name);
-      setDescription(foundGuideline.description);
-      setFrequency(foundGuideline.frequency || '');
-      setFrequencyMonths(foundGuideline.frequencyMonths);
-      setCategory(foundGuideline.category);
-      setGenders(foundGuideline.genders);
-      setAgeRanges(foundGuideline.ageRanges);
-      setVisibility(foundGuideline.visibility);
-      setTags(foundGuideline.tags || []);
-      setResources(foundGuideline.resources || []);
-
-      // If this is a personalized guideline, load the original for reference
-      if (foundGuideline.originalGuidelineId) {
-        const originalGuidelineItem = allGuidelines.find(
-          (g) => g.id === foundGuideline.originalGuidelineId
-        );
-        if (originalGuidelineItem) {
-          setOriginalGuideline(originalGuidelineItem);
+        // Load user profile
+        const profile = await GuidelineService.getUserProfile();
+        if (!profile) {
+          setError('User profile not found. Please set up your profile first.');
+          setIsLoading(false);
+          return;
         }
+        setUserProfile(profile);
+
+        // Load guideline
+        const allGuidelines = GuidelineService.getGuidelines(profile.userId);
+        const foundGuideline = allGuidelines.find((g) => g.id === guidelineId);
+
+        if (!foundGuideline) {
+          setError('Guideline not found.');
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if user has permission to edit
+        if (
+          !profile.isAdmin &&
+          foundGuideline.createdBy !== profile.userId &&
+          foundGuideline.visibility === 'public'
+        ) {
+          setError("You don't have permission to edit this guideline.");
+          setIsLoading(false);
+          return;
+        }
+
+        setGuideline(foundGuideline);
+
+        // Populate form fields
+        setName(foundGuideline.name);
+        setDescription(foundGuideline.description);
+        setFrequency(foundGuideline.frequency || '');
+        setFrequencyMonths(foundGuideline.frequencyMonths);
+        setCategory(foundGuideline.category);
+        setGenders(foundGuideline.genders);
+        setAgeRanges(foundGuideline.ageRanges);
+        setVisibility(foundGuideline.visibility);
+        setTags(foundGuideline.tags || []);
+        setResources(foundGuideline.resources || []);
+
+        // If this is a personalized guideline, load the original for reference
+        if (foundGuideline.originalGuidelineId) {
+          const originalGuidelineItem = allGuidelines.find(
+            (g) => g.id === foundGuideline.originalGuidelineId
+          );
+          if (originalGuidelineItem) {
+            setOriginalGuideline(originalGuidelineItem);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading guideline:', err);
+        setError('An error occurred while loading the guideline.');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.error('Error loading guideline:', err);
-      setError('An error occurred while loading the guideline.');
-    } finally {
-      setIsLoading(false);
-    }
+    };
+
+    fetchData();
   }, [guidelineId]);
 
   const handleGenderChange = (gender: 'male' | 'female' | 'all') => {
@@ -245,12 +255,14 @@ const EditGuidelinePage = () => {
       name: resourceName.trim(),
       url: resourceUrl.trim(),
       description: resourceDescription.trim() || undefined,
+      type: resourceType,
     };
 
     setResources([...resources, newResource]);
     setResourceName('');
     setResourceUrl('');
     setResourceDescription('');
+    setResourceType('resource'); // Reset to default
   };
 
   const handleRemoveResource = (index: number) => {

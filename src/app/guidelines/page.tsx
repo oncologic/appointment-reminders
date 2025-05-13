@@ -35,12 +35,19 @@ const GuidelinesPage = () => {
 
   // Update local state when API data is received
   useEffect(() => {
-    if (user) {
-      setUserProfile(user);
-    } else if (!isUserLoading && !user) {
-      // If not loading and no user data from API, try to get from local storage
-      setUserProfile(GuidelineService.getUserProfile());
-    }
+    const fetchUserProfile = async () => {
+      if (user) {
+        setUserProfile(user);
+      } else if (!isUserLoading && !user) {
+        // If not loading and no user data from API, try to get from user profile API
+        const profileData = await GuidelineService.getUserProfile();
+        if (profileData) {
+          setUserProfile(profileData);
+        }
+      }
+    };
+    
+    fetchUserProfile();
   }, [user, isUserLoading]);
 
   // Use the custom hook to manage guidelines and related logic
@@ -67,9 +74,9 @@ const GuidelinesPage = () => {
   // Save user profile - this will update both local storage and API
   const handleSaveUserProfile = async (profile: UserProfile) => {
     setUserProfile(profile);
-    GuidelineService.saveUserProfile(profile);
+    await GuidelineService.saveUserProfile(profile);
     
-    // After saving to local storage, refetch from the API to ensure consistency
+    // After saving, refetch from the API to ensure consistency
     await refetchUser();
   };
 
@@ -172,7 +179,7 @@ const GuidelinesPage = () => {
 
           <div className="flex items-center gap-2">
             <span className="text-gray-600">
-              Welcome, {userProfile.name} ({userProfile.age}, {userProfile.gender})
+              Welcome, {userProfile.firstName} {userProfile.lastName} ({userProfile.age}, {userProfile.gender})
             </span>
           </div>
         </div>

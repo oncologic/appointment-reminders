@@ -86,7 +86,8 @@ export function convertToUserProfile(dbProfile: UserProfileDB): UserProfile {
     : 0;
 
   return {
-    name: `${dbProfile.first_name || ''} ${dbProfile.last_name || ''}`.trim(),
+    firstName: dbProfile.first_name || '',
+    lastName: dbProfile.last_name || '',
     age,
     dateOfBirth: dbProfile.date_of_birth,
     gender: (dbProfile.gender as 'male' | 'female' | 'other') || 'other',
