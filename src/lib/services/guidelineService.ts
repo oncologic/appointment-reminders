@@ -23,7 +23,135 @@ export interface GuidelineResource {
 
 // Initial set of health guidelines as examples
 export const INITIAL_GUIDELINES = [
-  // ... existing code ...
+  {
+    id: 'prostate_screening',
+    name: 'Prostate Cancer Screening',
+    description: 'Recommendations for prostate cancer screening through PSA testing.',
+    frequency: 'Based on risk factors and PSA levels',
+    frequencyMonths: 12, // Default to annual but can be adjusted
+    category: 'Cancer Screening',
+    genders: ['male'] as ('male' | 'female' | 'all')[],
+    ageRanges: [
+      {
+        min: 40,
+        max: 44,
+        label: '40-44',
+        frequency: 'Consider baseline screening for high-risk men',
+        frequencyMonths: 12, // Annual for high-risk
+        notes: 'Including African American men and those with family history',
+      },
+      {
+        min: 45,
+        max: 49,
+        label: '45-49',
+        frequency: 'Consider screening for high-risk men',
+        frequencyMonths: 12, // Annual for high-risk
+        notes: 'Discuss benefits and risks with healthcare provider',
+      },
+      {
+        min: 50,
+        max: 69,
+        label: '50-69',
+        frequency: 'Consider screening every 1-2 years',
+        frequencyMonths: 24, // Every 2 years is typical
+        notes: 'Based on PSA levels and individual risk assessment',
+      },
+      {
+        min: 70,
+        max: null,
+        label: '70+',
+        frequency: 'Individualized decision based on health status',
+        frequencyMonths: 24, // Every 2 years if continuing screening
+        notes: 'Limited benefit for men with less than 10-15 year life expectancy',
+      },
+    ],
+    visibility: 'public' as 'public' | 'private',
+    createdBy: 'system',
+    tags: ['cancer', "men's health", 'preventive'],
+    resources: [
+      {
+        name: 'Prostate Cancer Risk Calculator',
+        url: 'https://www.pcpcc.org/tools/prostate-cancer-risk-calculator',
+        description:
+          'Assessment tool to help determine individual risk of prostate cancer based on multiple factors',
+        type: 'risk' as 'risk',
+      },
+      {
+        name: 'American Cancer Society Guidelines',
+        url: 'https://www.cancer.org/cancer/prostate-cancer/detection-diagnosis-staging/acs-recommendations.html',
+        description: 'Official screening recommendations from the American Cancer Society',
+        type: 'resource' as 'resource',
+      },
+    ],
+  },
+  {
+    id: 'mammogram',
+    name: 'Mammogram Screening',
+    description: 'Breast cancer screening through mammography for early detection.',
+    frequency: 'Every 1-2 years depending on age and risk factors',
+    frequencyMonths: 12, // Default to annual but overridden at age ranges
+    category: 'Cancer Screening',
+    genders: ['female'] as ('male' | 'female' | 'all')[],
+    ageRanges: [
+      {
+        min: 40,
+        max: 44,
+        label: '40-44',
+        frequency: 'Optional annual screening',
+        frequencyMonths: 12, // Annual
+        notes: 'Individual decision based on personal values and risk factors',
+      },
+      {
+        min: 45,
+        max: 54,
+        label: '45-54',
+        frequency: 'Annual screening recommended',
+        frequencyMonths: 12, // Annual
+        notes: 'More frequent for those with family history or genetic risk factors',
+      },
+      {
+        min: 55,
+        max: 74,
+        label: '55-74',
+        frequency: 'Every 1-2 years',
+        frequencyMonths: 24, // Every 2 years
+        notes: 'Option to continue annual screening based on preference',
+      },
+      {
+        min: 75,
+        max: null,
+        label: '75+',
+        frequency: 'Individualized decision',
+        frequencyMonths: 24, // Every 2 years if continuing
+        notes: 'Based on overall health and expected longevity',
+      },
+    ],
+    visibility: 'public' as 'public' | 'private',
+    createdBy: 'system',
+    tags: ['cancer', "women's health", 'preventive'],
+    resources: [
+      {
+        name: 'Breast Cancer Risk Assessment Tool',
+        url: 'https://bcrisktool.cancer.gov/',
+        description:
+          'Calculate your five-year and lifetime risks of developing invasive breast cancer',
+        type: 'risk' as 'risk',
+      },
+      {
+        name: 'Dense Breast Tissue Information',
+        url: 'https://www.cancer.gov/types/breast/breast-changes/dense-breasts',
+        description:
+          'Information about dense breast tissue and additional screening considerations',
+        type: 'resource' as 'resource',
+      },
+      {
+        name: 'Mammogram Preparation Guidelines',
+        url: 'https://www.cdc.gov/cancer/breast/basic_info/mammograms.htm',
+        description: 'How to prepare for your mammogram screening appointment',
+        type: 'resource' as 'resource',
+      },
+    ],
+  },
 ];
 
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
