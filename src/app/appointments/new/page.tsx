@@ -18,6 +18,7 @@ import { IoLogoMicrosoft } from 'react-icons/io5';
 
 import ScreeningsServicesList from '@/app/components/ScreeningsServicesList';
 import { ScreeningRecommendation } from '@/app/components/types';
+import { useGuidelines } from '@/app/hooks/useGuidelines';
 import GuidelineService from '@/lib/services/guidelineService';
 import { UserProfile } from '@/lib/types';
 
@@ -76,9 +77,6 @@ const NewAppointmentPage = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [notes, setNotes] = useState<string>('');
 
-  // State for my screenings
-  const [myScreenings, setMyScreenings] = useState<ServiceType[]>([]);
-
   // New state variables for provider search and modal
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedProvider, setSelectedProvider] = useState<Doctor | null>(null);
@@ -97,6 +95,9 @@ const NewAppointmentPage = () => {
   const [showCustomServiceInput, setShowCustomServiceInput] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
 
+  // State for other services from guidelines
+  const [otherServices, setOtherServices] = useState<ServiceType[]>([]);
+
   // Load user profile
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -113,134 +114,57 @@ const NewAppointmentPage = () => {
     fetchUserProfile();
   }, []);
 
-  // Mock data - tailored for a 38-year-old female
-  const serviceTypes: ServiceType[] = [
-    {
-      id: '1',
-      name: 'Annual Physical Exam',
-      description: 'Comprehensive health assessment, blood pressure screening, and preventive care',
-      duration: '45 minutes',
-      relevantForAge: [18, 120], // All adults
-    },
-    {
-      id: '2',
-      name: 'Clinical Breast Exam',
-      description: 'Physical examination of the breast by a healthcare provider',
-      duration: '30 minutes',
-      relevantForAge: [25, 39], // Women 25-39
-    },
-    {
-      id: '3',
-      name: 'Cervical Cancer Screening (Pap test)',
-      description: 'Screening test for cervical cancer and HPV',
-      duration: '30 minutes',
-      relevantForAge: [21, 65], // Women 21-65
-    },
-    {
-      id: '4',
-      name: 'Skin Cancer Screening',
-      description: 'Full-body skin examination',
-      duration: '30 minutes',
-      relevantForAge: [18, 120], // Adults with risk factors
-    },
-    {
-      id: '5',
-      name: 'Mammogram',
-      description: 'X-ray screening for breast cancer',
-      duration: '30 minutes',
-      relevantForAge: [40, 74], // Women 40-74
-    },
-    {
-      id: '6',
-      name: 'Colonoscopy',
-      description: 'Examination of the colon for cancer screening',
-      duration: '90 minutes',
-      relevantForAge: [45, 75], // Adults 45-75
-    },
-    {
-      id: '7',
-      name: 'Dental Examination',
-      description: 'Comprehensive dental check-up and cleaning',
-      duration: '60 minutes',
-      relevantForAge: [18, 120], // All adults
-    },
-    {
-      id: '8',
-      name: 'Eye Examination',
-      description: 'Comprehensive vision and eye health test',
-      duration: '45 minutes',
-      relevantForAge: [18, 60], // Adults 18-60
-    },
-    {
-      id: '9',
-      name: 'Cholesterol Test',
-      description: 'Blood test to check cholesterol and lipid levels',
-      duration: '15 minutes',
-      relevantForAge: [20, 120], // Adults 20+
-    },
-    {
-      id: '10',
-      name: 'Mental Health Screening',
-      description: 'Assessment for depression, anxiety and other mental health conditions',
-      duration: '60 minutes',
-      relevantForAge: [18, 120], // All adults
-    },
-  ];
+  // Use the custom hook to manage guidelines and related logic
+  const { guidelines, screenings, isLoading: isGuidelinesLoading } = useGuidelines(user);
 
-  // Load user's selected screenings from the database
+  // Set myScreenings from the userScreenings (from hook) and other services from guidelines
   useEffect(() => {
-    const loadUserScreenings = async () => {
-      try {
-        if (!user?.userId) return;
+    if (screenings.length > 0) {
+      // Convert screenings to ServiceType format for display
+      const myScreeningServices = screenings.map((screening: ScreeningRecommendation) => ({
+        id: screening.id,
+        name: screening.name,
+        description: screening.description,
+        duration: '30 minutes', // Default duration
+        relevantForAge:
+          screening.ageRange && screening.ageRange.length > 0
+            ? ([screening.ageRange[0].min, screening.ageRange[0].max || 120] as [number, number])
+            : undefined,
+      }));
 
-        // Load screenings from the database
-        const userScreeningsData = await GuidelineService.getUserScreenings(user.userId);
-
-        // Convert screenings to ServiceType format for the appointment form
-        const convertedScreenings = userScreeningsData.map(
-          (screening: ScreeningRecommendation) => ({
-            id: screening.id,
-            name: screening.name,
-            description: screening.description,
+      // Convert non-selected guidelines to other services
+      if (guidelines.length > 0) {
+        const guidelineServices = guidelines
+          .filter((guideline) => !screenings.some((screening) => screening.id === guideline.id))
+          .map((guideline) => ({
+            id: guideline.id,
+            name: guideline.name,
+            description: guideline.description,
             duration: '30 minutes', // Default duration
             relevantForAge:
-              screening.ageRange &&
-              Array.isArray(screening.ageRange) &&
-              screening.ageRange.length > 0
-                ? ([screening.ageRange[0].min, screening.ageRange[0].max || 120] as [
+              guideline.ageRanges && guideline.ageRanges.length > 0
+                ? ([guideline.ageRanges[0].min, guideline.ageRanges[0].max || 120] as [
                     number,
                     number,
                   ])
                 : undefined,
-          })
-        );
+          }));
 
-        setMyScreenings(convertedScreenings);
-      } catch (error) {
-        console.error('Error loading user screenings:', error);
+        setOtherServices(guidelineServices);
       }
-    };
-
-    loadUserScreenings();
-  }, [user]);
+    }
+  }, [screenings, guidelines]);
 
   // Define user age for relevance filtering
   const userAge = user?.age || 35;
   const userGender = user?.gender || 'female';
 
-  // Filter service types by age relevance
-  const relevantServiceTypes = serviceTypes.filter((service) => {
-    if (!service.relevantForAge) return true;
-    const [minAge, maxAge] = service.relevantForAge;
-    return userAge >= minAge && userAge <= maxAge;
-  });
-
   // Find service matching screening parameter
   useEffect(() => {
-    if (screeningParam) {
-      // First check in my screenings
-      const matchingScreening = myScreenings.find((service) =>
-        service.name.toLowerCase().includes(screeningParam.toLowerCase())
+    if (screeningParam && screenings.length > 0) {
+      // First check in user screenings
+      const matchingScreening = screenings.find((screening) =>
+        screening.name.toLowerCase().includes(screeningParam.toLowerCase())
       );
 
       if (matchingScreening) {
@@ -248,123 +172,30 @@ const NewAppointmentPage = () => {
         return;
       }
 
-      // Then check in service types
-      const matchingService = serviceTypes.find((service) =>
+      // Then check in other services
+      const matchingOtherService = otherServices.find((service) =>
         service.name.toLowerCase().includes(screeningParam.toLowerCase())
       );
-      if (matchingService) {
-        setSelectedService(matchingService.id);
+      if (matchingOtherService) {
+        setSelectedService(matchingOtherService.id);
       }
     }
-  }, [screeningParam, myScreenings]);
+  }, [screeningParam, screenings, otherServices]);
 
-  const doctors: Doctor[] = [
-    {
-      id: '1',
-      name: 'Dr. Sarah Johnson',
-      specialization: 'Family Medicine',
-      image: '/doctor-avatar.png',
-      clinic: 'HealthFirst Medical Center',
-      phone: '(555) 123-4567',
-      location: '123 Main St, Suite 400',
-    },
-    {
-      id: '2',
-      name: 'Dr. James Wilson',
-      specialization: 'Internal Medicine',
-      image: '/doctor-avatar.png',
-      clinic: 'City Medical Associates',
-      phone: '(555) 234-5678',
-      location: '456 Park Ave, Floor 2',
-    },
-    {
-      id: '3',
-      name: 'Dr. Maria Rodriguez',
-      specialization: 'Dermatology',
-      image: '/doctor-avatar.png',
-      clinic: 'Clear Skin Dermatology',
-      phone: '(555) 345-6789',
-      location: '789 Oak St, Suite 300',
-    },
-    {
-      id: '4',
-      name: 'Dr. David Kim',
-      specialization: 'Gastroenterology',
-      image: '/doctor-avatar.png',
-      clinic: 'Digestive Health Center',
-      phone: '(555) 456-7890',
-      location: '321 Elm St, Suite 200',
-    },
-    {
-      id: '5',
-      name: 'Dr. Emily Chen',
-      specialization: 'Oncology',
-      image: '/doctor-avatar.png',
-      clinic: 'Regional Cancer Center',
-      phone: '(555) 567-8901',
-      location: '555 Cedar Blvd, Floor 3',
-    },
-    {
-      id: '6',
-      name: 'Dr. Lisa Williams',
-      specialization: 'Gynecology',
-      image: '/doctor-avatar.png',
-      clinic: "Women's Health Associates",
-      phone: '(555) 678-9012',
-      location: '654 Pine Ave, Suite 150',
-    },
-    {
-      id: '7',
-      name: 'Dr. Robert Smith',
-      specialization: 'Dentistry',
-      image: '/doctor-avatar.png',
-      clinic: 'Bright Smile Dental',
-      phone: '(555) 789-0123',
-      location: '987 Maple Dr, Suite 100',
-    },
-    {
-      id: '8',
-      name: 'Dr. Michael Brown',
-      specialization: 'Ophthalmology',
-      image: '/doctor-avatar.png',
-      clinic: 'Clear Vision Eye Center',
-      phone: '(555) 890-1234',
-      location: '876 Walnut St, Floor 1',
-    },
-    {
-      id: '9',
-      name: 'Dr. Jennifer Parker',
-      specialization: 'Psychiatry',
-      image: '/doctor-avatar.png',
-      clinic: 'Wellness Mental Health',
-      phone: '(555) 901-2345',
-      location: '765 Birch Rd, Suite 250',
-    },
-  ];
-
-  // Filter doctors based on search term
-  const filteredDoctors = searchTerm
-    ? doctors.filter(
-        (doctor) =>
-          doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          doctor.specialization.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (doctor.clinic && doctor.clinic.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
-    : [];
-
-  // Transform ServiceType to ScreeningRecommendation
+  // Transform a ServiceType to a ScreeningRecommendation format for UI components
   const transformToScreeningRecommendation = (service: ServiceType): ScreeningRecommendation => {
     return {
       id: service.id,
       name: service.name,
       description: service.description,
-      frequency: service.duration || 'As needed',
+      frequency: 'As needed',
+      status: 'due',
       ageRange: service.relevantForAge
         ? [
             {
               min: service.relevantForAge[0],
-              max: service.relevantForAge[1] || null,
-              label: `${service.relevantForAge[0]}-${service.relevantForAge[1] || 'older'}`,
+              max: service.relevantForAge[1],
+              label: `${service.relevantForAge[0]}-${service.relevantForAge[1]} years`,
             },
           ]
         : [],
@@ -372,1161 +203,1039 @@ const NewAppointmentPage = () => {
         ? [
             {
               min: service.relevantForAge[0],
-              max: service.relevantForAge[1] || null,
-              label: service.relevantForAge[1]
-                ? `${service.relevantForAge[0]}-${service.relevantForAge[1]}`
-                : `${service.relevantForAge[0]}+`,
-              frequency: service.duration || 'As needed',
+              max: service.relevantForAge[1],
+              label: `${service.relevantForAge[0]}-${service.relevantForAge[1]} years`,
             },
           ]
         : [],
       dueDate: new Date().toISOString(),
-      status: 'due',
     };
   };
 
-  // Filter screenings based on search term with transformed type
-  const filteredScreeningsFormatted = searchTerm
-    ? [...myScreenings, ...serviceTypes]
-        .filter(
-          (screening) =>
-            screening.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            screening.description.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        .map(transformToScreeningRecommendation)
-    : [];
+  // Mock doctors data
+  const doctors: Doctor[] = [
+    {
+      id: '1',
+      name: 'Dr. Sarah Johnson',
+      specialization: 'Primary Care Physician',
+      clinic: 'HealthFirst Medical Group',
+      phone: '(555) 123-4567',
+      location: '123 Main St, Anytown, USA',
+    },
+    {
+      id: '2',
+      name: 'Dr. Michael Chen',
+      specialization: 'Cardiologist',
+      clinic: 'Heart Care Center',
+      phone: '(555) 987-6543',
+      location: '456 Cardiology Ln, Hearttown, USA',
+    },
+    {
+      id: '3',
+      name: 'Dr. Emily Rodriguez',
+      specialization: 'OB/GYN',
+      clinic: "Women's Health Associates",
+      phone: '(555) 789-0123',
+      location: "789 Women's Health Blvd, Healthville, USA",
+    },
+    {
+      id: '4',
+      name: 'Dr. James Wilson',
+      specialization: 'Dermatologist',
+      clinic: 'Clear Skin Dermatology',
+      phone: '(555) 234-5678',
+      location: '321 Derma Dr, Skintown, USA',
+    },
+  ];
 
-  // Filter doctors based on selected service
+  // Get relevant doctors based on selected service
   const getRelevantDoctors = () => {
     if (!selectedService) return doctors;
 
-    // Check if it's a custom service
-    if (showCustomService) return doctors;
+    // Find the selected service
+    const selectedScreening = screenings.find((s) => s.id === selectedService);
+    const selectedOtherService = otherServices.find((s) => s.id === selectedService);
 
-    // Check if it's from my screenings
-    const screeningService = myScreenings.find((s) => s.id === selectedService);
-    if (screeningService) {
-      // Filter based on screening name
-      if (screeningService.name.includes('Breast Cancer')) {
-        return doctors.filter(
-          (d) =>
-            d.specialization === 'Oncology' ||
-            d.specialization === 'Gynecology' ||
-            d.specialization === 'Family Medicine'
-        );
-      }
-      if (screeningService.name.includes('Cervical Cancer')) {
-        return doctors.filter(
-          (d) => d.specialization === 'Gynecology' || d.specialization === 'Family Medicine'
-        );
-      }
-      if (screeningService.name.includes('Cholesterol')) {
-        return doctors.filter(
-          (d) => d.specialization === 'Internal Medicine' || d.specialization === 'Family Medicine'
-        );
-      }
-      return doctors;
-    }
+    const service = selectedScreening || selectedOtherService;
 
-    const service = serviceTypes.find((s) => s.id === selectedService);
     if (!service) return doctors;
 
-    // Filter doctors based on service type
-    switch (service.name) {
-      case 'Clinical Breast Exam':
-      case 'Cervical Cancer Screening (Pap test)':
-        return doctors.filter(
-          (d) => d.specialization === 'Gynecology' || d.specialization === 'Family Medicine'
-        );
-      case 'Skin Cancer Screening':
-        return doctors.filter((d) => d.specialization === 'Dermatology');
-      case 'Mammogram':
-        return doctors.filter(
-          (d) =>
-            d.specialization === 'Oncology' ||
-            d.specialization === 'Radiology' ||
-            d.specialization === 'Gynecology'
-        );
-      case 'Colonoscopy':
-        return doctors.filter((d) => d.specialization === 'Gastroenterology');
-      case 'Dental Examination':
-        return doctors.filter((d) => d.specialization === 'Dentistry');
-      case 'Eye Examination':
-        return doctors.filter((d) => d.specialization === 'Ophthalmology');
-      case 'Mental Health Screening':
-        return doctors.filter((d) => d.specialization === 'Psychiatry');
-      default:
-        return doctors.filter(
-          (d) => d.specialization === 'Family Medicine' || d.specialization === 'Internal Medicine'
-        );
-    }
+    // Filter doctors based on specialization that matches the service name
+    return doctors.filter((doctor) => {
+      // For mammogram or breast exam, show OB/GYN
+      if (
+        service.name.toLowerCase().includes('breast') ||
+        service.name.toLowerCase().includes('mammogram')
+      ) {
+        return doctor.specialization === 'OB/GYN';
+      }
+
+      // For skin exams, show dermatologists
+      if (service.name.toLowerCase().includes('skin')) {
+        return doctor.specialization === 'Dermatologist';
+      }
+
+      // For heart screenings, show cardiologists
+      if (
+        service.name.toLowerCase().includes('heart') ||
+        service.name.toLowerCase().includes('cholesterol')
+      ) {
+        return doctor.specialization === 'Cardiologist';
+      }
+
+      // Default to primary care
+      return doctor.specialization === 'Primary Care Physician';
+    });
   };
 
   const relevantDoctors = getRelevantDoctors();
 
+  // Helper function for date management
   const DateSelector = () => {
-    const [selectedDay, setSelectedDay] = useState<number>(18);
-    const [displayMonth, setDisplayMonth] = useState<number>(new Date().getMonth());
-    const [displayYear, setDisplayYear] = useState<number>(new Date().getFullYear());
+    const daysInMonth = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth() + 1,
+      0
+    ).getDate();
+    const firstDayOfMonth = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      1
+    ).getDay();
 
-    const today = new Date();
-    const currentDay = today.getDate();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-
-    // Generate calendar days for displayed month
-    const daysInMonth = new Date(displayYear, displayMonth + 1, 0).getDate();
-    const firstDayOfMonth = new Date(displayYear, displayMonth, 1).getDay();
-
-    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-    const emptyCells = Array.from({ length: firstDayOfMonth }, (_, i) => null);
-    const calendarDays = [...emptyCells, ...days];
-
-    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-    // Navigate to previous month
+    // Go to previous month
     const goToPreviousMonth = () => {
-      if (displayMonth === 0) {
-        setDisplayMonth(11);
-        setDisplayYear(displayYear - 1);
-      } else {
-        setDisplayMonth(displayMonth - 1);
-      }
+      setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
     };
 
-    // Navigate to next month
+    // Go to next month
     const goToNextMonth = () => {
-      if (displayMonth === 11) {
-        setDisplayMonth(0);
-        setDisplayYear(displayYear + 1);
-      } else {
-        setDisplayMonth(displayMonth + 1);
-      }
+      setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
     };
 
-    // Format month and year for display
+    // Format month and year
     const getFormattedMonthYear = () => {
-      return new Date(displayYear, displayMonth, 1).toLocaleString('default', {
+      return currentMonth.toLocaleString('default', {
         month: 'long',
         year: 'numeric',
       });
     };
 
-    // Check if a given day is in the past
+    // Check if a day is in the past
     const isInPast = (day: number) => {
-      const dateToCheck = new Date(displayYear, displayMonth, day);
       const today = new Date();
-      today.setHours(0, 0, 0, 0); // Reset time to beginning of day for comparison
-      return dateToCheck < today;
+      const checkDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+      return checkDate < new Date(today.setHours(0, 0, 0, 0));
     };
 
+    // Create day elements for calendar
+    const dayElements = [];
+    // Add empty cells for days before the 1st of the month
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      dayElements.push(<div key={`empty-${i}`} className="h-10"></div>);
+    }
+
+    // Add cells for each day of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const isSelected =
+        selectedDate &&
+        selectedDate.getDate() === day &&
+        selectedDate.getMonth() === currentMonth.getMonth() &&
+        selectedDate.getFullYear() === currentMonth.getFullYear();
+
+      const isPast = isInPast(day);
+
+      dayElements.push(
+        <div
+          key={`day-${day}`}
+          className={`h-10 flex items-center justify-center cursor-pointer rounded-full
+            ${isPast ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-blue-50'}
+            ${isSelected ? 'bg-blue-500 text-white hover:bg-blue-600' : ''}
+          `}
+          onClick={() => {
+            if (!isPast) {
+              setSelectedDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
+            }
+          }}
+        >
+          {day}
+        </div>
+      );
+    }
+
     return (
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={goToPreviousMonth}
-            className="p-2 rounded-md text-gray-600 hover:bg-gray-100"
-            aria-label="Previous month"
-          >
-            &larr;
+      <div className="mt-4">
+        <div className="flex justify-between items-center mb-4">
+          <button onClick={goToPreviousMonth} className="p-2 text-gray-600 hover:text-gray-900">
+            &lt; Prev
           </button>
-          <div className="text-md font-medium">{getFormattedMonthYear()}</div>
-          <button
-            onClick={goToNextMonth}
-            className="p-2 rounded-md text-gray-600 hover:bg-gray-100"
-            aria-label="Next month"
-          >
-            &rarr;
+          <h3 className="text-lg font-medium">{getFormattedMonthYear()}</h3>
+          <button onClick={goToNextMonth} className="p-2 text-gray-600 hover:text-gray-900">
+            Next &gt;
           </button>
         </div>
 
-        <div className="grid grid-cols-7 gap-4 text-center mb-2">
-          {weekdays.map((day, index) => (
-            <div key={index} className="text-sm font-medium text-gray-600">
-              {day}
-            </div>
-          ))}
+        <div className="grid grid-cols-7 gap-1 text-center text-sm mb-2">
+          <div>Sun</div>
+          <div>Mon</div>
+          <div>Tue</div>
+          <div>Wed</div>
+          <div>Thu</div>
+          <div>Fri</div>
+          <div>Sat</div>
         </div>
 
-        <div className="grid grid-cols-7 gap-2">
-          {calendarDays.map((day, i) => {
-            if (day === null) return <div key={`empty-${i}`} className="h-10"></div>;
-
-            const dayIsPast = isInPast(day);
-            const isToday =
-              day === currentDay && displayMonth === currentMonth && displayYear === currentYear;
-            const isSelected =
-              day === selectedDay && displayMonth === displayMonth && displayYear === displayYear;
-            const isAvailable = isPastAppointment || !dayIsPast;
-
-            return (
-              <button
-                key={i}
-                onClick={() => isAvailable && setSelectedDay(day)}
-                disabled={!isAvailable && !isPastAppointment}
-                className={`h-10 w-full flex items-center justify-center rounded-md text-sm font-medium transition-colors
-                  ${
-                    isSelected
-                      ? 'bg-blue-600 text-white'
-                      : isToday
-                        ? 'bg-blue-100 text-blue-800'
-                        : isAvailable
-                          ? dayIsPast
-                            ? 'bg-white border border-orange-200 text-orange-700 hover:bg-orange-50'
-                            : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-                          : 'text-gray-300 bg-gray-50 cursor-not-allowed'
-                  }`}
-              >
-                {day}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="mt-4">
-          <label className="flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isPastAppointment}
-              onChange={() => {
-                setIsPastAppointment(!isPastAppointment);
-                // Reset completed status when toggling past appointment mode
-                if (!isPastAppointment) {
-                  setIsCompleted(false);
-                  setAppointmentResult('');
-                }
-              }}
-              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm text-gray-700">I want to record a past appointment</span>
-          </label>
-          {isPastAppointment && (
-            <p className="mt-1 text-xs text-orange-600">
-              Select a past date to record a previous appointment in your health records
-            </p>
-          )}
-        </div>
+        <div className="grid grid-cols-7 gap-1">{dayElements}</div>
       </div>
     );
   };
 
+  // Component for time selection
   const TimeSelector = () => {
-    // Create times from 5:00 AM to 12:00 AM (midnight)
+    // Generate time slots from 8 AM to 5 PM
     const generateTimeSlots = () => {
       const slots = [];
-      for (let hour = 5; hour <= 23; hour++) {
-        const hourFormatted = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-        const period = hour >= 12 ? 'PM' : 'AM';
-        slots.push(`${hourFormatted}:00 ${period}`);
-        slots.push(`${hourFormatted}:30 ${period}`);
+      const startHour = 8; // 8 AM
+      const endHour = 17; // 5 PM
+
+      for (let hour = startHour; hour <= endHour; hour++) {
+        const hourFormatted = hour > 12 ? hour - 12 : hour;
+        const amPm = hour >= 12 ? 'PM' : 'AM';
+
+        // Add :00 slot
+        slots.push(`${hourFormatted}:00 ${amPm}`);
+
+        // Add :30 slot except for the last hour
+        if (hour < endHour) {
+          slots.push(`${hourFormatted}:30 ${amPm}`);
+        }
       }
-      // Add 12:00 AM (midnight)
-      slots.push('12:00 AM');
+
       return slots;
     };
 
     const timeSlots = generateTimeSlots();
-    const [selectedTime, setSelectedTime] = useState<string>('10:30 AM');
 
     return (
-      <div className="grid grid-cols-3 md:grid-cols-4 gap-3 max-h-[280px] overflow-y-auto p-1">
-        {timeSlots.map((time, index) => (
-          <button
-            key={index}
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {timeSlots.map((time) => (
+          <div
+            key={time}
+            className={`p-2 border rounded-md text-center cursor-pointer
+              ${selectedTime === time ? 'bg-blue-500 text-white' : 'hover:bg-blue-50'}
+            `}
             onClick={() => setSelectedTime(time)}
-            className={`h-12 flex items-center justify-center rounded-md text-sm font-medium transition-colors ${
-              time === selectedTime
-                ? 'bg-blue-600 text-white'
-                : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-            }`}
           >
             {time}
-          </button>
+          </div>
         ))}
       </div>
     );
   };
 
-  // Get default notes based on selected service
+  // Get default notes based on the selected service
   const getDefaultNotes = () => {
-    if (!selectedService && !showCustomService) return '';
+    if (!selectedService) return '';
 
-    const actionVerb = isPastAppointment ? 'Recording' : 'Scheduling';
+    // Find the matching service
+    const selectedScreening = screenings.find((s) => s.id === selectedService);
+    const selectedOtherService = otherServices.find((s) => s.id === selectedService);
 
-    if (showCustomService) {
-      return `${actionVerb} for ${customService}`;
-    }
+    const service = selectedScreening || selectedOtherService;
 
-    // Check if it's from my screenings
-    const screeningService = myScreenings.find((s) => s.id === selectedService);
-    if (screeningService) {
-      return `${actionVerb} ${screeningService.name} as recommended for ${userAge}-year-old ${userGender}.`;
-    }
-
-    const service = serviceTypes.find((s) => s.id === selectedService);
     if (!service) return '';
 
-    return `${actionVerb} ${service.name} as recommended for ${userAge}-year-old ${userGender}.`;
+    if (showCustomService) {
+      return `Appointment for: ${customService}`;
+    }
+
+    return `Appointment for: ${service.name}`;
   };
 
-  // Determine if a service is age-appropriate
+  // Check if a service is age appropriate
   const isServiceAgeAppropriate = (service: ServiceType) => {
     if (!service.relevantForAge) return true;
+
     const [minAge, maxAge] = service.relevantForAge;
     return userAge >= minAge && userAge <= maxAge;
   };
 
-  // Check if form can proceed to confirm
+  // Check if we can proceed to confirm
   const canProceedToConfirm = () => {
-    // Must have either selected a service or entered a custom service
-    const hasService =
-      selectedService !== null || (showCustomService && customService.trim() !== '');
+    // Need service, provider, date and time
+    if (showCustomService) {
+      return (
+        customService.trim() !== '' &&
+        (selectedDoctor || (showCustomDoctor && customDoctor.name.trim() !== '')) &&
+        selectedDate &&
+        selectedTime
+      );
+    }
 
-    // Must have either selected a doctor or entered a custom doctor
-    const hasDoctor =
-      selectedDoctor !== null || (showCustomDoctor && customDoctor.name.trim() !== '');
-
-    return hasService && hasDoctor;
+    return (
+      selectedService &&
+      (selectedDoctor || (showCustomDoctor && customDoctor.name.trim() !== '')) &&
+      selectedDate &&
+      selectedTime
+    );
   };
 
-  // Get the selected service name
+  // Get the name of the selected service
   const getSelectedServiceName = () => {
     if (showCustomService) {
       return customService;
     }
 
-    if (selectedService) {
-      // Check if it's from my screenings
-      const screeningService = myScreenings.find((s) => s.id === selectedService);
-      if (screeningService) {
-        return screeningService.name;
-      }
+    if (!selectedService) return 'No service selected';
 
-      // Check if it's from service types
-      const service = serviceTypes.find((s) => s.id === selectedService);
-      if (service) {
-        return service.name;
-      }
+    // Check in screenings
+    const selectedScreening = screenings.find((s) => s.id === selectedService);
+    if (selectedScreening) {
+      return selectedScreening.name;
     }
 
-    return 'Unknown Service';
+    // Check in other services
+    const selectedOtherService = otherServices.find((s) => s.id === selectedService);
+    if (selectedOtherService) {
+      return selectedOtherService.name;
+    }
+
+    return 'Unknown service';
   };
 
-  // Get the selected doctor name
+  // Get the name of the selected doctor
   const getSelectedDoctorName = () => {
     if (showCustomDoctor) {
-      return `${customDoctor.name} (${customDoctor.specialization})`;
+      return customDoctor.name;
     }
 
-    if (selectedDoctor) {
-      const doctor = doctors.find((d) => d.id === selectedDoctor);
-      if (doctor) {
-        return `${doctor.name} (${doctor.specialization})`;
-      }
-    }
+    if (!selectedDoctor) return 'No provider selected';
 
-    return 'Unknown Provider';
+    const doctor = doctors.find((d) => d.id === selectedDoctor);
+    return doctor ? doctor.name : 'Unknown provider';
   };
 
   // Generate calendar links
   const getCalendarLinks = () => {
-    const now = new Date();
-    // Set appointment time to 1 week from now by default, or use the past date for recorded appointments
-    const appointmentDate = isPastAppointment
-      ? new Date() // For past appointments, we'll use today's date as we don't have the actual date field extracted
-      : new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-    const appointmentEndDate = new Date(appointmentDate.getTime() + 60 * 60 * 1000); // +1 hour
+    if (!selectedDate || !selectedTime) return { google: '#', outlook: '#' };
 
     const serviceName = getSelectedServiceName();
     const doctorName = getSelectedDoctorName();
 
-    // Use different title format for past appointments
-    const appointmentTitle = isPastAppointment
-      ? `Recorded: ${serviceName} with ${doctorName}`
-      : `${serviceName} with ${doctorName}`;
+    // Parse time
+    const [time, amPm] = selectedTime.split(' ');
+    const [hour, minute] = time.split(':');
+    let hourNum = parseInt(hour);
 
-    // Include different details for past appointments
-    const appointmentDetails =
-      isPastAppointment && isCompleted
-        ? `${notes || getDefaultNotes()}\n\nResults: ${appointmentResult || 'No results recorded'}`
-        : notes || getDefaultNotes();
+    // Convert to 24hr format
+    if (amPm === 'PM' && hourNum < 12) {
+      hourNum += 12;
+    } else if (amPm === 'AM' && hourNum === 12) {
+      hourNum = 0;
+    }
 
-    // Format dates for calendar links
+    // Create date objects for start and end (1 hour later)
+    const startDate = new Date(selectedDate);
+    startDate.setHours(hourNum, parseInt(minute), 0, 0);
+
+    const endDate = new Date(startDate);
+    endDate.setHours(endDate.getHours() + 1);
+
+    // Format dates for Google Calendar
     const formatDateForGoogle = (date: Date) => {
-      return date.toISOString().replace(/-|:|\.\d\d\d/g, '');
+      return date.toISOString().replace(/-|:|\.\d+/g, '');
     };
 
+    // Format dates for Outlook
     const formatDateForOutlook = (date: Date) => {
-      return date
-        .toISOString()
-        .slice(0, 19)
-        .replace(/-|:|\.\d\d\d/g, '');
+      return date.toISOString();
     };
 
-    // Google Calendar link
-    const googleCalendarLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(appointmentTitle)}&details=${encodeURIComponent(appointmentDetails)}&dates=${formatDateForGoogle(appointmentDate)}/${formatDateForGoogle(appointmentEndDate)}`;
+    const googleLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${serviceName} Appointment`)}&details=${encodeURIComponent(`Appointment with ${doctorName}`)}&dates=${formatDateForGoogle(startDate)}/${formatDateForGoogle(endDate)}`;
 
-    // Outlook Web link
-    const outlookWebLink = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(appointmentTitle)}&body=${encodeURIComponent(appointmentDetails)}&startdt=${appointmentDate.toISOString()}&enddt=${appointmentEndDate.toISOString()}`;
-
-    // Apple Calendar link (iCal format)
-    const icsContent = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'BEGIN:VEVENT',
-      `DTSTART:${formatDateForOutlook(appointmentDate)}Z`,
-      `DTEND:${formatDateForOutlook(appointmentEndDate)}Z`,
-      `SUMMARY:${appointmentTitle}`,
-      `DESCRIPTION:${appointmentDetails}`,
-      'END:VEVENT',
-      'END:VCALENDAR',
-    ].join('\n');
-
-    const icsBlob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const icsUrl = URL.createObjectURL(icsBlob);
+    const outlookLink = `https://outlook.office.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(`${serviceName} Appointment`)}&body=${encodeURIComponent(`Appointment with ${doctorName}`)}&startdt=${formatDateForOutlook(startDate)}&enddt=${formatDateForOutlook(endDate)}`;
 
     return {
-      google: googleCalendarLink,
-      outlook: outlookWebLink,
-      ics: icsUrl,
+      google: googleLink,
+      outlook: outlookLink,
     };
   };
 
-  // Handler for custom service toggling
+  // Toggle custom service input
   const handleCustomServiceToggle = () => {
-    if (showCustomService) {
-      setShowCustomService(false);
-      setCustomService('');
-    } else {
-      setShowCustomService(true);
+    setShowCustomService((prev) => !prev);
+    if (!showCustomService) {
       setSelectedService(null);
-    }
-  };
-
-  // Handler for custom doctor toggling
-  const handleCustomDoctorToggle = () => {
-    if (showCustomDoctor) {
-      setShowCustomDoctor(false);
-      setCustomDoctor({ name: '', specialization: '' });
     } else {
-      setShowCustomDoctor(true);
-      setSelectedDoctor(null);
+      setCustomService('');
     }
   };
 
-  // Function to open provider modal
+  // Toggle custom doctor input
+  const handleCustomDoctorToggle = () => {
+    setShowCustomDoctor((prev) => !prev);
+    if (!showCustomDoctor) {
+      setSelectedDoctor(null);
+    } else {
+      setCustomDoctor({ name: '', specialization: '' });
+    }
+  };
+
+  // Open provider modal
   const openProviderModal = (doctor: Doctor) => {
     setSelectedProvider(doctor);
     setShowProviderModal(true);
   };
 
-  // Function to close provider modal
+  // Close provider modal
   const closeProviderModal = () => {
     setShowProviderModal(false);
+    setSelectedProvider(null);
   };
 
-  // Function to record appointment after contacting provider
+  // Record appointment
   const recordAppointment = () => {
-    setShowProviderModal(false);
-    setSelectedDoctor(selectedProvider?.id || null);
-    setCurrentStep(1);
+    // In a real app, this would save to a database
+    console.log('Recording appointment:', {
+      service: showCustomService ? customService : getSelectedServiceName(),
+      doctor: showCustomDoctor ? customDoctor.name : getSelectedDoctorName(),
+      date: selectedDate,
+      time: selectedTime,
+      notes,
+      isPastAppointment,
+      isCompleted,
+      result: isCompleted ? appointmentResult : null,
+    });
+
+    // Redirect to calendar or dashboard
+    window.location.href = '/calendar';
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Link href="/appointments" className="flex items-center text-blue-700 mr-4">
-                <FaArrowLeft className="mr-2" /> Back to Appointments
-              </Link>
-              <h1 className="text-2xl font-bold">
-                {isPastAppointment ? 'Record Past Appointment' : 'Book New Appointment'}
-              </h1>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 pt-8 pb-12">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="mb-6">
+          <Link href="/dashboard" className="flex items-center text-blue-600 hover:text-blue-800">
+            <FaArrowLeft className="mr-2" /> Back to Dashboard
+          </Link>
         </div>
-      </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          {/* How to Record an Appointment Guide */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                <FaCalendarAlt className="mr-2 text-blue-600" /> How to Record Your Appointments
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-                <div className="border rounded-lg p-4">
-                  <div className="bg-blue-100 text-blue-800 w-8 h-8 rounded-full flex items-center justify-center mb-3">
-                    1
-                  </div>
-                  <h3 className="font-medium text-gray-800 mb-2">Find a Provider</h3>
-                  <p className="text-sm text-gray-600">
-                    Search for healthcare providers by name, specialty, or clinic using the search
-                    bar below.
-                  </p>
-                </div>
-                <div className="border rounded-lg p-4">
-                  <div className="bg-blue-100 text-blue-800 w-8 h-8 rounded-full flex items-center justify-center mb-3">
-                    2
-                  </div>
-                  <h3 className="font-medium text-gray-800 mb-2">Schedule Your Appointment</h3>
-                  <p className="text-sm text-gray-600">
-                    Contact the provider directly to schedule your appointment at a time that works
-                    for you.
-                  </p>
-                </div>
-                <div className="border rounded-lg p-4">
-                  <div className="bg-blue-100 text-blue-800 w-8 h-8 rounded-full flex items-center justify-center mb-3">
-                    3
-                  </div>
-                  <h3 className="font-medium text-gray-800 mb-2">Record in Your Health History</h3>
-                  <p className="text-sm text-gray-600">
-                    After scheduling or attending your appointment, record it here to keep track in
-                    your health records.
-                  </p>
-                </div>
-              </div>
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-8">
+          <div className="border-b border-gray-200 px-6 py-4">
+            <h1 className="text-2xl font-semibold text-gray-800">Schedule an Appointment</h1>
+          </div>
+
+          {/* Step indicators */}
+          <div className="flex border-b border-gray-200">
+            <div
+              className={`flex-1 text-center py-3 ${
+                step === 'service' ? 'border-b-2 border-blue-500 font-medium text-blue-600' : ''
+              }`}
+            >
+              1. Select Service
+            </div>
+            <div
+              className={`flex-1 text-center py-3 ${
+                step === 'provider' ? 'border-b-2 border-blue-500 font-medium text-blue-600' : ''
+              }`}
+            >
+              2. Select Provider
+            </div>
+            <div
+              className={`flex-1 text-center py-3 ${
+                step === 'datetime' ? 'border-b-2 border-blue-500 font-medium text-blue-600' : ''
+              }`}
+            >
+              3. Date & Time
+            </div>
+            <div
+              className={`flex-1 text-center py-3 ${
+                step === 'notes' ? 'border-b-2 border-blue-500 font-medium text-blue-600' : ''
+              }`}
+            >
+              4. Notes
+            </div>
+            <div
+              className={`flex-1 text-center py-3 ${
+                step === 'confirm' ? 'border-b-2 border-blue-500 font-medium text-blue-600' : ''
+              }`}
+            >
+              5. Confirm
             </div>
           </div>
 
-          {/* Progress indicators */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div
-                  className={`flex items-center justify-center w-8 h-8 ${currentStep === 1 ? 'bg-blue-600 text-white' : 'bg-green-500 text-white'} rounded-full`}
-                >
-                  {currentStep > 1 ? '✓' : '1'}
+          {/* Step content */}
+          <div className="p-6">
+            {/* Step 1: Select Service */}
+            {step === 'service' && (
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Select a Service</h2>
+
+                {/* Search input */}
+                <div className="mb-6 relative">
+                  <input
+                    type="text"
+                    placeholder="Search for a service..."
+                    className="w-full p-3 pl-10 border border-gray-300 rounded-lg"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
                 </div>
-                <div
-                  className={`ml-2 font-medium ${currentStep === 1 ? 'text-blue-600' : 'text-green-500'}`}
-                >
-                  Service
+
+                {/* Past appointment toggle */}
+                <div className="mb-4 flex items-center">
+                  <input
+                    type="checkbox"
+                    id="past-appointment"
+                    checked={isPastAppointment}
+                    onChange={() => setIsPastAppointment(!isPastAppointment)}
+                    className="mr-2"
+                  />
+                  <label htmlFor="past-appointment">
+                    This is a past appointment I want to record
+                  </label>
                 </div>
-              </div>
-              <div className="flex-1 h-1 mx-4 bg-gray-200">
-                <div
-                  className={`h-1 ${currentStep > 1 ? 'bg-green-500' : 'bg-blue-200'} ${currentStep === 1 ? 'w-0' : 'w-full'}`}
-                ></div>
-              </div>
-              <div className="flex items-center">
-                <div
-                  className={`flex items-center justify-center w-8 h-8 ${currentStep === 2 ? 'bg-blue-600 text-white' : currentStep < 2 ? 'bg-gray-200 text-gray-700' : 'bg-green-500 text-white'} rounded-full`}
-                >
-                  {currentStep > 2 ? '✓' : '2'}
-                </div>
-                <div
-                  className={`ml-2 font-medium ${currentStep === 2 ? 'text-blue-600' : currentStep < 2 ? 'text-gray-500' : 'text-green-500'}`}
-                >
-                  Date & Time
-                </div>
-              </div>
-              <div className="flex-1 h-1 mx-4 bg-gray-200">
-                <div
-                  className={`h-1 ${currentStep > 2 ? 'bg-green-500' : 'bg-blue-200'} ${currentStep < 2 ? 'w-0' : currentStep === 2 ? 'w-1/2' : 'w-full'}`}
-                ></div>
-              </div>
-              <div className="flex items-center">
-                <div
-                  className={`flex items-center justify-center w-8 h-8 ${currentStep === 3 ? 'bg-blue-600 text-white' : currentStep < 3 ? 'bg-gray-200 text-gray-700' : 'bg-green-500 text-white'} rounded-full`}
-                >
-                  {currentStep > 3 ? '✓' : '3'}
-                </div>
-                <div
-                  className={`ml-2 font-medium ${currentStep === 3 ? 'text-blue-600' : currentStep < 3 ? 'text-gray-500' : 'text-green-500'}`}
-                >
-                  Confirm
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Provider Search Section */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                <FaUserMd className="mr-2 text-blue-600" /> Find a Provider or Service
-              </h2>
-              <p className="text-gray-600 mb-4">
-                Search for a healthcare provider or screening service. Contact providers directly to
-                schedule an appointment, then record it in your health records.
-              </p>
-
-              <div className="flex flex-wrap gap-2 mb-4">
-                <button
-                  onClick={() => setSearchFilter('all')}
-                  className={`px-3 py-1.5 text-sm rounded-full ${
-                    searchFilter === 'all'
-                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                      : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
-                  }`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setSearchFilter('providers')}
-                  className={`px-3 py-1.5 text-sm rounded-full ${
-                    searchFilter === 'providers'
-                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                      : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
-                  }`}
-                >
-                  Providers
-                </button>
-                <button
-                  onClick={() => setSearchFilter('screenings')}
-                  className={`px-3 py-1.5 text-sm rounded-full ${
-                    searchFilter === 'screenings'
-                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                      : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
-                  }`}
-                >
-                  Screenings & Services
-                </button>
-              </div>
-
-              <div className="relative mb-6">
-                <input
-                  type="text"
-                  placeholder="Search for provider, screening, or service..."
-                  className="w-full border border-gray-300 rounded-md py-3 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
-              </div>
-
-              {searchTerm && (
-                <div>
-                  {/* Show Providers */}
-                  {(searchFilter === 'all' || searchFilter === 'providers') &&
-                    filteredDoctors.length > 0 && (
-                      <div className="mb-6">
-                        <h3 className="font-medium text-gray-800 mb-3">Providers</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {filteredDoctors.map((doctor) => (
-                            <div
-                              key={doctor.id}
-                              className="border rounded-lg p-4 hover:bg-blue-50 hover:border-blue-200 cursor-pointer transition"
-                              onClick={() => openProviderModal(doctor)}
-                            >
-                              <div className="flex items-center">
-                                <div className="w-12 h-12 bg-gray-200 rounded-full overflow-hidden flex-shrink-0">
-                                  <Image
-                                    src={doctor.image || '/doctor-avatar.png'}
-                                    alt={doctor.name}
-                                    width={48}
-                                    height={48}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <div className="ml-3">
-                                  <h3 className="font-medium text-gray-800">{doctor.name}</h3>
-                                  <p className="text-sm text-gray-500">{doctor.specialization}</p>
-                                  <p className="text-xs text-gray-500 mt-1">{doctor.clinic}</p>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                  {/* Show Screenings & Services */}
-                  {(searchFilter === 'all' || searchFilter === 'screenings') &&
-                    filteredScreeningsFormatted.length > 0 && (
-                      <ScreeningsServicesList
-                        screenings={filteredScreeningsFormatted}
-                        searchQuery={searchTerm}
-                        onSearch={(query) => setSearchTerm(query)}
-                      />
-                    )}
-
-                  {((searchFilter === 'providers' && filteredDoctors.length === 0) ||
-                    (searchFilter === 'screenings' && filteredScreeningsFormatted.length === 0) ||
-                    (searchFilter === 'all' &&
-                      filteredDoctors.length === 0 &&
-                      filteredScreeningsFormatted.length === 0)) && (
-                    <div className="p-4 text-center text-gray-500">
-                      No results found matching your search criteria
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="mt-4">
-                <h3 className="font-medium text-gray-800 mb-2">Already have an appointment?</h3>
-                <button
-                  onClick={() => setCurrentStep(1)}
-                  className="text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  Record past or upcoming appointments
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {currentStep === 1 && (
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              {/* Select Service Type */}
-              <div className="p-6 border-b">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                  <FaCalendarAlt className="mr-2 text-blue-600" /> Select Service Type
-                  <span className="ml-2 text-sm font-normal text-gray-500">
-                    (Based on recommendations for a {userAge}-year-old {userGender})
-                  </span>
-                </h2>
 
                 {/* My Selected Screenings */}
-                {myScreenings.length > 0 && (
+                {screenings.length > 0 && (
                   <div className="mb-6">
                     <h3 className="text-lg font-medium text-gray-800 mb-3">
                       My Selected Screenings
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {myScreenings.map((service) => (
-                        <div
-                          key={service.id}
-                          onClick={() => {
-                            setSelectedService(service.id);
-                            setShowCustomService(false);
-                          }}
-                          className={`border rounded-lg p-4 cursor-pointer
-                            ${
-                              selectedService === service.id
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-gray-200 hover:bg-blue-50 hover:border-blue-200'
-                            }`}
-                        >
-                          <h3 className="font-medium text-gray-800">{service.name}</h3>
-                          <p className="text-sm text-gray-500 mt-1">{service.description}</p>
-                        </div>
-                      ))}
+                      {screenings
+                        .filter(
+                          (screening) =>
+                            searchTerm === '' ||
+                            screening.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            screening.description.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .map((screening) => {
+                          // Convert to ServiceType format for display
+                          const service = {
+                            id: screening.id,
+                            name: screening.name,
+                            description: screening.description,
+                          };
+
+                          return (
+                            <div
+                              key={screening.id}
+                              onClick={() => {
+                                setSelectedService(screening.id);
+                                setShowCustomService(false);
+                              }}
+                              className={`border rounded-lg p-4 cursor-pointer
+                                ${
+                                  selectedService === screening.id
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : 'border-gray-200 hover:bg-blue-50 hover:border-blue-200'
+                                }`}
+                            >
+                              <h3 className="font-medium text-gray-800">{screening.name}</h3>
+                              <p className="text-sm text-gray-500 mt-1">{screening.description}</p>
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 )}
 
-                {/* Other Service Types */}
-                <h3 className="text-lg font-medium text-gray-800 mb-3">Other Services</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {serviceTypes.map((service) => {
-                    const isRelevant = isServiceAgeAppropriate(service);
-                    const isSelected = selectedService === service.id;
-
-                    return (
-                      <div
-                        key={service.id}
-                        onClick={() => {
-                          if (isRelevant) {
-                            setSelectedService(service.id);
-                            setShowCustomService(false);
-                          }
-                        }}
-                        className={`border rounded-lg p-4 ${isRelevant ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} 
-                          ${
-                            isSelected
-                              ? 'border-blue-500 bg-blue-50'
-                              : isRelevant
-                                ? 'border-gray-200 hover:bg-blue-50 hover:border-blue-200'
-                                : 'border-gray-200'
-                          }`}
-                      >
-                        <h3 className="font-medium text-gray-800">{service.name}</h3>
-                        <p className="text-sm text-gray-500 mt-1">{service.description}</p>
-                        <div className="flex justify-between items-center mt-2">
-                          {!isRelevant && (
-                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                              Not in guideline range at age {userAge}, add personalized guideline to
-                              schedule.
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* Custom Service Option */}
-                  <div
-                    className={`border rounded-lg p-4 cursor-pointer
-                      ${
-                        showCustomService
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:bg-blue-50 hover:border-blue-200'
-                      }`}
-                    onClick={handleCustomServiceToggle}
-                  >
-                    <div className="flex items-center">
-                      <FaPlus className="text-blue-600 mr-2" />
-                      <h3 className="font-medium text-gray-800">Other Appointment Type</h3>
+                {/* Other Services from Guidelines */}
+                {otherServices.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-medium text-gray-800 mb-3">Other Services</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {otherServices
+                        .filter(
+                          (service) =>
+                            isServiceAgeAppropriate(service) &&
+                            (searchTerm === '' ||
+                              service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              service.description.toLowerCase().includes(searchTerm.toLowerCase()))
+                        )
+                        .map((service) => (
+                          <div
+                            key={service.id}
+                            onClick={() => {
+                              setSelectedService(service.id);
+                              setShowCustomService(false);
+                            }}
+                            className={`border rounded-lg p-4 cursor-pointer
+                              ${
+                                selectedService === service.id
+                                  ? 'border-blue-500 bg-blue-50'
+                                  : 'border-gray-200 hover:bg-blue-50 hover:border-blue-200'
+                              }`}
+                          >
+                            <h3 className="font-medium text-gray-800">{service.name}</h3>
+                            <p className="text-sm text-gray-500 mt-1">{service.description}</p>
+                            {service.relevantForAge && (
+                              <p className="text-xs text-blue-600 mt-1">
+                                Recommended for ages {service.relevantForAge[0]}-
+                                {service.relevantForAge[1]}
+                              </p>
+                            )}
+                          </div>
+                        ))}
                     </div>
-                    {!showCustomService && (
-                      <p className="text-sm text-gray-500 mt-1">
-                        Schedule a different type of appointment not listed above
-                      </p>
-                    )}
-
-                    {showCustomService && (
-                      <div className="mt-3">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Appointment Type
-                        </label>
-                        <input
-                          type="text"
-                          value={customService}
-                          onChange={(e) => setCustomService(e.target.value)}
-                          placeholder="Enter appointment type"
-                          className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                    )}
                   </div>
-                </div>
-              </div>
+                )}
 
-              {/* Select Doctor */}
-              <div className="p-6 border-b">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                  <FaUserMd className="mr-2 text-blue-600" /> Select Healthcare Provider
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {relevantDoctors.map((doctor) => (
-                    <div
-                      key={doctor.id}
-                      onClick={() => {
-                        setSelectedDoctor(doctor.id);
-                        setShowCustomDoctor(false);
-                      }}
-                      className={`border rounded-lg p-4 cursor-pointer hover:bg-blue-50 hover:border-blue-200 ${
-                        selectedDoctor === doctor.id && !showCustomDoctor
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200'
-                      }`}
+                {/* Custom Service Option */}
+                <div className="mt-6 border rounded-lg p-4 hover:bg-blue-50 hover:border-blue-200 cursor-pointer">
+                  <div className="flex items-center mb-2">
+                    <input
+                      type="checkbox"
+                      id="custom-service"
+                      checked={showCustomService}
+                      onChange={handleCustomServiceToggle}
+                      className="mr-3"
+                    />
+                    <label
+                      htmlFor="custom-service"
+                      className="text-lg font-medium text-gray-800 cursor-pointer"
                     >
-                      <div className="flex items-center">
-                        <div className="w-12 h-12 bg-gray-200 rounded-full overflow-hidden flex-shrink-0">
-                          <Image
-                            src={doctor.image || '/doctor-avatar.png'}
-                            alt={doctor.name}
-                            width={48}
-                            height={48}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="ml-3">
-                          <h3 className="font-medium text-gray-800">{doctor.name}</h3>
-                          <p className="text-sm text-gray-500">{doctor.specialization}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Add Custom Provider Option */}
-                  <div
-                    className={`border rounded-lg p-4 cursor-pointer
-                      ${
-                        showCustomDoctor
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:bg-blue-50 hover:border-blue-200'
-                      }`}
-                    onClick={handleCustomDoctorToggle}
-                  >
-                    <div className="flex items-center">
-                      <FaPlus className="text-blue-600 mr-2" />
-                      <h3 className="font-medium text-gray-800">Other Provider</h3>
-                    </div>
-                    {!showCustomDoctor && (
-                      <p className="text-sm text-gray-500 mt-1">Add a provider not listed above</p>
-                    )}
-
-                    {showCustomDoctor && (
-                      <div className="mt-3 space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Provider Name
-                          </label>
-                          <input
-                            type="text"
-                            value={customDoctor.name}
-                            onChange={(e) =>
-                              setCustomDoctor({ ...customDoctor, name: e.target.value })
-                            }
-                            placeholder="Dr. John Smith"
-                            className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Specialization
-                          </label>
-                          <input
-                            type="text"
-                            value={customDoctor.specialization}
-                            onChange={(e) =>
-                              setCustomDoctor({ ...customDoctor, specialization: e.target.value })
-                            }
-                            placeholder="Cardiology"
-                            className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Action buttons */}
-              <div className="bg-gray-50 p-6 flex justify-between">
-                <Link
-                  href="/appointments"
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
-                >
-                  Cancel
-                </Link>
-                <button
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed"
-                  disabled={!canProceedToConfirm()}
-                  onClick={() => setCurrentStep(2)}
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          )}
-
-          {currentStep === 2 && (
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              {/* Select Date and Time */}
-              <div className="p-6 border-b">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                  <FaRegClock className="mr-2 text-blue-600" /> Select Date and Time
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="font-medium text-gray-700 mb-3">Select Date</h3>
-                    <DateSelector />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-700 mb-3">Select Time</h3>
-                    <TimeSelector />
-                  </div>
-                </div>
-              </div>
-
-              {/* Additional Information */}
-              <div className="p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                  <FaRegComment className="mr-2 text-blue-600" /> Additional Information
-                </h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Reason for Visit
+                      Schedule a different appointment
                     </label>
-                    <textarea
-                      className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      rows={4}
-                      placeholder="Please provide any additional information that might be relevant for your appointment..."
-                      defaultValue={getDefaultNotes()}
-                      onChange={(e) => setNotes(e.target.value)}
-                    ></textarea>
                   </div>
 
-                  {isPastAppointment && (
-                    <div className="border-t pt-4 mt-4">
-                      <h3 className="text-md font-medium text-gray-800 mb-3">
-                        Past Appointment Details
-                      </h3>
+                  <p className="text-sm text-gray-500 mb-3 ml-6">
+                    Enter a custom service not listed above, such as dental checkup, eye exam,
+                    mental health session, etc.
+                  </p>
 
-                      <div className="mb-3">
-                        <label className="flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={isCompleted}
-                            onChange={() => setIsCompleted(!isCompleted)}
-                            className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                          />
-                          <span className="ml-2 text-sm text-gray-700">
-                            Appointment was completed
-                          </span>
-                        </label>
-                      </div>
-
-                      {isCompleted && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Appointment Results/Notes
-                          </label>
-                          <textarea
-                            className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            rows={3}
-                            placeholder="Enter any results or notes from the completed appointment..."
-                            value={appointmentResult}
-                            onChange={(e) => setAppointmentResult(e.target.value)}
-                          ></textarea>
-                        </div>
+                  {showCustomService && (
+                    <div className="mt-3 ml-6">
+                      <input
+                        type="text"
+                        placeholder="Enter service name..."
+                        className="w-full p-3 border border-gray-300 rounded-lg"
+                        value={customService}
+                        onChange={(e) => setCustomService(e.target.value)}
+                      />
+                      {customService.trim() === '' && (
+                        <p className="text-sm text-blue-600 mt-1">
+                          Please enter a name for your appointment
+                        </p>
                       )}
                     </div>
                   )}
                 </div>
+
+                {/* Navigation buttons */}
+                <div className="mt-8 flex justify-end">
+                  <button
+                    className={`px-6 py-2 rounded-md font-medium ${
+                      selectedService || (showCustomService && customService.trim() !== '')
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    disabled={
+                      !selectedService && !(showCustomService && customService.trim() !== '')
+                    }
+                    onClick={() => setStep('provider')}
+                  >
+                    Next: Select Provider
+                  </button>
+                </div>
               </div>
+            )}
 
-              {/* Action buttons */}
-              <div className="bg-gray-50 p-6 flex justify-between">
-                <button
-                  onClick={() => setCurrentStep(1)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
-                >
-                  Back
-                </button>
-                <button
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  onClick={() => setCurrentStep(3)}
-                >
-                  {isPastAppointment ? 'Record Appointment' : 'Continue'}
-                </button>
-              </div>
-            </div>
-          )}
+            {/* Step 2: Select Provider */}
+            {step === 'provider' && (
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Select a Provider</h2>
 
-          {currentStep === 3 && (
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              {/* Confirmation Page */}
-              <div className="p-6 border-b">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6">
-                  Appointment Confirmation
-                </h2>
+                {/* Service selected info */}
+                <div className="mb-6 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-blue-800">
+                    <span className="font-medium">Selected Service:</span>{' '}
+                    {getSelectedServiceName()}
+                  </p>
+                </div>
 
-                <div className="bg-blue-50 border border-blue-100 rounded-lg p-6 mb-6">
-                  <div className="text-center mb-4">
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full text-blue-600 mb-3">
-                      <FaCalendarAlt className="text-xl" />
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-800">
-                      {isPastAppointment
-                        ? 'Your appointment has been recorded'
-                        : 'Your appointment has been recorded'}
-                    </h3>
-                  </div>
+                {/* Provider search */}
+                <div className="mb-6 relative">
+                  <input
+                    type="text"
+                    placeholder="Search for a provider..."
+                    className="w-full p-3 pl-10 border border-gray-300 rounded-lg"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
+                </div>
 
-                  <div className="bg-white rounded-md p-4 shadow-sm">
-                    <div className="mb-4">
-                      <p className="text-sm font-medium text-gray-500 mb-1">Service</p>
-                      <p className="font-medium text-gray-800">{getSelectedServiceName()}</p>
-                    </div>
-
-                    <div className="mb-4">
-                      <p className="text-sm font-medium text-gray-500 mb-1">Provider</p>
-                      <p className="font-medium text-gray-800">{getSelectedDoctorName()}</p>
-                    </div>
-
-                    {notes && (
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-gray-500 mb-1">Notes</p>
-                        <p className="text-gray-800">{notes}</p>
-                      </div>
-                    )}
-
-                    {isPastAppointment && isCompleted && appointmentResult && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 mb-1">Results</p>
-                        <p className="text-gray-800">{appointmentResult}</p>
-                      </div>
-                    )}
+                {/* Providers list */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium mb-3">Providers</h3>
+                  <div className="space-y-3">
+                    {getRelevantDoctors()
+                      .filter(
+                        (doctor) =>
+                          searchTerm === '' ||
+                          doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          doctor.specialization.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((doctor) => (
+                        <div
+                          key={doctor.id}
+                          className={`border p-4 rounded-lg cursor-pointer hover:bg-blue-50 ${
+                            selectedDoctor === doctor.id
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-gray-200'
+                          }`}
+                          onClick={() => setSelectedDoctor(doctor.id)}
+                        >
+                          <div className="flex justify-between">
+                            <div>
+                              <h4 className="font-medium">{doctor.name}</h4>
+                              <p className="text-gray-600 text-sm">{doctor.specialization}</p>
+                              {doctor.clinic && (
+                                <p className="text-gray-500 text-xs mt-1">{doctor.clinic}</p>
+                              )}
+                            </div>
+                            <button
+                              className="text-blue-600 hover:text-blue-800 text-sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openProviderModal(doctor);
+                              }}
+                            >
+                              View Details
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 </div>
 
-                <div className="mb-6">
-                  <h3 className="text-lg font-medium text-gray-800 mb-3">Add to Calendar</h3>
-                  <p className="text-gray-600 mb-4">
-                    {isPastAppointment
-                      ? 'Add this recorded appointment to your calendar for your records'
-                      : 'Add this appointment to your calendar'}
-                  </p>
+                {/* Custom Provider Option */}
+                <div className="mt-4">
+                  <div className="flex items-center mb-2">
+                    <input
+                      type="checkbox"
+                      id="custom-provider"
+                      checked={showCustomDoctor}
+                      onChange={handleCustomDoctorToggle}
+                      className="mr-2"
+                    />
+                    <label htmlFor="custom-provider">Enter a custom provider</label>
+                  </div>
 
-                  <div className="flex flex-wrap gap-3">
-                    <a
-                      href={getCalendarLinks().google}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                    >
-                      <Image
-                        src="https://www.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_10_2x.png"
-                        alt="Google Calendar"
-                        width={20}
-                        height={20}
+                  {showCustomDoctor && (
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        placeholder="Enter provider name..."
+                        className="w-full p-3 border border-gray-300 rounded-lg"
+                        value={customDoctor.name}
+                        onChange={(e) => setCustomDoctor({ ...customDoctor, name: e.target.value })}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Enter specialization (optional)..."
+                        className="w-full p-3 border border-gray-300 rounded-lg"
+                        value={customDoctor.specialization}
+                        onChange={(e) =>
+                          setCustomDoctor({ ...customDoctor, specialization: e.target.value })
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Navigation buttons */}
+                <div className="mt-8 flex justify-between">
+                  <button
+                    className="px-6 py-2 rounded-md font-medium border border-gray-300 hover:bg-gray-50"
+                    onClick={() => setStep('service')}
+                  >
+                    Back
+                  </button>
+                  <button
+                    className={`px-6 py-2 rounded-md font-medium ${
+                      selectedDoctor || (showCustomDoctor && customDoctor.name.trim() !== '')
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    disabled={
+                      !selectedDoctor && !(showCustomDoctor && customDoctor.name.trim() !== '')
+                    }
+                    onClick={() => setStep('datetime')}
+                  >
+                    Next: Select Date & Time
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Date & Time */}
+            {step === 'datetime' && (
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Select Date & Time</h2>
+
+                {/* Service and provider info */}
+                <div className="mb-6 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-blue-800">
+                    <span className="font-medium">Selected Service:</span>{' '}
+                    {getSelectedServiceName()}
+                  </p>
+                  <p className="text-blue-800 mt-1">
+                    <span className="font-medium">Selected Provider:</span>{' '}
+                    {getSelectedDoctorName()}
+                  </p>
+                </div>
+
+                {/* Past appointment date selector */}
+                {isPastAppointment && (
+                  <div className="mb-4">
+                    <p className="mb-2 font-medium">Select the date of your past appointment:</p>
+                    <input
+                      type="date"
+                      className="w-full p-3 border border-gray-300 rounded-lg"
+                      value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setSelectedDate(new Date(e.target.value));
+                        } else {
+                          setSelectedDate(null);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Date selector */}
+                {!isPastAppointment && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-medium mb-3">Select a Date</h3>
+                    <DateSelector />
+                  </div>
+                )}
+
+                {/* Time selector */}
+                {selectedDate && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-medium mb-3">Select a Time</h3>
+                    <TimeSelector />
+                  </div>
+                )}
+
+                {/* Completed appointment toggle (only for past appointments) */}
+                {isPastAppointment && (
+                  <div className="mb-4">
+                    <div className="flex items-center mb-2">
+                      <input
+                        type="checkbox"
+                        id="completed-appointment"
+                        checked={isCompleted}
+                        onChange={() => setIsCompleted(!isCompleted)}
                         className="mr-2"
                       />
-                      Google Calendar
-                    </a>
+                      <label htmlFor="completed-appointment">This appointment was completed</label>
+                    </div>
 
-                    <a
-                      href={getCalendarLinks().outlook}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                    >
-                      <IoLogoMicrosoft className="w-5 h-5 mr-2" />
-                      Outlook
-                    </a>
-
-                    <a
-                      href={getCalendarLinks().ics}
-                      download="appointment.ics"
-                      className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                    >
-                      <svg
-                        className="w-5 h-5 mr-2"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M19 19H5V8H19V19ZM16 1V3H8V1H6V3H5C3.89 3 3 3.89 3 5V19C3 20.11 3.89 21 5 21H19C20.11 21 21 20.11 21 19V5C21 3.89 20.11 3 19 3H18V1H16ZM17 12H12V17H17V12Z"
-                          fill="currentColor"
-                        />
-                      </svg>
-                      Apple Calendar
-                    </a>
+                    {isCompleted && (
+                      <div className="mt-2">
+                        <p className="mb-1 font-medium">Result:</p>
+                        <select
+                          className="w-full p-3 border border-gray-300 rounded-lg"
+                          value={appointmentResult}
+                          onChange={(e) => setAppointmentResult(e.target.value)}
+                        >
+                          <option value="">-- Select result --</option>
+                          <option value="clear">Clear / Normal</option>
+                          <option value="abnormal">Abnormal</option>
+                          <option value="pending">Results Pending</option>
+                        </select>
+                      </div>
+                    )}
                   </div>
+                )}
+
+                {/* Navigation buttons */}
+                <div className="mt-8 flex justify-between">
+                  <button
+                    className="px-6 py-2 rounded-md font-medium border border-gray-300 hover:bg-gray-50"
+                    onClick={() => setStep('provider')}
+                  >
+                    Back
+                  </button>
+                  <button
+                    className={`px-6 py-2 rounded-md font-medium ${
+                      selectedDate && selectedTime
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    disabled={!selectedDate || !selectedTime}
+                    onClick={() => setStep('notes')}
+                  >
+                    Next: Add Notes
+                  </button>
                 </div>
               </div>
+            )}
 
-              {/* Action buttons */}
-              <div className="bg-gray-50 p-6 flex justify-between">
-                <button
-                  onClick={() => setCurrentStep(2)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={() => (window.location.href = '/appointments')}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  {isPastAppointment ? 'Save Record' : 'Complete'}
-                </button>
+            {/* Step 4: Notes */}
+            {step === 'notes' && (
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Add Notes (Optional)</h2>
+
+                {/* Service, provider, and date/time info */}
+                <div className="mb-6 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-blue-800">
+                    <span className="font-medium">Selected Service:</span>{' '}
+                    {getSelectedServiceName()}
+                  </p>
+                  <p className="text-blue-800 mt-1">
+                    <span className="font-medium">Selected Provider:</span>{' '}
+                    {getSelectedDoctorName()}
+                  </p>
+                  <p className="text-blue-800 mt-1">
+                    <span className="font-medium">Date & Time:</span>{' '}
+                    {selectedDate?.toLocaleDateString()} at {selectedTime}
+                  </p>
+                </div>
+
+                {/* Notes textarea */}
+                <div className="mb-6">
+                  <label htmlFor="notes" className="block mb-2 font-medium">
+                    Notes for your appointment:
+                  </label>
+                  <textarea
+                    id="notes"
+                    rows={5}
+                    className="w-full p-3 border border-gray-300 rounded-lg"
+                    placeholder="Add any notes or questions for your provider..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  ></textarea>
+                </div>
+
+                {/* Navigation buttons */}
+                <div className="mt-8 flex justify-between">
+                  <button
+                    className="px-6 py-2 rounded-md font-medium border border-gray-300 hover:bg-gray-50"
+                    onClick={() => setStep('datetime')}
+                  >
+                    Back
+                  </button>
+                  <button
+                    className="px-6 py-2 rounded-md font-medium bg-blue-600 text-white hover:bg-blue-700"
+                    onClick={() => setStep('confirm')}
+                  >
+                    Next: Confirm Appointment
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </main>
+            )}
 
-      {/* Provider Modal */}
+            {/* Step 5: Confirm */}
+            {step === 'confirm' && (
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Confirm Appointment</h2>
+
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                  <h3 className="font-medium text-lg mb-2">Appointment Summary</h3>
+
+                  <div className="space-y-2">
+                    <p>
+                      <span className="font-medium text-gray-700">Service:</span>{' '}
+                      {getSelectedServiceName()}
+                    </p>
+                    <p>
+                      <span className="font-medium text-gray-700">Provider:</span>{' '}
+                      {getSelectedDoctorName()}
+                    </p>
+                    <p>
+                      <span className="font-medium text-gray-700">Date:</span>{' '}
+                      {selectedDate?.toLocaleDateString()}
+                    </p>
+                    <p>
+                      <span className="font-medium text-gray-700">Time:</span> {selectedTime}
+                    </p>
+
+                    {notes && (
+                      <div>
+                        <p className="font-medium text-gray-700">Notes:</p>
+                        <p className="bg-white p-2 rounded mt-1">{notes}</p>
+                      </div>
+                    )}
+
+                    {isPastAppointment && isCompleted && (
+                      <p>
+                        <span className="font-medium text-gray-700">Result:</span>{' '}
+                        {appointmentResult === 'clear' && 'Clear / Normal'}
+                        {appointmentResult === 'abnormal' && 'Abnormal'}
+                        {appointmentResult === 'pending' && 'Results Pending'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Add to calendar links */}
+                {!isPastAppointment && (
+                  <div className="mb-6">
+                    <h3 className="font-medium mb-2">Add to Calendar:</h3>
+                    <div className="flex space-x-3">
+                      <a
+                        href={getCalendarLinks().google}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
+                      >
+                        <FaCalendarAlt className="mr-2" /> Google Calendar
+                      </a>
+                      <a
+                        href={getCalendarLinks().outlook}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200"
+                      >
+                        <IoLogoMicrosoft className="mr-2" /> Outlook Calendar
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* Navigation buttons */}
+                <div className="mt-8 flex justify-between">
+                  <button
+                    className="px-6 py-2 rounded-md font-medium border border-gray-300 hover:bg-gray-50"
+                    onClick={() => setStep('notes')}
+                  >
+                    Back
+                  </button>
+                  <button
+                    className="px-6 py-2 rounded-md font-medium bg-green-600 text-white hover:bg-green-700"
+                    onClick={recordAppointment}
+                  >
+                    {isPastAppointment ? 'Record Appointment' : 'Confirm Appointment'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Provider detail modal */}
       {showProviderModal && selectedProvider && (
         <BookProviderModal
           provider={selectedProvider.name}
-          location={selectedProvider.location || ''}
           specialty={selectedProvider.specialization}
-          clinic={selectedProvider.clinic}
-          phone={selectedProvider.phone}
+          clinic={selectedProvider.clinic || ''}
+          phone={selectedProvider.phone || ''}
+          location={selectedProvider.location || ''}
           onClose={closeProviderModal}
-          onRecordAppointment={recordAppointment}
+          onRecordAppointment={() => {
+            closeProviderModal();
+            setSelectedDoctor(selectedProvider.id);
+            setStep('datetime');
+          }}
         />
       )}
     </div>
