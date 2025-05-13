@@ -19,6 +19,7 @@ import { IoLogoMicrosoft } from 'react-icons/io5';
 import ScreeningsServicesList from '@/app/components/ScreeningsServicesList';
 import { ScreeningRecommendation } from '@/app/components/types';
 import { useGuidelines } from '@/app/hooks/useGuidelines';
+import { fetchProviders } from '@/lib/providerService';
 import GuidelineService from '@/lib/services/guidelineService';
 import { UserProfile } from '@/lib/types';
 
@@ -98,20 +99,43 @@ const NewAppointmentPage = () => {
   // State for other services from guidelines
   const [otherServices, setOtherServices] = useState<ServiceType[]>([]);
 
-  // Load user profile
+  // State for doctors
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [isLoadingProviders, setIsLoadingProviders] = useState<boolean>(true);
+
+  // Load user profile and providers
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchData = async () => {
       try {
+        // Fetch user profile
         const profileData = await GuidelineService.getUserProfile();
         if (profileData) {
           setUser(profileData);
         }
+
+        // Fetch providers from API
+        const providers = await fetchProviders();
+
+        // Map API providers to Doctor interface format
+        const mappedDoctors = providers.map((provider) => ({
+          id: provider.id,
+          name: provider.name,
+          specialization: provider.specialty,
+          clinic: provider.clinic,
+          phone: provider.phone,
+          location: provider.address,
+          image: provider.profileImage,
+        }));
+
+        setDoctors(mappedDoctors);
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        console.error('Error fetching data:', error);
+      } finally {
+        setIsLoadingProviders(false);
       }
     };
 
-    fetchUserProfile();
+    fetchData();
   }, []);
 
   // Use the custom hook to manage guidelines and related logic
@@ -212,80 +236,10 @@ const NewAppointmentPage = () => {
     };
   };
 
-  // Mock doctors data
-  const doctors: Doctor[] = [
-    {
-      id: '1',
-      name: 'Dr. Sarah Johnson',
-      specialization: 'Primary Care Physician',
-      clinic: 'HealthFirst Medical Group',
-      phone: '(555) 123-4567',
-      location: '123 Main St, Anytown, USA',
-    },
-    {
-      id: '2',
-      name: 'Dr. Michael Chen',
-      specialization: 'Cardiologist',
-      clinic: 'Heart Care Center',
-      phone: '(555) 987-6543',
-      location: '456 Cardiology Ln, Hearttown, USA',
-    },
-    {
-      id: '3',
-      name: 'Dr. Emily Rodriguez',
-      specialization: 'OB/GYN',
-      clinic: "Women's Health Associates",
-      phone: '(555) 789-0123',
-      location: "789 Women's Health Blvd, Healthville, USA",
-    },
-    {
-      id: '4',
-      name: 'Dr. James Wilson',
-      specialization: 'Dermatologist',
-      clinic: 'Clear Skin Dermatology',
-      phone: '(555) 234-5678',
-      location: '321 Derma Dr, Skintown, USA',
-    },
-  ];
-
-  // Get relevant doctors based on selected service
+  // Get relevant doctors based on selected service - now returning all doctors without filtering
   const getRelevantDoctors = () => {
-    if (!selectedService) return doctors;
-
-    // Find the selected service
-    const selectedScreening = screenings.find((s) => s.id === selectedService);
-    const selectedOtherService = otherServices.find((s) => s.id === selectedService);
-
-    const service = selectedScreening || selectedOtherService;
-
-    if (!service) return doctors;
-
-    // Filter doctors based on specialization that matches the service name
-    return doctors.filter((doctor) => {
-      // For mammogram or breast exam, show OB/GYN
-      if (
-        service.name.toLowerCase().includes('breast') ||
-        service.name.toLowerCase().includes('mammogram')
-      ) {
-        return doctor.specialization === 'OB/GYN';
-      }
-
-      // For skin exams, show dermatologists
-      if (service.name.toLowerCase().includes('skin')) {
-        return doctor.specialization === 'Dermatologist';
-      }
-
-      // For heart screenings, show cardiologists
-      if (
-        service.name.toLowerCase().includes('heart') ||
-        service.name.toLowerCase().includes('cholesterol')
-      ) {
-        return doctor.specialization === 'Cardiologist';
-      }
-
-      // Default to primary care
-      return doctor.specialization === 'Primary Care Physician';
-    });
+    // Return all doctors without filtering by service
+    return doctors;
   };
 
   const relevantDoctors = getRelevantDoctors();
@@ -860,7 +814,7 @@ const NewAppointmentPage = () => {
                 <div className="mb-6 relative">
                   <input
                     type="text"
-                    placeholder="Search for a provider..."
+                    placeholder="Search for a provider by name or specialty..."
                     className="w-full p-3 pl-10 border border-gray-300 rounded-lg"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -871,45 +825,69 @@ const NewAppointmentPage = () => {
                 {/* Providers list */}
                 <div className="mb-6">
                   <h3 className="text-lg font-medium mb-3">Providers</h3>
-                  <div className="space-y-3">
-                    {getRelevantDoctors()
-                      .filter(
-                        (doctor) =>
-                          searchTerm === '' ||
-                          doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          doctor.specialization.toLowerCase().includes(searchTerm.toLowerCase())
-                      )
-                      .map((doctor) => (
-                        <div
-                          key={doctor.id}
-                          className={`border p-4 rounded-lg cursor-pointer hover:bg-blue-50 ${
-                            selectedDoctor === doctor.id
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-gray-200'
-                          }`}
-                          onClick={() => setSelectedDoctor(doctor.id)}
-                        >
-                          <div className="flex justify-between">
-                            <div>
-                              <h4 className="font-medium">{doctor.name}</h4>
-                              <p className="text-gray-600 text-sm">{doctor.specialization}</p>
-                              {doctor.clinic && (
-                                <p className="text-gray-500 text-xs mt-1">{doctor.clinic}</p>
-                              )}
+                  <p className="text-sm text-gray-600 mb-3">
+                    Select a provider and use their contact information to schedule your appointment
+                    directly. This app will help you record and track your appointments.
+                  </p>
+                  {isLoadingProviders ? (
+                    <div className="text-center py-4">Loading providers...</div>
+                  ) : doctors.length > 0 ? (
+                    <div className="space-y-3">
+                      {doctors
+                        .filter(
+                          (doctor) =>
+                            searchTerm === '' ||
+                            doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            doctor.specialization
+                              .toLowerCase()
+                              .includes(searchTerm.toLowerCase()) ||
+                            (doctor.clinic &&
+                              doctor.clinic.toLowerCase().includes(searchTerm.toLowerCase()))
+                        )
+                        .map((doctor) => (
+                          <div
+                            key={doctor.id}
+                            className={`border p-4 rounded-lg cursor-pointer hover:bg-blue-50 ${
+                              selectedDoctor === doctor.id
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-200'
+                            }`}
+                            onClick={() => setSelectedDoctor(doctor.id)}
+                          >
+                            <div className="flex justify-between">
+                              <div>
+                                <h4 className="font-medium">{doctor.name}</h4>
+                                <p className="text-gray-600 text-sm">{doctor.specialization}</p>
+                                {doctor.clinic && (
+                                  <p className="text-gray-500 text-xs mt-1">{doctor.clinic}</p>
+                                )}
+                                {doctor.phone && (
+                                  <p className="text-blue-600 text-sm mt-1 flex items-center">
+                                    <FaPhone className="mr-1" size={12} /> {doctor.phone}
+                                  </p>
+                                )}
+                              </div>
+                              <button
+                                className="text-blue-600 hover:text-blue-800 text-sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openProviderModal(doctor);
+                                }}
+                              >
+                                Contact Info
+                              </button>
                             </div>
-                            <button
-                              className="text-blue-600 hover:text-blue-800 text-sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openProviderModal(doctor);
-                              }}
-                            >
-                              View Details
-                            </button>
                           </div>
-                        </div>
-                      ))}
-                  </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 border border-gray-200 rounded-lg text-center">
+                      <p className="text-gray-500">No providers found.</p>
+                      <p className="text-gray-500 text-sm mt-1">
+                        Try using a custom provider instead.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Custom Provider Option */}
