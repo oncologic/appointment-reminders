@@ -1,10 +1,9 @@
 import {
   GuidelineItem,
   UserPreferences,
-  UserProfile,
 } from '../../app/components/PersonalizedGuidelines';
-import { ScreeningRecommendation } from '../../app/components/types';
-import { getToolsAndResourcesForGuideline, upcomingScreenings } from '../mockData';
+import { UserProfile } from '../types';
+import { getToolsAndResourcesForGuideline } from '../mockData';
 
 // Type definitions for a guideline
 export interface AgeRange {
@@ -24,152 +23,8 @@ export interface GuidelineResource {
 
 // Initial set of health guidelines as examples
 export const INITIAL_GUIDELINES = [
-  {
-    id: 'prostate_screening',
-    name: 'Prostate Cancer Screening',
-    description: 'Recommendations for prostate cancer screening through PSA testing.',
-    frequency: 'Based on risk factors and PSA levels',
-    frequencyMonths: 12, // Default to annual but can be adjusted
-    category: 'Cancer Screening',
-    genders: ['male'] as ('male' | 'female' | 'all')[],
-    ageRanges: [
-      {
-        min: 40,
-        max: 44,
-        label: '40-44',
-        frequency: 'Consider baseline screening for high-risk men',
-        frequencyMonths: 12, // Annual for high-risk
-        notes: 'Including African American men and those with family history',
-      },
-      {
-        min: 45,
-        max: 49,
-        label: '45-49',
-        frequency: 'Consider screening for high-risk men',
-        frequencyMonths: 12, // Annual for high-risk
-        notes: 'Discuss benefits and risks with healthcare provider',
-      },
-      {
-        min: 50,
-        max: 69,
-        label: '50-69',
-        frequency: 'Consider screening every 1-2 years',
-        frequencyMonths: 24, // Every 2 years is typical
-        notes: 'Based on PSA levels and individual risk assessment',
-      },
-      {
-        min: 70,
-        max: null,
-        label: '70+',
-        frequency: 'Individualized decision based on health status',
-        frequencyMonths: 24, // Every 2 years if continuing screening
-        notes: 'Limited benefit for men with less than 10-15 year life expectancy',
-      },
-    ],
-    visibility: 'public' as 'public' | 'private',
-    createdBy: 'system',
-    tags: ['cancer', "men's health", 'preventive'],
-    resources: [
-      {
-        name: 'Prostate Cancer Risk Calculator',
-        url: 'https://www.pcpcc.org/tools/prostate-cancer-risk-calculator',
-        description:
-          'Assessment tool to help determine individual risk of prostate cancer based on multiple factors',
-        type: 'risk' as 'risk',
-      },
-      {
-        name: 'American Cancer Society Guidelines',
-        url: 'https://www.cancer.org/cancer/prostate-cancer/detection-diagnosis-staging/acs-recommendations.html',
-        description: 'Official screening recommendations from the American Cancer Society',
-        type: 'resource' as 'resource',
-      },
-    ],
-  },
-  {
-    id: 'mammogram',
-    name: 'Mammogram Screening',
-    description: 'Breast cancer screening through mammography for early detection.',
-    frequency: 'Every 1-2 years depending on age and risk factors',
-    frequencyMonths: 12, // Default to annual but overridden at age ranges
-    category: 'Cancer Screening',
-    genders: ['female'] as ('male' | 'female' | 'all')[],
-    ageRanges: [
-      {
-        min: 40,
-        max: 44,
-        label: '40-44',
-        frequency: 'Optional annual screening',
-        frequencyMonths: 12, // Annual
-        notes: 'Individual decision based on personal values and risk factors',
-      },
-      {
-        min: 45,
-        max: 54,
-        label: '45-54',
-        frequency: 'Annual screening recommended',
-        frequencyMonths: 12, // Annual
-        notes: 'More frequent for those with family history or genetic risk factors',
-      },
-      {
-        min: 55,
-        max: 74,
-        label: '55-74',
-        frequency: 'Every 1-2 years',
-        frequencyMonths: 24, // Every 2 years
-        notes: 'Option to continue annual screening based on preference',
-      },
-      {
-        min: 75,
-        max: null,
-        label: '75+',
-        frequency: 'Individualized decision',
-        frequencyMonths: 24, // Every 2 years if continuing
-        notes: 'Based on overall health and expected longevity',
-      },
-    ],
-    visibility: 'public' as 'public' | 'private',
-    createdBy: 'system',
-    tags: ['cancer', "women's health", 'preventive'],
-    resources: [
-      {
-        name: 'Breast Cancer Risk Assessment Tool',
-        url: 'https://bcrisktool.cancer.gov/',
-        description:
-          'Calculate your five-year and lifetime risks of developing invasive breast cancer',
-        type: 'risk' as 'risk',
-      },
-      {
-        name: 'Dense Breast Tissue Information',
-        url: 'https://www.cancer.gov/types/breast/breast-changes/dense-breasts',
-        description:
-          'Information about dense breast tissue and additional screening considerations',
-        type: 'resource' as 'resource',
-      },
-      {
-        name: 'Mammogram Preparation Guidelines',
-        url: 'https://www.cdc.gov/cancer/breast/basic_info/mammograms.htm',
-        description: 'How to prepare for your mammogram screening appointment',
-        type: 'resource' as 'resource',
-      },
-    ],
-  },
+  // ... existing code ...
 ];
-
-// Initial user profile
-export const DEFAULT_USER_PROFILE: UserProfile = {
-  name: 'Jane Doe',
-  age: 38,
-  dateOfBirth: '1986-06-15', // Added DOB for a 38-year-old (as of 2024)
-  gender: 'female',
-  riskFactors: {
-    familyHistoryBreastCancer: false,
-    familyHistoryColonCancer: false,
-    smoking: false,
-    sunExposure: 'moderate',
-  },
-  isAdmin: false,
-  userId: 'user_default',
-};
 
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   selectedGuidelineIds: ['2', '1', '3'], // Breast cancer (2), Colorectal cancer (1), Cervical cancer (3)
@@ -177,7 +32,6 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
 
 const STORAGE_KEYS = {
   GUIDELINES: 'health_guidelines',
-  USER_PROFILE: 'user_profile',
   USER_PREFERENCES: 'user_preferences',
 };
 
@@ -312,13 +166,49 @@ export const GuidelineService = {
   },
 
   // Get user profile
-  getUserProfile: (): UserProfile => {
-    return getFromStorage<UserProfile>(STORAGE_KEYS.USER_PROFILE, DEFAULT_USER_PROFILE);
+  getUserProfile: async (): Promise<UserProfile | null> => {
+    try {
+      const response = await fetch('/api/users/me');
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          return null; // Not authenticated
+        }
+        throw new Error(`Error fetching user profile: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting user profile:', error);
+      return null;
+    }
   },
 
-  // Save user profile
-  saveUserProfile: (profile: UserProfile): void => {
-    saveToStorage(STORAGE_KEYS.USER_PROFILE, profile);
+  // Save user profile (updates existing profile)
+  saveUserProfile: async (profile: UserProfile): Promise<boolean> => {
+    if (!profile || !profile.userId) {
+      console.error('Invalid user profile data');
+      return false;
+    }
+    
+    try {
+      const response = await fetch(`/api/users/${profile.userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profile),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error updating user profile: ${response.status}`);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error saving user profile:', error);
+      return false;
+    }
   },
 
   // Get user preferences
@@ -331,67 +221,91 @@ export const GuidelineService = {
     saveToStorage(STORAGE_KEYS.USER_PREFERENCES, preferences);
   },
 
-  // Reset all data to defaults
+  // Reset all data to defaults (only resets guidelines and preferences, not user profile)
   resetToDefaults: (): void => {
     GuidelineService.saveGuidelines(INITIAL_GUIDELINES);
-    GuidelineService.saveUserProfile(DEFAULT_USER_PROFILE);
     GuidelineService.saveUserPreferences(DEFAULT_USER_PREFERENCES);
+    // No longer resetting user profile as it's stored in the database
   },
 
   // Get guidelines relevant to the user
-  getRelevantGuidelines: (age: number, gender: string): GuidelineItem[] => {
-    const guidelines = GuidelineService.getGuidelines();
-
-    return guidelines.filter((guideline) => {
-      // Check gender relevance
-      const genderRelevant =
-        guideline.genders.includes('all') ||
-        guideline.genders.includes(gender as 'male' | 'female');
-
-      if (!genderRelevant) return false;
-
-      // Check age ranges
-      let ageRelevant = false;
-      for (const range of guideline.ageRanges) {
-        if (age >= range.min && (range.max === null || age <= range.max)) {
-          ageRelevant = true;
-          break;
-        }
+  getRelevantGuidelines: async (userId: string): Promise<GuidelineItem[]> => {
+    try {
+      // Fetch user profile to get age and gender
+      const userProfile = await GuidelineService.getUserProfile();
+      if (!userProfile) {
+        return [];
       }
-
-      return ageRelevant;
-    });
+      
+      const { age, gender } = userProfile;
+      const guidelines = GuidelineService.getGuidelines(userId);
+  
+      return guidelines.filter((guideline) => {
+        // Check gender relevance
+        const genderRelevant =
+          guideline.genders.includes('all') ||
+          guideline.genders.includes(gender as 'male' | 'female');
+  
+        if (!genderRelevant) return false;
+  
+        // Check age ranges
+        let ageRelevant = false;
+        for (const range of guideline.ageRanges) {
+          if (age >= range.min && (range.max === null || age <= range.max)) {
+            ageRelevant = true;
+            break;
+          }
+        }
+  
+        return ageRelevant;
+      });
+    } catch (error) {
+      console.error('Error getting relevant guidelines:', error);
+      return [];
+    }
   },
 
   // Get guidelines coming up in the next few years
-  getUpcomingGuidelines: (age: number, gender: string, yearsAhead = 5): GuidelineItem[] => {
-    const guidelines = GuidelineService.getGuidelines();
-    const relevantNow = GuidelineService.getRelevantGuidelines(age, gender);
-
-    return guidelines.filter((guideline) => {
-      // Skip if already relevant
-      if (relevantNow.some((g) => g.id === guideline.id)) {
-        return false;
+  getUpcomingGuidelines: async (userId: string, yearsAhead = 5): Promise<GuidelineItem[]> => {
+    try {
+      // Fetch user profile to get age and gender
+      const userProfile = await GuidelineService.getUserProfile();
+      if (!userProfile) {
+        return [];
       }
-
-      // Check gender relevance
-      const genderRelevant =
-        guideline.genders.includes('all') ||
-        guideline.genders.includes(gender as 'male' | 'female');
-
-      if (!genderRelevant) return false;
-
-      // Check if it will be relevant in the next X years
-      let comingSoon = false;
-      for (const range of guideline.ageRanges) {
-        if (range.min > age && range.min <= age + yearsAhead) {
-          comingSoon = true;
-          break;
+      
+      const { age, gender } = userProfile;
+      const guidelines = GuidelineService.getGuidelines(userId);
+      const relevantNow = await GuidelineService.getRelevantGuidelines(userId);
+  
+      return guidelines.filter((guideline) => {
+        // Skip if already relevant
+        if (relevantNow.some((g) => g.id === guideline.id)) {
+          return false;
         }
-      }
-
-      return comingSoon;
-    });
+  
+        // Check gender relevance
+        const genderRelevant =
+          guideline.genders.includes('all') ||
+          guideline.genders.includes(gender as 'male' | 'female');
+  
+        if (!genderRelevant) return false;
+  
+        // Check if it will be relevant in the next X years
+        let comingSoon = false;
+        for (const range of guideline.ageRanges) {
+          if (range.min > age && range.min <= age + yearsAhead) {
+            comingSoon = true;
+            break;
+          }
+        }
+  
+        return comingSoon;
+      });
+    } catch (error) {
+      console.error('Error getting upcoming guidelines:', error);
+      return [];
+    }
   },
 
   /**
@@ -452,7 +366,7 @@ export const GuidelineService = {
    * @param guidelineId ID of the guideline that was completed
    * @returns The updated guideline with lastCompletedDate and nextDueDate
    */
-  markGuidelineCompleted: (guidelineId: string): GuidelineItem | null => {
+  markGuidelineCompleted: async (guidelineId: string): Promise<GuidelineItem | null> => {
     const guidelines = GuidelineService.getGuidelines();
     const guidelineIndex = guidelines.findIndex((g) => g.id === guidelineId);
 
@@ -467,7 +381,7 @@ export const GuidelineService = {
     const updatedGuideline = {
       ...guideline,
       lastCompletedDate: today.toISOString(),
-      nextDueDate: GuidelineService.calculateNextDueDate(guideline, today),
+      nextDueDate: await GuidelineService.calculateNextDueDate(guideline, today),
     };
 
     // Save the updated guideline
@@ -483,8 +397,8 @@ export const GuidelineService = {
    * @param fromDate The date to calculate from (defaults to today)
    * @returns ISO date string for when the guideline will next be due
    */
-  calculateNextDueDate: (guideline: GuidelineItem, fromDate = new Date()): string => {
-    const userProfile = GuidelineService.getUserProfile();
+  calculateNextDueDate: async (guideline: GuidelineItem, fromDate = new Date()): Promise<string> => {
+    const userProfile = await GuidelineService.getUserProfile();
     if (!userProfile) {
       // If no user profile, just use default frequency
       const defaultFrequency = guideline.frequencyMonths || 12; // Default to annual
