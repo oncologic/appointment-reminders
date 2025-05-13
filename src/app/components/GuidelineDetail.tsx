@@ -195,12 +195,12 @@ const GuidelineDetail = ({
               </div>
             </div>
 
-            <button
+            {/* <button
               onClick={handleMarkCompleted}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
             >
               <FaCheckCircle className="mr-2" /> Mark as Completed Today
-            </button>
+            </button> */}
           </div>
 
           {completedMessage && (

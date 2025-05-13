@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FaArrowLeft } from 'react-icons/fa';
 
+import { UserProfile } from '@/lib/types';
+
 import { getToolsAndResourcesForGuideline } from '../../../lib/mockData';
 import GuidelineService from '../../../lib/services/guidelineService';
 import GuidelineDetail, {
@@ -12,7 +14,6 @@ import GuidelineDetail, {
   RiskAssessmentTool,
 } from '../../components/GuidelineDetail';
 import { GuidelineItem } from '../../components/PersonalizedGuidelines';
-import { UserProfile } from '@/lib/types';
 
 const GuidelinePage = () => {
   const params = useParams();
@@ -42,7 +43,7 @@ const GuidelinePage = () => {
         setUserProfile(profile);
 
         // Load guidelines
-        const allGuidelines = GuidelineService.getGuidelines(profile.userId);
+        const allGuidelines = await GuidelineService.getGuidelines(profile.userId);
         const foundGuideline = allGuidelines.find((g) => g.id === guidelineId);
 
         if (!foundGuideline) {
@@ -54,7 +55,7 @@ const GuidelinePage = () => {
         setGuideline(foundGuideline);
 
         // Load user preferences
-        const prefs = GuidelineService.getUserPreferences();
+        const prefs = await GuidelineService.getUserPreferences(profile.userId);
         setUserPreferences(prefs);
       } catch (err) {
         console.error('Error loading guideline:', err);

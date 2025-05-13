@@ -161,22 +161,37 @@ export const GuidelineService = {
   // Helper function to convert API guidelines to our GuidelineItem format
   _formatGuidelineFromApi: (guideline: any): GuidelineItem => {
     return {
-      ...guideline,
-      // Map snake_case to camelCase properties
+      id: guideline.id,
+      name: guideline.name,
+      description: guideline.description,
+      frequency: guideline.frequency,
       frequencyMonths: guideline.frequency_months,
       frequencyMonthsMax: guideline.frequency_months_max,
+      category: guideline.category,
+      genders: guideline.genders,
+      visibility: guideline.visibility,
       createdBy: guideline.created_by,
+      tags: guideline.tags || [],
       originalGuidelineId: guideline.original_guideline_id,
       lastCompletedDate: guideline.last_completed_date,
       nextDueDate: guideline.next_due_date,
       // Map age ranges from guideline_age_ranges to ageRanges
       ageRanges: (guideline.guideline_age_ranges || []).map((range: any) => ({
+        id: range.id,
         min: range.min_age,
         max: range.max_age,
         label: range.label,
         frequency: range.frequency,
         frequencyMonths: range.frequency_months,
+        frequencyMonthsMax: range.frequency_months_max,
         notes: range.notes,
+      })),
+      resources: (guideline.guideline_resources || []).map((resource: any) => ({
+        id: resource.id,
+        name: resource.name,
+        url: resource.url,
+        description: resource.description,
+        type: resource.type,
       })),
     };
   },
