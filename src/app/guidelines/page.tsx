@@ -20,7 +20,7 @@ const GuidelinesPage = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(
     GuidelineService.getUserProfile()
   );
-  const [currentView, setCurrentView] = useState<GuidelineView>(GuidelineView.RecommendedView);
+  const [currentView, setCurrentView] = useState<GuidelineView>(GuidelineView.MyScreenings);
   const [filterStatus, setFilterStatus] = useState<string[]>([
     'due',
     'overdue',
@@ -99,7 +99,7 @@ const GuidelinesPage = () => {
 
   const renderCurrentView = () => {
     switch (currentView) {
-      case GuidelineView.RecommendedView:
+      case GuidelineView.MyScreenings:
         return (
           <RecommendedScreeningsView
             screenings={filteredScreenings}
@@ -167,13 +167,13 @@ const GuidelinesPage = () => {
         <GuidelineTabs currentView={currentView} setCurrentView={setCurrentView} />
 
         {/* Age-based recommendations section - only show in recommended view */}
-        {currentView === GuidelineView.RecommendedView && (
+        {currentView === GuidelineView.MyScreenings && (
           <AgeBasedRecommendations screenings={screenings} userProfile={userProfile} />
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left sidebar - only show in recommended view */}
-          {currentView === GuidelineView.RecommendedView && (
+          {currentView === GuidelineView.MyScreenings && (
             <div className="lg:col-span-1">
               <ScreeningFiltersSidebar
                 filterStatus={filterStatus}
@@ -189,7 +189,7 @@ const GuidelinesPage = () => {
           {/* Main content */}
           <div
             className={
-              currentView === GuidelineView.RecommendedView ? 'lg:col-span-3' : 'lg:col-span-4'
+              currentView === GuidelineView.MyScreenings ? 'lg:col-span-3' : 'lg:col-span-4'
             }
           >
             {renderCurrentView()}

@@ -6,18 +6,27 @@ import React, { Suspense, useEffect, useState } from 'react';
 import {
   FaArrowLeft,
   FaCalendarAlt,
+  FaPhone,
   FaPlus,
   FaRegClock,
   FaRegComment,
+  FaSearch,
   FaUserMd,
 } from 'react-icons/fa';
 import { IoLogoMicrosoft } from 'react-icons/io5';
+
+import ScreeningsServicesList from '@/app/components/ScreeningsServicesList';
+
+import { BookProviderModal } from '../../components/BookProviderModal';
 
 interface Doctor {
   id: string;
   name: string;
   specialization: string;
   image?: string;
+  clinic?: string;
+  phone?: string;
+  location?: string;
 }
 
 interface ServiceType {
@@ -65,6 +74,14 @@ const NewAppointmentPage = () => {
 
   // State for my screenings
   const [myScreenings, setMyScreenings] = useState<ServiceType[]>([]);
+
+  // New state variables for provider search and modal
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedProvider, setSelectedProvider] = useState<Doctor | null>(null);
+  const [showProviderModal, setShowProviderModal] = useState<boolean>(false);
+
+  // State for search filters
+  const [searchFilter, setSearchFilter] = useState<'all' | 'providers' | 'screenings'>('all');
 
   // Mock data - tailored for a 38-year-old female
   const serviceTypes: ServiceType[] = [
@@ -220,56 +237,102 @@ const NewAppointmentPage = () => {
       name: 'Dr. Sarah Johnson',
       specialization: 'Family Medicine',
       image: '/doctor-avatar.png',
+      clinic: 'HealthFirst Medical Center',
+      phone: '(555) 123-4567',
+      location: '123 Main St, Suite 400',
     },
     {
       id: '2',
       name: 'Dr. James Wilson',
       specialization: 'Internal Medicine',
       image: '/doctor-avatar.png',
+      clinic: 'City Medical Associates',
+      phone: '(555) 234-5678',
+      location: '456 Park Ave, Floor 2',
     },
     {
       id: '3',
       name: 'Dr. Maria Rodriguez',
       specialization: 'Dermatology',
       image: '/doctor-avatar.png',
+      clinic: 'Clear Skin Dermatology',
+      phone: '(555) 345-6789',
+      location: '789 Oak St, Suite 300',
     },
     {
       id: '4',
       name: 'Dr. David Kim',
       specialization: 'Gastroenterology',
       image: '/doctor-avatar.png',
+      clinic: 'Digestive Health Center',
+      phone: '(555) 456-7890',
+      location: '321 Elm St, Suite 200',
     },
     {
       id: '5',
       name: 'Dr. Emily Chen',
       specialization: 'Oncology',
       image: '/doctor-avatar.png',
+      clinic: 'Regional Cancer Center',
+      phone: '(555) 567-8901',
+      location: '555 Cedar Blvd, Floor 3',
     },
     {
       id: '6',
       name: 'Dr. Lisa Williams',
       specialization: 'Gynecology',
       image: '/doctor-avatar.png',
+      clinic: "Women's Health Associates",
+      phone: '(555) 678-9012',
+      location: '654 Pine Ave, Suite 150',
     },
     {
       id: '7',
       name: 'Dr. Robert Smith',
       specialization: 'Dentistry',
       image: '/doctor-avatar.png',
+      clinic: 'Bright Smile Dental',
+      phone: '(555) 789-0123',
+      location: '987 Maple Dr, Suite 100',
     },
     {
       id: '8',
       name: 'Dr. Michael Brown',
       specialization: 'Ophthalmology',
       image: '/doctor-avatar.png',
+      clinic: 'Clear Vision Eye Center',
+      phone: '(555) 890-1234',
+      location: '876 Walnut St, Floor 1',
     },
     {
       id: '9',
       name: 'Dr. Jennifer Parker',
       specialization: 'Psychiatry',
       image: '/doctor-avatar.png',
+      clinic: 'Wellness Mental Health',
+      phone: '(555) 901-2345',
+      location: '765 Birch Rd, Suite 250',
     },
   ];
+
+  // Filter doctors based on search term
+  const filteredDoctors = searchTerm
+    ? doctors.filter(
+        (doctor) =>
+          doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          doctor.specialization.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (doctor.clinic && doctor.clinic.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    : [];
+
+  // Filter screenings based on search term
+  const filteredScreenings = searchTerm
+    ? [...myScreenings, ...serviceTypes].filter(
+        (screening) =>
+          screening.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          screening.description.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
 
   // Filter doctors based on selected service
   const getRelevantDoctors = () => {
@@ -690,6 +753,24 @@ const NewAppointmentPage = () => {
     }
   };
 
+  // Function to open provider modal
+  const openProviderModal = (doctor: Doctor) => {
+    setSelectedProvider(doctor);
+    setShowProviderModal(true);
+  };
+
+  // Function to close provider modal
+  const closeProviderModal = () => {
+    setShowProviderModal(false);
+  };
+
+  // Function to record appointment after contacting provider
+  const recordAppointment = () => {
+    setShowProviderModal(false);
+    setSelectedDoctor(selectedProvider?.id || null);
+    setCurrentStep(1);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -710,6 +791,47 @@ const NewAppointmentPage = () => {
 
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
+          {/* How to Record an Appointment Guide */}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                <FaCalendarAlt className="mr-2 text-blue-600" /> How to Record Your Appointments
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                <div className="border rounded-lg p-4">
+                  <div className="bg-blue-100 text-blue-800 w-8 h-8 rounded-full flex items-center justify-center mb-3">
+                    1
+                  </div>
+                  <h3 className="font-medium text-gray-800 mb-2">Find a Provider</h3>
+                  <p className="text-sm text-gray-600">
+                    Search for healthcare providers by name, specialty, or clinic using the search
+                    bar below.
+                  </p>
+                </div>
+                <div className="border rounded-lg p-4">
+                  <div className="bg-blue-100 text-blue-800 w-8 h-8 rounded-full flex items-center justify-center mb-3">
+                    2
+                  </div>
+                  <h3 className="font-medium text-gray-800 mb-2">Schedule Your Appointment</h3>
+                  <p className="text-sm text-gray-600">
+                    Contact the provider directly to schedule your appointment at a time that works
+                    for you.
+                  </p>
+                </div>
+                <div className="border rounded-lg p-4">
+                  <div className="bg-blue-100 text-blue-800 w-8 h-8 rounded-full flex items-center justify-center mb-3">
+                    3
+                  </div>
+                  <h3 className="font-medium text-gray-800 mb-2">Record in Your Health History</h3>
+                  <p className="text-sm text-gray-600">
+                    After scheduling or attending your appointment, record it here to keep track in
+                    your health records.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Progress indicators */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
@@ -758,6 +880,129 @@ const NewAppointmentPage = () => {
                 >
                   Confirm
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Provider Search Section */}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                <FaUserMd className="mr-2 text-blue-600" /> Find a Provider or Service
+              </h2>
+              <p className="text-gray-600 mb-4">
+                Search for a healthcare provider or screening service. Contact providers directly to
+                schedule an appointment, then record it in your health records.
+              </p>
+
+              <div className="flex flex-wrap gap-2 mb-4">
+                <button
+                  onClick={() => setSearchFilter('all')}
+                  className={`px-3 py-1.5 text-sm rounded-full ${
+                    searchFilter === 'all'
+                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                      : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setSearchFilter('providers')}
+                  className={`px-3 py-1.5 text-sm rounded-full ${
+                    searchFilter === 'providers'
+                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                      : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
+                  }`}
+                >
+                  Providers
+                </button>
+                <button
+                  onClick={() => setSearchFilter('screenings')}
+                  className={`px-3 py-1.5 text-sm rounded-full ${
+                    searchFilter === 'screenings'
+                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                      : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
+                  }`}
+                >
+                  Screenings & Services
+                </button>
+              </div>
+
+              <div className="relative mb-6">
+                <input
+                  type="text"
+                  placeholder="Search for provider, screening, or service..."
+                  className="w-full border border-gray-300 rounded-md py-3 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
+              </div>
+
+              {searchTerm && (
+                <div>
+                  {/* Show Providers */}
+                  {(searchFilter === 'all' || searchFilter === 'providers') &&
+                    filteredDoctors.length > 0 && (
+                      <div className="mb-6">
+                        <h3 className="font-medium text-gray-800 mb-3">Providers</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {filteredDoctors.map((doctor) => (
+                            <div
+                              key={doctor.id}
+                              className="border rounded-lg p-4 hover:bg-blue-50 hover:border-blue-200 cursor-pointer transition"
+                              onClick={() => openProviderModal(doctor)}
+                            >
+                              <div className="flex items-center">
+                                <div className="w-12 h-12 bg-gray-200 rounded-full overflow-hidden flex-shrink-0">
+                                  <img
+                                    src={doctor.image || '/doctor-avatar.png'}
+                                    alt={doctor.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="ml-3">
+                                  <h3 className="font-medium text-gray-800">{doctor.name}</h3>
+                                  <p className="text-sm text-gray-500">{doctor.specialization}</p>
+                                  <p className="text-xs text-gray-500 mt-1">{doctor.clinic}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                  {/* Show Screenings & Services */}
+                  {(searchFilter === 'all' || searchFilter === 'screenings') &&
+                    filteredScreenings.length > 0 && (
+                      <ScreeningsServicesList
+                        screenings={filteredScreenings}
+                        searchQuery={searchTerm}
+                        onSearch={(query) => setSearchTerm(query)}
+                      />
+                    )}
+
+                  {((searchFilter === 'providers' && filteredDoctors.length === 0) ||
+                    (searchFilter === 'screenings' && filteredScreenings.length === 0) ||
+                    (searchFilter === 'all' &&
+                      filteredDoctors.length === 0 &&
+                      filteredScreenings.length === 0)) && (
+                    <div className="p-4 text-center text-gray-500">
+                      No results found matching your search criteria
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-4">
+                <h3 className="font-medium text-gray-800 mb-2">Already have an appointment?</h3>
+                <button
+                  onClick={() => setCurrentStep(1)}
+                  className="text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Record past or upcoming appointments
+                </button>
               </div>
             </div>
           </div>
@@ -1203,6 +1448,19 @@ const NewAppointmentPage = () => {
           )}
         </div>
       </main>
+
+      {/* Provider Modal */}
+      {showProviderModal && selectedProvider && (
+        <BookProviderModal
+          provider={selectedProvider.name}
+          location={selectedProvider.location || ''}
+          specialty={selectedProvider.specialization}
+          clinic={selectedProvider.clinic}
+          phone={selectedProvider.phone}
+          onClose={closeProviderModal}
+          onRecordAppointment={recordAppointment}
+        />
+      )}
     </div>
   );
 };

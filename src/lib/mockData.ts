@@ -25,7 +25,11 @@ export interface FriendRecommendation {
 
 export interface ScreeningResult {
   date: string;
-  provider: string;
+  provider: {
+    id: string;
+    name: string;
+    specialty?: string;
+  };
   result: 'clear' | 'abnormal' | 'pending';
   notes?: string;
   providerDetails?: {
@@ -177,7 +181,7 @@ export const appointments: Appointment[] = [
     detailsPath: '/appointments/appt-7',
     completed: true,
     result: {
-      status: 'followup',
+      status: 'abnormal',
       notes:
         'Dense breast tissue noted. Additional ultrasound recommended for complete evaluation. Schedule follow-up ultrasound within 2 weeks.',
       date: '2025-02-15',
@@ -335,6 +339,80 @@ export const upcomingScreenings: ScreeningRecommendation[] = [
     ],
   },
   {
+    id: 'mammogram',
+    title: 'Breast Cancer Screening',
+    description: 'Mammography and clinical breast exams for early detection',
+    icon: 'FaHeartbeat',
+    iconColor: 'text-pink-600',
+    bgColor: 'bg-pink-100',
+    status: 'completed',
+    statusText: 'Completed',
+    schedulePath: '/appointments/new?screening=mammogram',
+    detailsPath: '/screenings/mammogram',
+    previousResults: [
+      {
+        date: 'February 15, 2025',
+        provider: {
+          id: 'Dr. Maria Rodriguez',
+          name: 'Dr. Maria Rodriguez',
+          specialty: 'Radiology',
+        },
+        result: 'abnormal',
+        notes:
+          'Dense breast tissue noted. Additional ultrasound recommended for complete evaluation. Schedule follow-up ultrasound within 2 weeks.',
+        providerDetails: {
+          name: 'Dr. Maria Rodriguez',
+          specialty: 'Radiology',
+          clinic: "Women's Imaging Center",
+          address: '987 Health Parkway, San Francisco, CA 94115',
+          phone: '(415) 555-9876',
+          email: 'appointments@womensimaging.com',
+          website: 'www.womensimaging.com',
+        },
+      },
+      {
+        date: 'February 10, 2024',
+        provider: {
+          id: 'Dr. Maria Rodriguez',
+          name: 'Dr. Maria Rodriguez',
+          specialty: 'Radiology',
+        },
+        result: 'clear',
+        notes: 'No concerning findings. Dense breast tissue noted. Continue annual screening.',
+        providerDetails: {
+          name: 'Dr. Maria Rodriguez',
+          specialty: 'Radiology',
+          clinic: "Women's Imaging Center",
+          address: '987 Health Parkway, San Francisco, CA 94115',
+          phone: '(415) 555-9876',
+          email: 'appointments@womensimaging.com',
+          website: 'www.womensimaging.com',
+        },
+      },
+      {
+        date: 'February 3, 2023',
+        provider: {
+          id: 'Dr. Maria Rodriguez',
+          name: 'Dr. Maria Rodriguez',
+          specialty: 'Radiology',
+        },
+        result: 'clear',
+        notes:
+          'No abnormalities detected. Dense breast tissue noted. Next mammogram recommended in 12 months.',
+        providerDetails: {
+          name: 'Dr. Maria Rodriguez',
+          specialty: 'Radiology',
+          clinic: "Women's Imaging Center",
+          address: '987 Health Parkway, San Francisco, CA 94115',
+          phone: '(415) 555-9876',
+          email: 'appointments@womensimaging.com',
+          website: 'www.womensimaging.com',
+        },
+      },
+    ],
+    friendRecommendations: [],
+  },
+  {
     id: 'cervical-cancer',
     title: 'Cervical Cancer (Pap)',
     description: 'Screening test',
@@ -367,7 +445,11 @@ export const upcomingScreenings: ScreeningRecommendation[] = [
     previousResults: [
       {
         date: 'April 3, 2023',
-        provider: 'Dr. Robert Lee, Dermatologist',
+        provider: {
+          id: 'Dr. Robert Lee, Dermatologist',
+          name: 'Dr. Robert Lee',
+          specialty: 'Dermatology',
+        },
         result: 'abnormal',
         notes:
           'Suspicious mole on upper back was biopsied. Follow-up revealed benign lesion. Recommend annual skin checks with more frequent monitoring of the site.',
@@ -383,7 +465,11 @@ export const upcomingScreenings: ScreeningRecommendation[] = [
       },
       {
         date: 'April 18, 2022',
-        provider: 'Dr. Robert Lee, Dermatologist',
+        provider: {
+          id: 'Dr. Robert Lee, Dermatologist',
+          name: 'Dr. Robert Lee',
+          specialty: 'Dermatology',
+        },
         result: 'clear',
         notes:
           'No suspicious lesions identified. Continue using sunscreen and monitoring for any changes in moles.',
@@ -414,7 +500,11 @@ export const upcomingScreenings: ScreeningRecommendation[] = [
     previousResults: [
       {
         date: 'March 15, 2023',
-        provider: 'Dr. Emily Johnson',
+        provider: {
+          id: 'Dr. Emily Johnson',
+          name: 'Dr. Emily Johnson',
+          specialty: 'OB/GYN',
+        },
         result: 'clear',
         notes: 'No abnormalities detected. Next examination recommended in 12 months.',
         providerDetails: {
@@ -429,7 +519,11 @@ export const upcomingScreenings: ScreeningRecommendation[] = [
       },
       {
         date: 'February 22, 2022',
-        provider: 'Dr. Emily Johnson',
+        provider: {
+          id: 'Dr. Emily Johnson',
+          name: 'Dr. Emily Johnson',
+          specialty: 'OB/GYN',
+        },
         result: 'clear',
         notes: 'No concerning findings.',
         providerDetails: {
@@ -448,18 +542,6 @@ export const upcomingScreenings: ScreeningRecommendation[] = [
 ];
 
 export const futureScreenings: ScreeningRecommendation[] = [
-  {
-    id: 'mammogram',
-    title: 'Mammogram',
-    description: 'Breast cancer screening',
-    icon: 'FaHeartbeat',
-    iconColor: 'text-pink-600',
-    bgColor: 'bg-pink-100',
-    status: 'upcoming',
-    statusText: 'Due in 2 years (age 40)',
-    schedulePath: '/appointments/new?screening=mammogram',
-    friendRecommendations: [],
-  },
   {
     id: 'colonoscopy',
     title: 'Colonoscopy',

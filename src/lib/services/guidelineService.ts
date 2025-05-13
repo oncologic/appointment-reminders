@@ -508,6 +508,54 @@ export const GuidelineService = {
 
     return nextDue.toISOString();
   },
+
+  // Helper: Convert guideline to screening recommendation format
+  convertGuidelinesToScreenings: (
+    guidelines: GuidelineItem[],
+    userPreferences: UserPreferences,
+    userProfile: UserProfile
+  ): ScreeningRecommendation[] => {
+    const screenings: ScreeningRecommendation[] = [];
+    const selectedIds = userPreferences.selectedGuidelineIds || [];
+
+    selectedIds.forEach((id) => {
+      const guideline = guidelines.find((g) => g.id === id);
+      if (!guideline) return;
+
+      // Get the matching screening from the mock data if available
+      // This is used for demo purposes to show completed screenings with results
+      const mockUpcomingScreening = upcomingScreenings.find(
+        (s) => s.id === guideline.id || s.title.toLowerCase() === guideline.name.toLowerCase()
+      );
+
+      const { status, dueDate, lastCompleted, notes } = getScreeningStatusAndDueDate(
+        guideline,
+        userProfile,
+        userPreferences
+      );
+
+      // Create screening object
+      const screening: ScreeningRecommendation = {
+        id: guideline.id,
+        name: guideline.name,
+        description: guideline.description,
+        frequency: guideline.frequency,
+        ageRange: getAgeRangeDisplay(guideline.ageRanges),
+        ageRangeDetails: guideline.ageRanges,
+        status,
+        dueDate,
+        lastCompleted,
+        notes,
+        tags: guideline.tags,
+        // Add previousResults if they exist in the mock data
+        previousResults: mockUpcomingScreening?.previousResults || [],
+      };
+
+      screenings.push(screening);
+    });
+
+    return screenings;
+  },
 };
 
 export default GuidelineService;
