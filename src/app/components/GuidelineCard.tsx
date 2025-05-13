@@ -59,7 +59,7 @@ const GuidelineCard: React.FC<GuidelineCardProps> = ({
         guideline.id,
         userProfile.userId
       );
-      router.push(`/guidelines/edit/${personalizedGuideline.id}`);
+      router.push(`/guidelines/edit/${personalizedGuideline}`);
     } catch (error) {
       console.error('Error creating personalized guideline:', error);
       alert('There was an error creating your personalized guideline.');
@@ -77,9 +77,6 @@ const GuidelineCard: React.FC<GuidelineCardProps> = ({
             </Link>
           </h3>
           <div className="flex items-center gap-1 flex-wrap justify-end">
-            <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">
-              {guideline.category}
-            </span>
             {guideline.createdBy === 'system' && (
               <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
                 System
@@ -89,6 +86,28 @@ const GuidelineCard: React.FC<GuidelineCardProps> = ({
               <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
                 Relevant
               </span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 mt-1.5">
+          <span className="text-xs font-medium text-gray-500">Applies to:</span>
+          <div className="flex flex-wrap gap-1">
+            <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">
+              {guideline.category}
+            </span>
+            {guideline.genders.includes('all') ? (
+              <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                All Genders
+              </span>
+            ) : (
+              guideline.genders.map((g, idx) => (
+                <span
+                  key={idx}
+                  className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full"
+                >
+                  {g.charAt(0).toUpperCase() + g.slice(1)}
+                </span>
+              ))
             )}
           </div>
         </div>
@@ -134,15 +153,6 @@ const GuidelineCard: React.FC<GuidelineCardProps> = ({
             })}
           </ul>
         </div>
-
-        <div>
-          <h5 className="text-xs font-medium text-gray-500 mb-1">Applies to:</h5>
-          <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">
-            {guideline.genders.includes('all')
-              ? 'All'
-              : guideline.genders.map((g) => g.charAt(0).toUpperCase() + g.slice(1)).join(', ')}
-          </span>
-        </div>
       </div>
 
       {/* Footer with Action Buttons */}
@@ -158,14 +168,14 @@ const GuidelineCard: React.FC<GuidelineCardProps> = ({
         <div className="flex gap-1">
           <button
             onClick={handlePersonalize}
-            className="text-xs flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+            className="text-xs flex items-center px-2 py-1 bg-green-400 hover:bg-green-500 text-white rounded transition-colors"
           >
             <FaEdit className="mr-1" />
             Personalize
           </button>
           <button
             onClick={() => onAddToRecommended(guideline.id)}
-            className="text-xs flex items-center px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+            className="text-xs flex items-center px-2 py-1 bg-blue-400 hover:bg-blue-500 text-white rounded transition-colors"
           >
             <FaClipboardList className="mr-1" />
             Add

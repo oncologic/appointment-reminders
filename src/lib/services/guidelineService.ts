@@ -156,72 +156,92 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   selectedGuidelineIds: ['2', '1', '3'], // Breast cancer (2), Colorectal cancer (1), Cervical cancer (3)
 };
 
-const STORAGE_KEYS = {
-  GUIDELINES: 'health_guidelines',
-  USER_PREFERENCES: 'user_preferences',
-};
-
-// Helper functions for interacting with localStorage
-const getFromStorage = <T>(key: string, defaultValue: T): T => {
-  if (typeof window === 'undefined') {
-    return defaultValue;
-  }
-
-  try {
-    const storedValue = localStorage.getItem(key);
-    if (!storedValue) {
-      return defaultValue;
-    }
-    const parsedValue = JSON.parse(storedValue);
-    return parsedValue;
-  } catch (error) {
-    console.error(`Error getting ${key} from localStorage:`, error);
-    return defaultValue;
-  }
-};
-
-const saveToStorage = <T>(key: string, value: T): void => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (error) {
-    console.error(`Error saving ${key} to localStorage:`, error);
-  }
-};
-
 // Guideline service methods
 export const GuidelineService = {
+  // Helper function to convert API guidelines to our GuidelineItem format
+  _formatGuidelineFromApi: (guideline: any): GuidelineItem => {
+    return {
+      ...guideline,
+      // Map snake_case to camelCase properties
+      frequencyMonths: guideline.frequency_months,
+      frequencyMonthsMax: guideline.frequency_months_max,
+      createdBy: guideline.created_by,
+      originalGuidelineId: guideline.original_guideline_id,
+      lastCompletedDate: guideline.last_completed_date,
+      nextDueDate: guideline.next_due_date,
+      // Map age ranges from guideline_age_ranges to ageRanges
+      ageRanges: (guideline.guideline_age_ranges || []).map((range: any) => ({
+        min: range.min_age,
+        max: range.max_age,
+        label: range.label,
+        frequency: range.frequency,
+        frequencyMonths: range.frequency_months,
+        notes: range.notes,
+      })),
+    };
+  },
+
   // Get all guidelines (both public and user's private guidelines)
-  getGuidelines: (userId?: string): GuidelineItem[] => {
-    const allGuidelines = getFromStorage<GuidelineItem[]>(
-      STORAGE_KEYS.GUIDELINES,
-      INITIAL_GUIDELINES
-    );
+  getGuidelines: async (userId?: string): Promise<GuidelineItem[]> => {
+    try {
+      const url = userId ? `/api/guidelines?userId=${userId}` : '/api/guidelines';
 
-    // If no userId provided, return all guidelines
-    if (!userId) {
-      return allGuidelines;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch guidelines: ${response.status}`);
+      }
+
+      const data = await response.json();
+      // Handle response where guidelines are nested in a "guidelines" property
+      const guidelines = data.guidelines || data;
+
+      // Map the response to match our GuidelineItem type
+      return guidelines.map(GuidelineService._formatGuidelineFromApi);
+    } catch (error) {
+      console.error('Error fetching guidelines:', error);
+      return [];
     }
-
-    // Return public guidelines and user's private guidelines
-    return allGuidelines.filter(
-      (g) => g.visibility === 'public' || (g.visibility === 'private' && g.createdBy === userId)
-    );
   },
 
   // Get only public guidelines
-  getPublicGuidelines: (): GuidelineItem[] => {
-    const allGuidelines = GuidelineService.getGuidelines();
-    return allGuidelines.filter((g) => g.visibility === 'public');
+  getPublicGuidelines: async (): Promise<GuidelineItem[]> => {
+    try {
+      const response = await fetch('/api/guidelines?visibility=public');
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch public guidelines: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const guidelines = data.guidelines || data;
+
+      // Map the response to match our GuidelineItem type
+      return guidelines.map(GuidelineService._formatGuidelineFromApi);
+    } catch (error) {
+      console.error('Error fetching public guidelines:', error);
+      return [];
+    }
   },
 
   // Get a user's private guidelines
-  getUserGuidelines: (userId: string): GuidelineItem[] => {
-    const allGuidelines = GuidelineService.getGuidelines();
-    return allGuidelines.filter((g) => g.visibility === 'private' && g.createdBy === userId);
+  getUserGuidelines: async (userId: string): Promise<GuidelineItem[]> => {
+    try {
+      const response = await fetch(`/api/guidelines?userId=${userId}&visibility=private`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch user guidelines: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const guidelines = data.guidelines || data;
+
+      // Map the response to match our GuidelineItem type
+      return guidelines.map(GuidelineService._formatGuidelineFromApi);
+    } catch (error) {
+      console.error('Error fetching user guidelines:', error);
+      return [];
+    }
   },
 
   // Add a new guideline with visibility and user info
@@ -259,54 +279,96 @@ export const GuidelineService = {
   },
 
   // Update a guideline with permission check
-  updateGuideline: (
+  updateGuideline: async (
     guideline: GuidelineItem,
     userId: string,
     isAdmin: boolean
-  ): GuidelineItem[] => {
-    const guidelines = GuidelineService.getGuidelines();
+  ): Promise<GuidelineItem[]> => {
+    try {
+      // Find the original guideline
+      const response = await fetch(`/api/guidelines/${guideline.id}`);
 
-    // Find the original guideline
-    const originalGuideline = guidelines.find((g) => g.id === guideline.id);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch original guideline: ${response.status}`);
+      }
 
-    // If guideline doesn't exist or user doesn't have permission to edit
-    if (!originalGuideline || (!isAdmin && originalGuideline.createdBy !== userId)) {
-      return guidelines; // Return unchanged
+      const data = await response.json();
+      const originalGuideline = data.guideline || data;
+
+      // If guideline doesn't exist or user doesn't have permission to edit
+      if (!originalGuideline || (!isAdmin && originalGuideline.created_by !== userId)) {
+        return GuidelineService.getGuidelines();
+      }
+
+      // If trying to change from private to public, check admin status
+      if (
+        originalGuideline.visibility === 'private' &&
+        guideline.visibility === 'public' &&
+        !isAdmin
+      ) {
+        guideline.visibility = 'private'; // Force private if not admin
+      }
+
+      // Update the guideline
+      const updateResponse = await fetch(`/api/guidelines/${guideline.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          guideline,
+          ageRanges: guideline.ageRanges,
+          resources: guideline.resources || [],
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        throw new Error(`Failed to update guideline: ${updateResponse.status}`);
+      }
+
+      return GuidelineService.getGuidelines();
+    } catch (error) {
+      console.error('Error updating guideline:', error);
+      return GuidelineService.getGuidelines();
     }
-
-    // If trying to change from private to public, check admin status
-    if (
-      originalGuideline.visibility === 'private' &&
-      guideline.visibility === 'public' &&
-      !isAdmin
-    ) {
-      guideline.visibility = 'private'; // Force private if not admin
-    }
-
-    // Update the guideline
-    const updatedGuidelines = guidelines.map((g) => (g.id === guideline.id ? guideline : g));
-    GuidelineService.saveGuidelines(updatedGuidelines);
-    return updatedGuidelines;
   },
 
   // Delete a guideline with permission check
-  deleteGuideline: (id: string, userId: string, isAdmin: boolean): GuidelineItem[] => {
-    const guidelines = GuidelineService.getGuidelines();
-    const guidelineToDelete = guidelines.find((g) => g.id === id);
+  deleteGuideline: async (
+    id: string,
+    userId: string,
+    isAdmin: boolean
+  ): Promise<GuidelineItem[]> => {
+    try {
+      // Find the original guideline
+      const response = await fetch(`/api/guidelines/${id}`);
 
-    // If guideline doesn't exist or user doesn't have permission to delete
-    if (!guidelineToDelete || (!isAdmin && guidelineToDelete.createdBy !== userId)) {
-      return guidelines; // Return unchanged
+      if (!response.ok) {
+        throw new Error(`Failed to fetch guideline for deletion: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const guidelineToDelete = data.guideline || data;
+
+      // If guideline doesn't exist or user doesn't have permission to delete
+      if (!guidelineToDelete || (!isAdmin && guidelineToDelete.created_by !== userId)) {
+        return GuidelineService.getGuidelines();
+      }
+
+      // Delete the guideline
+      const deleteResponse = await fetch(`/api/guidelines/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!deleteResponse.ok) {
+        throw new Error(`Failed to delete guideline: ${deleteResponse.status}`);
+      }
+
+      return GuidelineService.getGuidelines();
+    } catch (error) {
+      console.error('Error deleting guideline:', error);
+      return GuidelineService.getGuidelines();
     }
-
-    const updatedGuidelines = guidelines.filter((g) => g.id !== id);
-    GuidelineService.saveGuidelines(updatedGuidelines);
-    return updatedGuidelines;
-  },
-
-  // Save all guidelines
-  saveGuidelines: (guidelines: GuidelineItem[]): void => {
-    // saveToStorage(STORAGE_KEYS.GUIDELINES, guidelines);
   },
 
   // Get user profile
@@ -356,20 +418,37 @@ export const GuidelineService = {
   },
 
   // Get user preferences
-  getUserPreferences: (): UserPreferences => {
-    return getFromStorage<UserPreferences>(STORAGE_KEYS.USER_PREFERENCES, DEFAULT_USER_PREFERENCES);
+  getUserPreferences: async (userId: string): Promise<UserPreferences> => {
+    try {
+      const response = await fetch(`/api/users/${userId}/preferences`);
+
+      if (!response.ok) {
+        return DEFAULT_USER_PREFERENCES;
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching user preferences:', error);
+      return DEFAULT_USER_PREFERENCES;
+    }
   },
 
   // Save user preferences
-  saveUserPreferences: (preferences: UserPreferences): void => {
-    saveToStorage(STORAGE_KEYS.USER_PREFERENCES, preferences);
-  },
+  saveUserPreferences: async (userId: string, preferences: UserPreferences): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/users/${userId}/preferences`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(preferences),
+      });
 
-  // Reset all data to defaults (only resets guidelines and preferences, not user profile)
-  resetToDefaults: (): void => {
-    GuidelineService.saveGuidelines(INITIAL_GUIDELINES);
-    GuidelineService.saveUserPreferences(DEFAULT_USER_PREFERENCES);
-    // No longer resetting user profile as it's stored in the database
+      return response.ok;
+    } catch (error) {
+      console.error('Error saving user preferences:', error);
+      return false;
+    }
   },
 
   // Get guidelines relevant to the user
@@ -382,7 +461,7 @@ export const GuidelineService = {
       }
 
       const { age, gender } = userProfile;
-      const guidelines = GuidelineService.getGuidelines(userId);
+      const guidelines = await GuidelineService.getGuidelines(userId);
 
       return guidelines.filter((guideline) => {
         // Check gender relevance
@@ -419,7 +498,7 @@ export const GuidelineService = {
       }
 
       const { age, gender } = userProfile;
-      const guidelines = GuidelineService.getGuidelines(userId);
+      const guidelines = await GuidelineService.getGuidelines(userId);
       const relevantNow = await GuidelineService.getRelevantGuidelines(userId);
 
       return guidelines.filter((guideline) => {
@@ -458,51 +537,81 @@ export const GuidelineService = {
    * @param userId ID of the user creating the personalized version
    * @returns The new personalized guideline
    */
-  createPersonalizedGuideline: (guidelineId: string, userId: string): GuidelineItem => {
-    // Find the original guideline
-    const originalGuideline = GuidelineService.getGuidelines().find((g) => g.id === guidelineId);
+  createPersonalizedGuideline: async (
+    guidelineId: string,
+    userId: string
+  ): Promise<GuidelineItem> => {
+    try {
+      // Find the original guideline
+      const response = await fetch(`/api/guidelines/${guidelineId}`);
 
-    if (!originalGuideline) {
-      throw new Error('Original guideline not found');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch original guideline: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const originalGuideline = data.guideline || data;
+
+      if (!originalGuideline) {
+        throw new Error('Original guideline not found');
+      }
+
+      // Get any resources and risk tools from the mock data
+      const { tools: riskTools, resources } = getToolsAndResourcesForGuideline(guidelineId);
+
+      // Create a new guideline based on the original
+      const personalizedGuideline = {
+        ...JSON.parse(JSON.stringify(originalGuideline)), // Deep copy
+        id: undefined, // Let the server generate a new ID
+        name: `${originalGuideline.name} (Personalized)`,
+        visibility: 'private',
+        created_by: userId, // Use snake_case for API
+        original_guideline_id: originalGuideline.id,
+        // Ensure resources are properly copied over
+        resources: [
+          ...(originalGuideline.resources || []),
+          // Convert from GuidelineResource format to simplified resource format
+          ...resources.map((r) => ({
+            name: r.title,
+            url: r.url,
+            description: r.description,
+            type: 'resource',
+          })),
+          // Convert from RiskAssessmentTool format to simplified resource format
+          ...riskTools.map((r) => ({
+            name: r.name,
+            url: r.url,
+            description: r.description,
+            type: 'risk',
+          })),
+        ],
+      };
+
+      // Create the personalized guideline via API
+      const createResponse = await fetch('/api/guidelines', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          guideline: personalizedGuideline,
+          ageRanges: originalGuideline.guideline_age_ranges || [],
+          resources: personalizedGuideline.resources || [],
+        }),
+      });
+
+      if (!createResponse.ok) {
+        throw new Error(`Failed to create personalized guideline: ${createResponse.status}`);
+      }
+
+      const createdData = await createResponse.json();
+      const createdGuideline = createdData.guideline || createdData;
+
+      return GuidelineService._formatGuidelineFromApi(createdGuideline);
+    } catch (error) {
+      console.error('Error creating personalized guideline:', error);
+      throw error;
     }
-
-    // Get any resources and risk tools from the mock data
-    const { tools: riskTools, resources } = getToolsAndResourcesForGuideline(guidelineId);
-
-    // Create a new guideline based on the original
-    const personalizedGuideline: GuidelineItem = {
-      ...JSON.parse(JSON.stringify(originalGuideline)), // Deep copy
-      id: `personal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: `${originalGuideline.name} (Personalized)`,
-      visibility: 'private',
-      createdBy: userId,
-      originalGuidelineId: originalGuideline.id,
-      // Ensure resources are properly copied over
-      resources: [
-        ...(originalGuideline.resources || []),
-        // Convert from GuidelineResource format to simplified resource format
-        ...resources.map((r) => ({
-          name: r.title,
-          url: r.url,
-          description: r.description,
-          type: 'resource',
-        })),
-        // Convert from RiskAssessmentTool format to simplified resource format
-        ...riskTools.map((r) => ({
-          name: r.name,
-          url: r.url,
-          description: r.description,
-          type: 'risk',
-        })),
-      ],
-    };
-
-    // Add to guidelines
-    const guidelines = GuidelineService.getGuidelines();
-    guidelines.push(personalizedGuideline);
-    GuidelineService.saveGuidelines(guidelines);
-
-    return personalizedGuideline;
   },
 
   /**
@@ -511,28 +620,45 @@ export const GuidelineService = {
    * @returns The updated guideline with lastCompletedDate and nextDueDate
    */
   markGuidelineCompleted: async (guidelineId: string): Promise<GuidelineItem | null> => {
-    const guidelines = GuidelineService.getGuidelines();
-    const guidelineIndex = guidelines.findIndex((g) => g.id === guidelineId);
+    try {
+      const today = new Date();
 
-    if (guidelineIndex === -1) {
+      // Calculate the next due date
+      const guidelineResponse = await fetch(`/api/guidelines/${guidelineId}`);
+
+      if (!guidelineResponse.ok) {
+        throw new Error(`Failed to fetch guideline: ${guidelineResponse.status}`);
+      }
+
+      const data = await guidelineResponse.json();
+      const guideline = data.guideline || data;
+      const formattedGuideline = GuidelineService._formatGuidelineFromApi(guideline);
+      const nextDueDate = await GuidelineService.calculateNextDueDate(formattedGuideline, today);
+
+      // Update the guideline with completion date
+      const updateResponse = await fetch(`/api/guidelines/${guidelineId}/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          completedDate: today.toISOString(),
+          nextDueDate,
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        throw new Error(`Failed to mark guideline as completed: ${updateResponse.status}`);
+      }
+
+      const updatedData = await updateResponse.json();
+      const updatedGuideline = updatedData.guideline || updatedData;
+
+      return GuidelineService._formatGuidelineFromApi(updatedGuideline);
+    } catch (error) {
+      console.error('Error marking guideline as completed:', error);
       return null;
     }
-
-    const guideline = guidelines[guidelineIndex];
-    const today = new Date();
-
-    // Update the guideline with completion date
-    const updatedGuideline = {
-      ...guideline,
-      lastCompletedDate: today.toISOString(),
-      nextDueDate: await GuidelineService.calculateNextDueDate(guideline, today),
-    };
-
-    // Save the updated guideline
-    guidelines[guidelineIndex] = updatedGuideline;
-    GuidelineService.saveGuidelines(guidelines);
-
-    return updatedGuideline;
   },
 
   /**
@@ -572,57 +698,74 @@ export const GuidelineService = {
   },
 
   // Helper: Convert guideline to screening recommendation format
-  convertGuidelinesToScreenings: (
+  convertGuidelinesToScreenings: async (
     guidelines: GuidelineItem[],
-    userPreferences: UserPreferences,
-    userProfile: UserProfile
-  ): ScreeningRecommendation[] => {
-    const screenings: ScreeningRecommendation[] = [];
-    const selectedIds = userPreferences.selectedGuidelineIds || [];
+    userId: string
+  ): Promise<ScreeningRecommendation[]> => {
+    try {
+      const userProfile = await GuidelineService.getUserProfile();
+      const userPreferences = await GuidelineService.getUserPreferences(userId);
 
-    selectedIds.forEach((id) => {
-      const guideline = guidelines.find((g) => g.id === id);
-      if (!guideline) return;
+      if (!userProfile) {
+        return [];
+      }
 
-      // Get the matching screening from the mock data if available
-      // This is used for demo purposes to show completed screenings with results
-      const mockUpcomingScreening = upcomingScreenings.find(
-        (s: { id: string; title: string }) =>
-          s.id === guideline.id || s.title.toLowerCase() === guideline.name.toLowerCase()
-      );
+      const screenings: ScreeningRecommendation[] = [];
+      const selectedIds = userPreferences.selectedGuidelineIds || [];
 
-      const status = 'due';
-      const dueDate = new Date().toISOString();
-      const lastCompleted = null;
-      const notes = null;
+      for (const id of selectedIds) {
+        const guideline = guidelines.find((g) => g.id === id);
+        if (!guideline) continue;
 
-      // const { status, dueDate, lastCompleted, notes } = getScreeningStatus(
-      //   guideline,
-      //   userProfile,
-      //   userPreferences
-      // );
+        // Get the matching screening from the mock data if available
+        // This is used for demo purposes to show completed screenings with results
+        const mockUpcomingScreening = upcomingScreenings.find(
+          (s: { id: string; title: string }) =>
+            s.id === guideline.id || s.title.toLowerCase() === guideline.name.toLowerCase()
+        );
 
-      // Create screening object
-      const screening: ScreeningRecommendation = {
-        id: guideline.id,
-        name: guideline.name,
-        description: guideline.description,
-        frequency: guideline.frequency || 'As recommended',
-        ageRange: guideline.ageRanges,
-        ageRangeDetails: guideline.ageRanges,
-        status,
-        dueDate,
-        lastCompleted: lastCompleted || undefined,
-        notes: notes || undefined,
-        tags: guideline.tags,
-        // Add previousResults if they exist in the mock data
-        previousResults: mockUpcomingScreening?.previousResults || [],
-      };
+        // Determine status based on due date and last completed date
+        let status: 'due' | 'upcoming' | 'overdue' | 'completed' = 'due';
+        let dueDate = guideline.nextDueDate || new Date().toISOString();
+        let lastCompleted = guideline.lastCompletedDate || null;
 
-      screenings.push(screening);
-    });
+        if (guideline.lastCompletedDate) {
+          const lastCompletedDate = new Date(guideline.lastCompletedDate);
+          const nextDueDate = new Date(guideline.nextDueDate || '');
+          const now = new Date();
 
-    return screenings;
+          if (nextDueDate > now) {
+            status = 'upcoming';
+          } else {
+            status = 'overdue';
+          }
+        }
+
+        // Create screening object
+        const screening: ScreeningRecommendation = {
+          id: guideline.id,
+          name: guideline.name,
+          description: guideline.description,
+          frequency: guideline.frequency || 'As recommended',
+          ageRange: guideline.ageRanges,
+          ageRangeDetails: guideline.ageRanges,
+          status,
+          dueDate,
+          lastCompleted: lastCompleted || undefined,
+          notes: undefined,
+          tags: guideline.tags,
+          // Add previousResults if they exist in the mock data
+          previousResults: mockUpcomingScreening?.previousResults || [],
+        };
+
+        screenings.push(screening);
+      }
+
+      return screenings;
+    } catch (error) {
+      console.error('Error converting guidelines to screenings:', error);
+      return [];
+    }
   },
 };
 

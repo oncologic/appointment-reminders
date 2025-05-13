@@ -15,41 +15,48 @@ export const useGuidelines = (userProfile: UserProfile | null) => {
   useEffect(() => {
     if (!userProfile) return;
 
-    try {
-      setIsLoading(true);
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
 
-      // Get guidelines visible to this user
-      const visibleGuidelines = GuidelineService.getGuidelines(userProfile.userId).filter(
-        (g) => g.visibility === 'public' || g.createdBy === userProfile.userId
-      );
+        // Get guidelines visible to this user
+        const allGuidelines = await GuidelineService.getGuidelines(userProfile.userId);
+        const visibleGuidelines = allGuidelines.filter(
+          (g: GuidelineItem) => g.visibility === 'public' || g.createdBy === userProfile.userId
+        );
 
-      setGuidelines(visibleGuidelines);
+        setGuidelines(visibleGuidelines);
 
-      // Extract all unique tags
-      const allTags = new Set<string>();
-      visibleGuidelines.forEach((guideline) => {
-        if (guideline.tags) {
-          guideline.tags.forEach((tag) => allTags.add(tag));
-        }
-      });
-      setAvailableTags(Array.from(allTags));
+        // Extract all unique tags
+        const allTags = new Set<string>();
+        visibleGuidelines.forEach((guideline: GuidelineItem) => {
+          if (guideline.tags) {
+            guideline.tags.forEach((tag: string) => allTags.add(tag));
+          }
+        });
+        setAvailableTags(Array.from(allTags));
 
-      // Load user preferences
-      const prefs = GuidelineService.getUserPreferences() || { selectedGuidelineIds: [] };
-      setUserPreferences(prefs);
+        // Load user preferences
+        const prefs = (await GuidelineService.getUserPreferences(userProfile.userId)) || {
+          selectedGuidelineIds: [],
+        };
+        setUserPreferences(prefs);
 
-      // Convert guidelines to screenings
-      const convertedScreenings = convertGuidelinesToScreenings(
-        visibleGuidelines,
-        prefs,
-        userProfile
-      );
-      setScreenings(convertedScreenings);
-    } catch (error) {
-      console.error('Error loading guidelines:', error);
-    } finally {
-      setIsLoading(false);
-    }
+        // Convert guidelines to screenings
+        const convertedScreenings = convertGuidelinesToScreenings(
+          visibleGuidelines,
+          prefs,
+          userProfile
+        );
+        setScreenings(convertedScreenings);
+      } catch (error) {
+        console.error('Error loading guidelines:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, [userProfile]);
 
   // Filter guidelines for specific search
@@ -99,7 +106,9 @@ export const useGuidelines = (userProfile: UserProfile | null) => {
   // Save user preferences
   const saveUserPreferences = (preferences: UserPreferences) => {
     setUserPreferences(preferences);
-    GuidelineService.saveUserPreferences(preferences);
+    if (userProfile?.userId) {
+      GuidelineService.saveUserPreferences(userProfile.userId, preferences);
+    }
 
     // Update screenings based on new preferences
     if (userProfile) {

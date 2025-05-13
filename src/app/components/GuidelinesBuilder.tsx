@@ -75,9 +75,19 @@ const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderPro
 
   // Load guidelines on component mount
   useEffect(() => {
-    const loadedGuidelines = GuidelineService.getGuidelines(userProfile.userId);
-    setGuidelines(loadedGuidelines);
-    setIsLoading(false);
+    const loadGuidelines = async () => {
+      try {
+        const loadedGuidelines = await GuidelineService.getGuidelines(userProfile.userId);
+        setGuidelines(loadedGuidelines);
+      } catch (error) {
+        console.error('Error loading guidelines:', error);
+        toast.error('Failed to load guidelines');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadGuidelines();
   }, [userProfile.userId]);
 
   const generateId = () => {
@@ -134,7 +144,7 @@ const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderPro
     setResourceType('resource');
   };
 
-  const handleDeleteGuideline = (id: string) => {
+  const handleDeleteGuideline = async (id: string) => {
     const guideline = guidelines.find((g) => g.id === id);
 
     // Check if user has permission to delete this guideline
@@ -147,12 +157,18 @@ const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderPro
       return;
     }
 
-    const updatedGuidelines = GuidelineService.deleteGuideline(
-      id,
-      userProfile.userId,
-      userProfile.isAdmin
-    );
-    setGuidelines(updatedGuidelines);
+    try {
+      const updatedGuidelines = await GuidelineService.deleteGuideline(
+        id,
+        userProfile.userId,
+        userProfile.isAdmin
+      );
+      setGuidelines(updatedGuidelines);
+      toast.success('Guideline deleted successfully');
+    } catch (error) {
+      console.error('Error deleting guideline:', error);
+      toast.error('Failed to delete guideline');
+    }
   };
 
   const handleResetDefaults = () => {
@@ -162,10 +178,8 @@ const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderPro
     }
 
     if (window.confirm('This will reset all guidelines to default values. Are you sure?')) {
-      GuidelineService.resetToDefaults();
-      const loadedGuidelines = GuidelineService.getGuidelines(userProfile.userId);
-      setGuidelines(loadedGuidelines);
-      toast.success('Guidelines have been reset to defaults.');
+      // This function doesn't exist anymore since we're using the API
+      toast.error('This functionality is not available when using the API.');
     }
   };
 
@@ -202,7 +216,7 @@ const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderPro
       let updatedGuidelines;
 
       if (isEditing) {
-        updatedGuidelines = GuidelineService.updateGuideline(
+        updatedGuidelines = await GuidelineService.updateGuideline(
           guidelineToSave,
           userProfile.userId,
           userProfile.isAdmin

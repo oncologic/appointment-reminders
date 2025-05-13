@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
   // Start building the query
   let guidelinesQuery = supabase.from('guidelines').select(`
       *,
-      guideline_age_ranges(*)
+      guideline_age_ranges(*),
+      guideline_resources(*)
     `);
 
   // Filter by visibility
