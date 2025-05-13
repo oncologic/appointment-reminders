@@ -24,15 +24,16 @@ export interface ScreeningRecommendation {
   id: string;
   name: string;
   description: string;
-  frequency: string;
+  frequency?: string;
   frequencyMonths?: number;
+  startAge?: number;
   ageRange: AgeRange[];
   ageRangeDetails: AgeRange[];
-  tags?: string[];
+  status: 'due' | 'upcoming' | 'overdue' | 'completed';
+  dueDate?: string;
   lastCompleted?: string;
-  dueDate: string;
-  status: 'completed' | 'due' | 'overdue' | 'upcoming';
   notes?: string;
+  tags?: string[];
   previousResults?: ScreeningResult[];
 }
 

@@ -2,7 +2,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { FaChartLine, FaClipboardList, FaEdit, FaTimes } from 'react-icons/fa';
+import {
+  FaChartLine,
+  FaChevronDown,
+  FaChevronUp,
+  FaClipboardList,
+  FaEdit,
+  FaTimes,
+} from 'react-icons/fa';
 
 import { getToolsAndResourcesForGuideline } from '../../lib/mockData';
 import GuidelineService from '../../lib/services/guidelineService';
@@ -12,7 +19,7 @@ import { GuidelineItem } from './PersonalizedGuidelines';
 interface GuidelineCardProps {
   guideline: GuidelineItem;
   userProfile: UserProfile | null;
-  onAddToRecommended: (id: string, frequencyMonths?: number) => void;
+  onAddToRecommended: (id: string, frequencyMonths?: number, startAge?: number) => void;
 }
 
 const GuidelineCard: React.FC<GuidelineCardProps> = ({
@@ -23,6 +30,10 @@ const GuidelineCard: React.FC<GuidelineCardProps> = ({
   const router = useRouter();
   const [showFrequencyModal, setShowFrequencyModal] = useState(false);
   const [frequencyMonths, setFrequencyMonths] = useState<number | undefined>(undefined);
+  const [startAge, setStartAge] = useState<number | undefined>(
+    userProfile?.age ? userProfile.age : undefined
+  );
+  const [showAllRanges, setShowAllRanges] = useState(false);
 
   const isGuidelineRelevantForUser = (guideline: GuidelineItem, profile: UserProfile) => {
     const genderRelevant =
@@ -49,7 +60,17 @@ const GuidelineCard: React.FC<GuidelineCardProps> = ({
     );
   };
 
+  const getOtherRecommendations = () => {
+    if (!userProfile || guideline.ageRanges.length === 0) return [];
+
+    return guideline.ageRanges.filter(
+      (range) =>
+        !(userProfile.age >= range.min && (range.max === null || userProfile.age <= range.max))
+    );
+  };
+
   const currentRange = getCurrentRecommendation();
+  const otherRanges = getOtherRecommendations();
   const isRelevant = userProfile && isGuidelineRelevantForUser(guideline, userProfile);
   const { tools, resources } = getToolsAndResourcesForGuideline(guideline.id);
   const hasResourcesOrRiskTools = tools.length > 0 || resources.length > 0;
@@ -75,6 +96,7 @@ const GuidelineCard: React.FC<GuidelineCardProps> = ({
     // Set default frequency based on current age range or guideline
     if (currentRange && currentRange.frequencyMonths) {
       setFrequencyMonths(currentRange.frequencyMonths);
+      setStartAge(currentRange.min);
     } else if (guideline.frequencyMonths) {
       setFrequencyMonths(guideline.frequencyMonths);
     } else {
@@ -83,7 +105,7 @@ const GuidelineCard: React.FC<GuidelineCardProps> = ({
   };
 
   const handleSubmitFrequency = () => {
-    onAddToRecommended(guideline.id, frequencyMonths);
+    onAddToRecommended(guideline.id, frequencyMonths, startAge);
     setShowFrequencyModal(false);
 
     // Set the frequency text for toast message
@@ -263,22 +285,79 @@ const GuidelineCard: React.FC<GuidelineCardProps> = ({
                 </div>
               )}
 
-              <div>
-                <label
-                  htmlFor="frequencyMonths"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Frequency (months)
-                </label>
-                <input
-                  type="number"
-                  id="frequencyMonths"
-                  min="1"
-                  max="120"
-                  value={frequencyMonths || ''}
-                  onChange={(e) => setFrequencyMonths(parseInt(e.target.value) || undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
+              {/* Show other age recommendations toggle */}
+              {otherRanges.length > 0 && (
+                <div className="mb-4">
+                  <button
+                    onClick={() => setShowAllRanges(!showAllRanges)}
+                    className="flex items-center text-sm text-blue-600 hover:text-blue-800 mb-2"
+                  >
+                    {showAllRanges ? (
+                      <>
+                        <FaChevronUp className="mr-1" /> Hide other age recommendations
+                      </>
+                    ) : (
+                      <>
+                        <FaChevronDown className="mr-1" /> Show other age recommendations
+                      </>
+                    )}
+                  </button>
+
+                  {showAllRanges && (
+                    <div className="pl-2 border-l-2 border-gray-200 space-y-2">
+                      {otherRanges.map((range, idx) => (
+                        <div key={idx} className="bg-gray-50 p-2 rounded text-sm">
+                          <p className="font-medium">Ages {range.label}:</p>
+                          <p className="text-gray-700">{range.frequency}</p>
+                          {range.notes && (
+                            <p className="text-gray-500 text-xs mt-1">{range.notes}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="frequencyMonths"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Frequency (months)
+                  </label>
+                  <input
+                    type="number"
+                    id="frequencyMonths"
+                    min="1"
+                    max="120"
+                    value={frequencyMonths || ''}
+                    onChange={(e) => setFrequencyMonths(parseInt(e.target.value) || undefined)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="startAge"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Age to Start At
+                  </label>
+                  <input
+                    type="number"
+                    id="startAge"
+                    min="1"
+                    max="120"
+                    value={startAge || ''}
+                    onChange={(e) => setStartAge(parseInt(e.target.value) || undefined)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    This is the age when you should start this screening.
+                  </p>
+                </div>
               </div>
             </div>
 

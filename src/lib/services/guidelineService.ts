@@ -787,7 +787,8 @@ export const GuidelineService = {
   addScreeningForUser: async (
     guidelineId: string,
     userId: string,
-    frequencyMonths?: number
+    frequencyMonths?: number,
+    startAge?: number
   ): Promise<boolean> => {
     try {
       // Find the guideline to get its details
@@ -803,12 +804,22 @@ export const GuidelineService = {
       const nextDueDate = new Date();
       nextDueDate.setMonth(now.getMonth() + (frequencyMonths || guideline.frequencyMonths || 12));
 
+      // Set the time to end of day (23:59:59) to make the display cleaner
+      nextDueDate.setHours(23, 59, 59, 0);
+
+      // Find the default start age if not provided
+      const defaultStartAge =
+        startAge || guideline.ageRanges.length > 0
+          ? Math.min(...guideline.ageRanges.map((range) => range.min))
+          : null;
+
       // Create the screening record payload
       const screeningPayload = {
         guideline_id: guidelineId,
         user_id: userId,
         personalized: false,
         frequency: frequencyMonths || guideline.frequencyMonths || 12,
+        start_age: defaultStartAge,
         status: 'due',
         next_due_date: nextDueDate.toISOString(),
         notes: '',
@@ -881,6 +892,7 @@ export const GuidelineService = {
           description: guideline?.description || '',
           frequency: guideline?.frequency || 'As recommended',
           frequencyMonths: screening.frequency || guideline?.frequency_months,
+          startAge: screening.start_age,
           ageRange: guideline?.guideline_age_ranges || [],
           ageRangeDetails: guideline?.guideline_age_ranges || [],
           status,

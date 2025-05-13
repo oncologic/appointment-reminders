@@ -40,6 +40,80 @@ const calculateAge = (dateOfBirth: string): number => {
   return age;
 };
 
+// Format dates for display
+const formatDate = (dateString?: string): string => {
+  if (!dateString) return 'Not specified';
+
+  try {
+    const date = new Date(dateString);
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Invalid date';
+    }
+
+    // Format as "Month Day, Year" (e.g., "May 13, 2026")
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  } catch (e) {
+    return 'Invalid date format';
+  }
+};
+
+// Calculate the duration text from now to a future date
+const getDurationText = (dateString?: string): string => {
+  if (!dateString) return '';
+
+  try {
+    const date = new Date(dateString);
+    const today = new Date();
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return '';
+    }
+
+    // If the date is in the past
+    if (date < today) {
+      return '(overdue)';
+    }
+
+    // Calculate the difference in years
+    const yearDiff = date.getFullYear() - today.getFullYear();
+    const monthDiff = date.getMonth() - today.getMonth();
+
+    // Adjust for partial years
+    const adjustedYearDiff =
+      monthDiff < 0 || (monthDiff === 0 && date.getDate() < today.getDate())
+        ? yearDiff - 1
+        : yearDiff;
+
+    // Calculate months for less than a year
+    const adjustedMonthDiff = monthDiff < 0 ? 12 + monthDiff : monthDiff;
+
+    if (adjustedYearDiff === 0) {
+      if (adjustedMonthDiff === 0) {
+        return '(this month)';
+      } else if (adjustedMonthDiff === 1) {
+        return '(next month)';
+      } else {
+        return `(in ${adjustedMonthDiff} months)`;
+      }
+    } else if (adjustedYearDiff === 1) {
+      return adjustedMonthDiff === 0
+        ? '(in 1 year)'
+        : `(in 1 year and ${adjustedMonthDiff} months)`;
+    } else {
+      return `(in ${adjustedYearDiff} years)`;
+    }
+  } catch (e) {
+    return '';
+  }
+};
+
 const ScreeningItem: React.FC<ScreeningItemProps> = ({ screening, onRemove, userProfile }) => {
   const [showPreviousResults, setShowPreviousResults] = useState(false);
 
@@ -150,7 +224,7 @@ const ScreeningItem: React.FC<ScreeningItemProps> = ({ screening, onRemove, user
             </div>
             {screening.frequencyMonths && getFrequencyDisplay()}
             {/* Show icon for available resources & risk tools */}
-            <div className="ml-auto flex gap-1">
+            {/* <div className="ml-auto flex gap-1">
               {hasResourcesOrRiskTools && (
                 <Link href={`/guidelines/${screening.id}`}>
                   <span
@@ -161,7 +235,7 @@ const ScreeningItem: React.FC<ScreeningItemProps> = ({ screening, onRemove, user
                   </span>
                 </Link>
               )}
-            </div>
+            </div> */}
           </div>
           <p className="text-gray-600 mb-3">{screening.description}</p>
 
@@ -179,8 +253,13 @@ const ScreeningItem: React.FC<ScreeningItemProps> = ({ screening, onRemove, user
           )}
 
           <div className="text-sm text-gray-500 space-y-1">
-            {screening.lastCompleted && <p>Last completed: {screening.lastCompleted}</p>}
-            <p>Next due: {screening.dueDate}</p>
+            {screening.lastCompleted && (
+              <p>Last completed: {formatDate(screening.lastCompleted)}</p>
+            )}
+            <p>
+              Next due: {formatDate(screening.dueDate)}{' '}
+              <span className="text-gray-400 text-xs">{getDurationText(screening.dueDate)}</span>
+            </p>
             {screening.frequencyMonths && (
               <p className="flex items-center">
                 <FaClock className="mr-1" />
@@ -223,7 +302,7 @@ const ScreeningItem: React.FC<ScreeningItemProps> = ({ screening, onRemove, user
                       <div key={idx} className="bg-gray-50 p-3 rounded-md">
                         <div className="flex justify-between items-start">
                           <div>
-                            <p className="font-medium text-gray-800">{result.date}</p>
+                            <p className="font-medium text-gray-800">{formatDate(result.date)}</p>
                             <p className="text-sm text-gray-600 flex items-center">
                               <FaUserMd className="mr-1" /> {result.provider.name}
                               {result.provider.specialty && (

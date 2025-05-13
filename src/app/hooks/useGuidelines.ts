@@ -162,7 +162,11 @@ export const useGuidelines = (userProfile: UserProfile | null) => {
   };
 
   // Add guideline to recommended list
-  const addToRecommended = async (guidelineId: string, frequencyMonths?: number) => {
+  const addToRecommended = async (
+    guidelineId: string,
+    frequencyMonths?: number,
+    startAge?: number
+  ) => {
     if (!userProfile) return;
 
     // Find the guideline to get its details
@@ -174,7 +178,8 @@ export const useGuidelines = (userProfile: UserProfile | null) => {
       const success = await GuidelineService.addScreeningForUser(
         guidelineId,
         userProfile.userId,
-        frequencyMonths || guideline.frequencyMonths
+        frequencyMonths || guideline.frequencyMonths,
+        startAge
       );
 
       if (success) {
