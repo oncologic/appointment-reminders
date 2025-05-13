@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaExclamationCircle, FaPlus } from 'react-icons/fa';
 
-import { UserProfile } from './PersonalizedGuidelines';
+import { UserProfile } from '../../lib/types';
 import ScreeningItem from './ScreeningItem';
 import { ScreeningRecommendation } from './types';
 
@@ -48,6 +48,13 @@ const RecommendedScreeningsView: React.FC<RecommendedScreeningsViewProps> = ({
     return renderEmptyState();
   }
 
+  // Ensure screenings are sorted with completed ones first
+  const sortedScreenings = [...screenings].sort((a, b) => {
+    if (a.status === 'completed' && b.status !== 'completed') return -1;
+    if (a.status !== 'completed' && b.status === 'completed') return 1;
+    return 0;
+  });
+
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200">
@@ -55,8 +62,8 @@ const RecommendedScreeningsView: React.FC<RecommendedScreeningsViewProps> = ({
       </div>
 
       <div className="divide-y divide-gray-200">
-        {screenings.length > 0 ? (
-          screenings.map((screening) => (
+        {sortedScreenings.length > 0 ? (
+          sortedScreenings.map((screening) => (
             <ScreeningItem
               key={screening.id}
               screening={screening}

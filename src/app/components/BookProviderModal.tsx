@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FaPhone, FaTimes, FaUserMd } from 'react-icons/fa';
+import { FaCalendarAlt, FaPhone, FaTimes, FaUserMd } from 'react-icons/fa';
 
 interface BookProviderModalProps {
   provider: string;
@@ -55,8 +55,8 @@ export const BookProviderModal: React.FC<BookProviderModalProps> = ({
           <div className="bg-blue-50 p-4 rounded-md mt-4 border border-blue-100">
             <h4 className="text-sm font-medium text-blue-800 mb-2">Important</h4>
             <p className="text-blue-700 text-sm mb-3">
-              Please call the provider&apos;s office before booking to verify availability and
-              insurance coverage.
+              Please call the provider&apos;s office to schedule your appointment. After scheduling,
+              you can record it in your health records.
             </p>
             <div className="flex items-center text-blue-700 font-medium">
               <FaPhone className="mr-2" />
@@ -74,8 +74,9 @@ export const BookProviderModal: React.FC<BookProviderModalProps> = ({
           </button>
           <button
             onClick={onRecordAppointment}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center"
           >
+            <FaCalendarAlt className="mr-2" />
             Record Appointment
           </button>
         </div>
