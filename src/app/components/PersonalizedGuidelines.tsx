@@ -6,6 +6,7 @@ import {
   FaExclamationTriangle,
   FaStar,
 } from 'react-icons/fa';
+import { UserProfile } from '@/lib/types';
 
 export interface AgeRange {
   min: number;
@@ -43,18 +44,6 @@ export interface GuidelineItem {
 
 export interface UserPreferences {
   selectedGuidelineIds: string[];
-}
-
-export interface UserProfile {
-  name: string;
-  age: number;
-  dateOfBirth?: string; // ISO date string format
-  gender: 'male' | 'female' | 'other';
-  riskFactors: {
-    [key: string]: boolean | string;
-  };
-  isAdmin: boolean;
-  userId: string;
 }
 
 interface PersonalizedGuidelinesProps {

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FaArrowLeft } from 'react-icons/fa';
 
 import GuidelineService from '../../lib/services/guidelineService';
@@ -9,17 +9,18 @@ import AgeBasedRecommendations from '../components/AgeBasedRecommendations';
 import AllGuidelinesView from '../components/AllGuidelinesView';
 import GuidelineTabs from '../components/GuidelineTabs';
 import GuidelinesBuilder from '../components/GuidelinesBuilder';
-import { UserProfile } from '../components/PersonalizedGuidelines';
 import RecommendedScreeningsView from '../components/RecommendedScreeningsView';
 import ScreeningFiltersSidebar from '../components/ScreeningFiltersSidebar';
 import UserProfileForm from '../components/UserProfileForm';
 import { GuidelineView } from '../components/types';
 import useGuidelines from '../hooks/useGuidelines';
+import useUser from '../hooks/useUser';
+import { UserProfile } from '@/lib/types';
 
 const GuidelinesPage = () => {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(
-    GuidelineService.getUserProfile()
-  );
+  const { user, isLoading: isUserLoading, error: userError, refetch: refetchUser } = useUser();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  
   const [currentView, setCurrentView] = useState<GuidelineView>(GuidelineView.RecommendedView);
   const [filterStatus, setFilterStatus] = useState<string[]>([
     'due',
@@ -32,12 +33,29 @@ const GuidelinesPage = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
 
+  // Update local state when API data is received
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user) {
+        setUserProfile(user);
+      } else if (!isUserLoading && !user) {
+        // If not loading and no user data from API, try to get from user profile API
+        const profileData = await GuidelineService.getUserProfile();
+        if (profileData) {
+          setUserProfile(profileData);
+        }
+      }
+    };
+    
+    fetchUserProfile();
+  }, [user, isUserLoading]);
+
   // Use the custom hook to manage guidelines and related logic
   const {
     guidelines,
     screenings,
     userPreferences,
-    isLoading,
+    isLoading: isGuidelinesLoading,
     getFilteredGuidelines,
     getFilteredScreenings,
     addToRecommended,
@@ -53,10 +71,13 @@ const GuidelinesPage = () => {
     }
   };
 
-  // Save user profile
-  const handleSaveUserProfile = (profile: UserProfile) => {
+  // Save user profile - this will update both local storage and API
+  const handleSaveUserProfile = async (profile: UserProfile) => {
     setUserProfile(profile);
-    GuidelineService.saveUserProfile(profile);
+    await GuidelineService.saveUserProfile(profile);
+    
+    // After saving, refetch from the API to ensure consistency
+    await refetchUser();
   };
 
   // Get filtered screenings based on current filter settings
@@ -73,13 +94,17 @@ const GuidelinesPage = () => {
   const hasSelectedGuidelines =
     userPreferences.selectedGuidelineIds && userPreferences.selectedGuidelineIds.length > 0;
 
+  const isLoading = isUserLoading || isGuidelinesLoading;
+
   if (isLoading || !userProfile) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <p className="text-gray-700">
             {isLoading
-              ? 'Loading guidelines...'
+              ? 'Loading user and guidelines...'
+              : userError
+              ? `Error loading user data: ${userError.message}`
               : 'No user profile found. Please set up your profile first.'}
           </p>
           {!isLoading && !userProfile && (
@@ -154,7 +179,7 @@ const GuidelinesPage = () => {
 
           <div className="flex items-center gap-2">
             <span className="text-gray-600">
-              Welcome, {userProfile.name} ({userProfile.age}, {userProfile.gender})
+              Welcome, {userProfile.firstName} {userProfile.lastName} ({userProfile.age}, {userProfile.gender})
             </span>
           </div>
         </div>

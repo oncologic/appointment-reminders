@@ -1,5 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from './supabase/client'
 
 // For client-side usage
 export const createBrowserSupabaseClient = () => {
@@ -13,13 +13,8 @@ export const createBrowserSupabaseClient = () => {
   return createBrowserClient(supabaseUrl, supabaseAnonKey)
 }
 
-// For server-side usage
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-  {
-    auth: {
-      persistSession: false,
-    },
-  }
-) 
+/**
+ * Supabase client for client-side operations
+ * This is a convenience export of the client
+ */
+export const supabase = createClient(); 
