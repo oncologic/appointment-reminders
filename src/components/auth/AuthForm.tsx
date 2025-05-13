@@ -4,6 +4,7 @@ import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { FaCheckCircle, FaSpinner } from 'react-icons/fa';
 
 import { createBrowserSupabaseClient } from '@/lib/supabase';
 
@@ -52,19 +53,28 @@ export default function AuthForm({ next = '/' }: AuthFormProps) {
     };
   }, [router]);
 
-  if (!supabase || !origin) return <div>Loading...</div>;
+  if (!supabase || !origin) {
+    return (
+      <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-sm flex justify-center">
+        <FaSpinner className="animate-spin text-blue-600 text-3xl" />
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
+    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-sm">
       {isSignedIn ? (
-        <div className="text-center my-8">
-          <p className="text-green-500 mb-4">Successfully signed in!</p>
-          <p className="text-gray-300 mb-6">
-            If you&apos;re not automatically redirected, please click the button below.
+        <div className="text-center py-6">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+            <FaCheckCircle className="text-2xl text-green-600" />
+          </div>
+          <p className="text-xl font-semibold text-gray-800 mb-2">Successfully signed in!</p>
+          <p className="text-gray-600 mb-6">
+            If you're not automatically redirected, please click the button below.
           </p>
           <button
             onClick={() => router.push('/dashboard')}
-            className="block w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-center transition"
+            className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-center transition"
           >
             Go to Dashboard
           </button>
@@ -72,13 +82,34 @@ export default function AuthForm({ next = '/' }: AuthFormProps) {
       ) : (
         <Auth
           supabaseClient={supabase}
-          appearance={{ theme: ThemeSupa }}
+          appearance={{ 
+            theme: ThemeSupa,
+            style: {
+              button: {
+                borderRadius: '0.5rem',
+                padding: '0.75rem 1rem',
+                fontWeight: '500'
+              },
+              container: {
+                borderRadius: '0.5rem',
+              },
+              divider: {
+                marginTop: '1.5rem',
+                marginBottom: '1.5rem'
+              },
+              label: {
+                color: '#4B5563',
+                marginBottom: '0.5rem',
+                fontWeight: '500'
+              }
+            }
+          }}
           view="sign_in"
-          theme="dark"
-          showLinks={true}
+          theme="default"
+          showLinks={false}
           providers={['google']}
-          redirectTo={`${origin}/dashboard`}
-          onlyThirdPartyProviders={false}
+          redirectTo={`${origin}/`}
+          onlyThirdPartyProviders={true}
         />
       )}
     </div>
