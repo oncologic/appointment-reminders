@@ -23,4 +23,4 @@ export interface UserProfileDB {
   created_at: string;
   updated_at: string;
   admin_role?: string;
-} 
+}

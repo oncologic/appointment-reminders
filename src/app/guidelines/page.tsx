@@ -151,7 +151,7 @@ const GuidelinesPage = () => {
       case GuidelineView.ManageGuidelines:
         return (
           <div className="space-y-6">
-            <GuidelinesBuilder userProfile={userProfile} />
+            <GuidelinesBuilder userProfile={userProfile} setCurrentView={setCurrentView} />
           </div>
         );
       case GuidelineView.UserProfile:

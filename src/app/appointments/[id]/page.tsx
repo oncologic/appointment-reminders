@@ -185,7 +185,6 @@ const AppointmentDetailsPage: React.FC = () => {
 
   const handleRecommendSubmit = (comment: string) => {
     // In a real app, this would save the recommendation to a database
-    console.log('Provider recommendation:', comment);
     setShowRecommendModal(false);
     setRecommendationSubmitted(true);
 

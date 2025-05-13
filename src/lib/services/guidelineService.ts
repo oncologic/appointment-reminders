@@ -225,7 +225,11 @@ export const GuidelineService = {
   },
 
   // Add a new guideline with visibility and user info
-  addGuideline: (guideline: GuidelineItem, userId: string, isAdmin: boolean): GuidelineItem[] => {
+  addGuideline: async (
+    guideline: GuidelineItem,
+    userId: string,
+    isAdmin: boolean
+  ): Promise<GuidelineItem[]> => {
     // Validate the visibility based on user permissions
     if (guideline.visibility === 'public' && !isAdmin) {
       guideline.visibility = 'private';
@@ -234,10 +238,23 @@ export const GuidelineService = {
     // Set the creator
     guideline.createdBy = userId;
 
-    const guidelines = GuidelineService.getGuidelines();
-    const updatedGuidelines = [...guidelines, guideline];
-    GuidelineService.saveGuidelines(updatedGuidelines);
-    return updatedGuidelines;
+    // Save the guideline to the database
+    const response = await fetch('/api/guidelines', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        guideline,
+        ageRanges: guideline.ageRanges,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save guideline');
+    }
+
+    return GuidelineService.getGuidelines();
   },
 
   // Update a guideline with permission check
@@ -288,7 +305,7 @@ export const GuidelineService = {
 
   // Save all guidelines
   saveGuidelines: (guidelines: GuidelineItem[]): void => {
-    saveToStorage(STORAGE_KEYS.GUIDELINES, guidelines);
+    // saveToStorage(STORAGE_KEYS.GUIDELINES, guidelines);
   },
 
   // Get user profile

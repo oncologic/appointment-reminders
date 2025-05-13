@@ -37,7 +37,6 @@ export default function AuthForm({ next = '/' }: AuthFormProps) {
     } = client.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN') {
         // User signed in, update state
-        console.log('User signed in, updating state...');
         setIsSignedIn(true);
 
         // Try automatic redirect

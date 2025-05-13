@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   FaCalendarAlt,
   FaChevronRight,
@@ -12,17 +12,16 @@ import {
   FaNotesMedical,
   FaPhoneAlt,
   FaPlus,
-  FaSearch,
   FaShareAlt,
+  FaSpinner,
   FaStar,
   FaTooth,
   FaUserMd,
   FaUsers,
-  FaSpinner,
 } from 'react-icons/fa';
 
-import useUser from './hooks/useUser';
 import HealthScreenings from './components/HealthScreenings';
+import useUser from './hooks/useUser';
 
 // Placeholder user for when data is not yet loaded
 const defaultUser = {
@@ -43,7 +42,6 @@ const quickActions = [
 
 const navItems = [
   { label: 'Home', icon: <FaHome />, href: '/' },
-  { label: 'Search', icon: <FaSearch />, href: '#' },
   { label: 'Appointments', icon: <FaCalendarAlt />, href: '/appointments' },
   { label: 'Guidelines', icon: <FaClipboardCheck />, href: '/guidelines' },
   { label: 'Friend Recommendations', icon: <FaUsers />, href: '/friend-recommendations' },
@@ -102,13 +100,11 @@ const Home: React.FC = () => {
               ))}
             </div>
             <div className="flex items-center gap-3">
-              <img 
-                src="/avatar.png" 
-                alt="avatar" 
-                className="w-8 h-8 rounded-full object-cover" 
-              />
+              <img src="/avatar.png" alt="avatar" className="w-8 h-8 rounded-full object-cover" />
               <div className="hidden sm:block">
-                <p className="font-semibold text-gray-800">{userData.firstName} {userData.lastName}</p>
+                <p className="font-semibold text-gray-800">
+                  {userData.firstName} {userData.lastName}
+                </p>
               </div>
             </div>
           </div>
@@ -128,7 +124,9 @@ const Home: React.FC = () => {
                 />
                 <div>
                   <p className="text-xs text-gray-500">Welcome back,</p>
-                  <p className="font-semibold text-gray-800">{userData.firstName} {userData.lastName}</p>
+                  <p className="font-semibold text-gray-800">
+                    {userData.firstName} {userData.lastName}
+                  </p>
                 </div>
               </div>
               <div className="space-y-1">

@@ -1,29 +1,22 @@
-'use client'
+'use client';
 
-import ProtectedRoute from '@/components/auth/ProtectedRoute'
-import { useAuth } from '@/components/auth/AuthProvider'
-import Link from 'next/link'
-import { useEffect } from 'react'
+import Link from 'next/link';
+import { useEffect } from 'react';
+
+import { useAuth } from '@/components/auth/AuthProvider';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 export default function DashboardPage() {
-  const { user, isLoading, refreshSession, signOut } = useAuth()
+  const { user, isLoading, refreshSession, signOut } = useAuth();
 
   useEffect(() => {
-    // Log the auth state when the component mounts
-    console.log('Dashboard page mounted', { 
-      isAuthenticated: !!user, 
-      isLoading, 
-      userEmail: user?.email 
-    })
-    
     // Force a session refresh when the dashboard loads
     const checkSession = async () => {
-      console.log('Dashboard: Manually refreshing session...')
-      await refreshSession()
-    }
-    
-    checkSession()
-  }, [user, isLoading, refreshSession])
+      await refreshSession();
+    };
+
+    checkSession();
+  }, [user, isLoading, refreshSession]);
 
   return (
     <ProtectedRoute>
@@ -45,7 +38,9 @@ export default function DashboardPage() {
             {user ? (
               <>
                 <h2 className="text-xl font-semibold mb-4">Welcome, {user.email}</h2>
-                <p className="mb-4">This is a protected page that only authenticated users can access.</p>
+                <p className="mb-4">
+                  This is a protected page that only authenticated users can access.
+                </p>
                 <div className="bg-gray-100 p-4 rounded-md mb-4 dark:bg-gray-700">
                   <h3 className="text-md font-semibold mb-2">Debug Info:</h3>
                   <p>User ID: {user.id}</p>
@@ -56,7 +51,7 @@ export default function DashboardPage() {
             ) : (
               <p>Loading user information...</p>
             )}
-            
+
             <div className="mt-6">
               <Link
                 href="/"
@@ -69,5 +64,5 @@ export default function DashboardPage() {
         </div>
       </div>
     </ProtectedRoute>
-  )
-} 
+  );
+}

@@ -40,8 +40,6 @@ const EditGuidelinePage = () => {
   const [genders, setGenders] = useState<('male' | 'female' | 'all')[]>(['all']);
   const [ageRanges, setAgeRanges] = useState<AgeRange[]>([]);
   const [visibility, setVisibility] = useState<'public' | 'private'>('private');
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
 
   // New age range form
   const [newAgeRange, setNewAgeRange] = useState({
@@ -127,7 +125,6 @@ const EditGuidelinePage = () => {
         setGenders(foundGuideline.genders);
         setAgeRanges(foundGuideline.ageRanges);
         setVisibility(foundGuideline.visibility);
-        setTags(foundGuideline.tags || []);
         setResources(foundGuideline.resources || []);
 
         // If this is a personalized guideline, load the original for reference
@@ -214,24 +211,6 @@ const EditGuidelinePage = () => {
     setAgeRanges(ageRanges.filter((_, i) => i !== index));
   };
 
-  const handleAddTag = () => {
-    if (!tagInput.trim()) return;
-
-    // Check if tag already exists
-    if (tags.includes(tagInput.toLowerCase().trim())) {
-      setTagInput('');
-      return;
-    }
-
-    // Add new tag
-    setTags([...tags, tagInput.toLowerCase().trim()]);
-    setTagInput('');
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove));
-  };
-
   const handleVisibilityChange = (vis: 'public' | 'private') => {
     // Only allow admins to set public visibility
     if (vis === 'public' && userProfile && !userProfile.isAdmin) {
@@ -291,7 +270,6 @@ const EditGuidelinePage = () => {
       genders,
       ageRanges,
       visibility,
-      tags,
       resources,
     };
 
@@ -753,49 +731,6 @@ const EditGuidelinePage = () => {
               </div>
             </div>
 
-            <div>
-              <div className="block text-sm font-medium text-gray-700 mb-1">Tags</div>
-
-              {/* Display current tags */}
-              <div className="flex flex-wrap gap-2 mb-2">
-                {tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full text-sm flex items-center gap-1"
-                  >
-                    {tag}
-                    <button
-                      onClick={() => handleRemoveTag(tag)}
-                      className="text-gray-600 hover:text-red-600 ml-1"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-
-              {/* Add new tag */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  className="border border-gray-300 rounded-md p-2 text-gray-700 flex-grow"
-                  placeholder="Add a tag (e.g. cancer, heart)"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddTag();
-                    }
-                  }}
-                />
-                <button
-                  onClick={handleAddTag}
-                  className="bg-gray-200 text-gray-700 px-3 py-2 rounded hover:bg-gray-300"
-                >
-                  Add
-                </button>
-              </div>
             </div>
 
             <div>

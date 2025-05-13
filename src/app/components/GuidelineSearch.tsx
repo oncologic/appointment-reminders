@@ -38,7 +38,7 @@ const GuidelineSearch: React.FC<GuidelineSearchProps> = ({
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={
               showTips
-                ? 'Try &quot;blood pressure&quot;, &quot;mammogram&quot;, or &quot;diabetes&quot;'
+                ? 'Try blood pressure, mammogram, or diabetes etc.'
                 : 'Search guidelines and screenings'
             }
             className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -49,7 +49,7 @@ const GuidelineSearch: React.FC<GuidelineSearchProps> = ({
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full py-2 px-3 border border-gray-300 text-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             {categories.map((category) => (
               <option key={category} value={category}>

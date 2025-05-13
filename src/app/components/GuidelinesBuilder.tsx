@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { FaGlobe, FaLock, FaPlus, FaSave, FaTag, FaTrash, FaUndo } from 'react-icons/fa';
 
 import GuidelineService from '../../lib/services/guidelineService';
 import { UserProfile } from '../../lib/types';
+import GuidelineForm from './GuidelineForm';
 import { AgeRange, GuidelineItem } from './PersonalizedGuidelines';
+import { GuidelineView } from './types';
 
 export const CATEGORIES = [
   'General Health',
@@ -33,14 +36,14 @@ const DEFAULT_GUIDELINE: GuidelineItem = {
   genders: ['all'],
   category: 'General Health',
   visibility: 'private',
-  tags: [],
 };
 
 interface GuidelinesBuilderProps {
   userProfile: UserProfile;
+  setCurrentView: (view: GuidelineView) => void;
 }
 
-const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
+const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderProps) => {
   const [guidelines, setGuidelines] = useState<GuidelineItem[]>([]);
   const [currentGuideline, setCurrentGuideline] = useState<GuidelineItem>({ ...DEFAULT_GUIDELINE });
   const [isEditing, setIsEditing] = useState(false);
@@ -73,7 +76,6 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
       ...DEFAULT_GUIDELINE,
       id: generateId(),
       visibility: userProfile.isAdmin ? 'public' : 'private', // Default to private unless admin
-      tags: [],
     });
     setAgeRange({
       min: '18',
@@ -92,7 +94,7 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
       guideline.createdBy !== userProfile.userId &&
       guideline.visibility === 'public'
     ) {
-      alert("You don't have permission to edit this public guideline.");
+      toast.error("You don't have permission to edit this public guideline.");
       return;
     }
 
@@ -117,7 +119,7 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
       guideline?.createdBy !== userProfile.userId &&
       guideline?.visibility === 'public'
     ) {
-      alert("You don't have permission to delete this public guideline.");
+      toast.error("You don't have permission to delete this public guideline.");
       return;
     }
 
@@ -131,7 +133,7 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
 
   const handleResetDefaults = () => {
     if (!userProfile.isAdmin) {
-      alert('Only administrators can reset guidelines to defaults.');
+      toast.error('Only administrators can reset guidelines to defaults.');
       return;
     }
 
@@ -139,13 +141,14 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
       GuidelineService.resetToDefaults();
       const loadedGuidelines = GuidelineService.getGuidelines(userProfile.userId);
       setGuidelines(loadedGuidelines);
+      toast.success('Guidelines have been reset to defaults.');
     }
   };
 
-  const handleSaveGuideline = () => {
+  const handleSaveGuideline = async () => {
     // Make sure we have at least one age range
     if (currentGuideline.ageRanges.length === 0) {
-      alert('Please add at least one age range for this guideline.');
+      toast.error('Please add at least one age range for this guideline.');
       return;
     }
 
@@ -171,34 +174,47 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
       }
     }
 
-    if (isEditing) {
-      const updatedGuidelines = GuidelineService.updateGuideline(
-        guidelineToSave,
-        userProfile.userId,
-        userProfile.isAdmin
-      );
-      setGuidelines(updatedGuidelines);
-    } else {
-      const updatedGuidelines = GuidelineService.addGuideline(
-        guidelineToSave,
-        userProfile.userId,
-        userProfile.isAdmin
-      );
-      setGuidelines(updatedGuidelines);
-    }
+    try {
+      let updatedGuidelines;
 
-    // Reset form
-    setCurrentGuideline({ ...DEFAULT_GUIDELINE });
-    setAgeRange({
-      min: '18',
-      max: '',
-      frequency: '',
-      frequencyMonths: '',
-      frequencyMonthsMax: '',
-      notes: '',
-    });
-    setTagInput('');
-    setIsEditing(false);
+      if (isEditing) {
+        updatedGuidelines = GuidelineService.updateGuideline(
+          guidelineToSave,
+          userProfile.userId,
+          userProfile.isAdmin
+        );
+
+        toast.success('Guideline updated successfully!');
+      } else {
+        updatedGuidelines = await GuidelineService.addGuideline(
+          guidelineToSave,
+          userProfile.userId,
+          userProfile.isAdmin
+        );
+
+        toast.success('Guideline created successfully!');
+        // Navigate to All Guidelines view
+        setCurrentView(GuidelineView.AllGuidelinesView);
+      }
+
+      setGuidelines(updatedGuidelines);
+
+      // Reset form
+      setCurrentGuideline({ ...DEFAULT_GUIDELINE });
+      setAgeRange({
+        min: '18',
+        max: '',
+        frequency: '',
+        frequencyMonths: '',
+        frequencyMonthsMax: '',
+        notes: '',
+      });
+      setTagInput('');
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to save guideline:', error);
+      toast.error('Failed to save guideline. Please try again.');
+    }
   };
 
   const handleAddAgeRange = () => {
@@ -364,7 +380,7 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
             <select
               value={visibilityFilter}
               onChange={(e) => setVisibilityFilter(e.target.value as 'all' | 'public' | 'private')}
-              className="border border-gray-300 rounded p-1 text-sm"
+              className="border border-gray-300 rounded p-1 text-sm text-gray-700"
             >
               <option value="all">All Guidelines</option>
               <option value="public">Public Only</option>
@@ -379,12 +395,6 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
           <h3 className="text-lg font-medium text-gray-700">
             {isEditing ? 'Edit Guideline' : 'Add New Guideline'}
           </h3>
-          <button
-            onClick={handleAddGuideline}
-            className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-          >
-            <FaPlus className="text-sm" /> New Guideline
-          </button>
         </div>
 
         <div className="space-y-4">
@@ -646,52 +656,6 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
             </div>
           </div>
 
-          <div>
-            <div className="block text-sm font-medium text-gray-700 mb-1">Tags</div>
-
-            {/* Display current tags */}
-            <div className="flex flex-wrap gap-2 mb-2">
-              {currentGuideline.tags?.map((tag) => (
-                <span
-                  key={tag}
-                  className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full text-sm flex items-center gap-1"
-                >
-                  {tag}
-                  <button
-                    onClick={() => handleRemoveTag(tag)}
-                    className="text-gray-600 hover:text-red-600 ml-1"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-
-            {/* Add new tag */}
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                className="border border-gray-300 rounded-md p-2 text-gray-700 flex-grow"
-                placeholder="Add a tag (e.g. cancer, heart)"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddTag();
-                  }
-                }}
-              />
-              <button
-                onClick={handleAddTag}
-                className="bg-gray-200 text-gray-700 px-3 py-2 rounded hover:bg-gray-300 flex items-center gap-1"
-              >
-                <FaTag className="text-sm" /> Add
-              </button>
-            </div>
-            <p className="text-xs text-gray-500 mt-1">Press Enter or click Add to add a tag</p>
-          </div>
-
           <div className="pt-4">
             <button
               onClick={handleSaveGuideline}
@@ -707,105 +671,6 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
             </button>
           </div>
         </div>
-      </div>
-
-      <div>
-        <h3 className="text-lg font-medium text-gray-700 mb-3">Current Guidelines</h3>
-        {guidelines.length === 0 ? (
-          <p className="text-gray-500 italic">No guidelines added yet.</p>
-        ) : (
-          <div className="space-y-3">
-            {filterGuidelines(guidelines).map((guideline) => (
-              <div
-                key={guideline.id}
-                className="border border-gray-200 rounded-md p-3 hover:bg-gray-50"
-              >
-                <div className="flex justify-between">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-gray-800">{guideline.name}</h4>
-                    {guideline.visibility === 'public' ? (
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <FaGlobe className="text-xs" /> Public
-                      </span>
-                    ) : (
-                      <span className="text-xs bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <FaLock className="text-xs" /> Private
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    {(userProfile.isAdmin ||
-                      guideline.createdBy === userProfile.userId ||
-                      guideline.visibility === 'private') && (
-                      <>
-                        <button
-                          onClick={() => handleEditGuideline(guideline)}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteGuideline(guideline.id)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          Delete
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 mt-1">{guideline.description}</p>
-
-                {/* Age ranges with frequency details */}
-                {guideline.ageRanges.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-xs font-semibold text-gray-700">
-                      Age-Specific Recommendations:
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-1 mt-1">
-                      {guideline.ageRanges.map((range, index) => (
-                        <div key={index} className="text-xs bg-gray-50 p-1 rounded">
-                          <span className="font-medium">{range.label}:</span>{' '}
-                          {range.frequency || guideline.frequency}
-                          {range.notes && (
-                            <span className="block italic text-gray-500">{range.notes}</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                    {guideline.frequency}
-                  </span>
-                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                    {guideline.category}
-                  </span>
-                  <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">
-                    Gender:{' '}
-                    {guideline.genders.includes('all') ? 'All' : guideline.genders.join(', ')}
-                  </span>
-                </div>
-
-                {/* Tags */}
-                {guideline.tags && guideline.tags.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {guideline.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs capitalize"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
