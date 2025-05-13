@@ -51,15 +51,15 @@ const GuidelineCard: React.FC<GuidelineCardProps> = ({
   const { tools, resources } = getToolsAndResourcesForGuideline(guideline.id);
   const hasResourcesOrRiskTools = tools.length > 0 || resources.length > 0;
 
-  const handlePersonalize = () => {
+  const handlePersonalize = async () => {
     if (!userProfile) return;
 
     try {
-      const personalizedGuideline = GuidelineService.createPersonalizedGuideline(
+      const personalizedGuideline = await GuidelineService.createPersonalizedGuideline(
         guideline.id,
         userProfile.userId
       );
-      router.push(`/guidelines/edit/${personalizedGuideline}`);
+      router.push(`/guidelines/edit/${personalizedGuideline.id}`);
     } catch (error) {
       console.error('Error creating personalized guideline:', error);
       alert('There was an error creating your personalized guideline.');

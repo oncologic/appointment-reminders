@@ -94,8 +94,8 @@ const EditGuidelinePage = () => {
         setUserProfile(profile);
 
         // Load guideline
-        const allGuidelines = GuidelineService.getGuidelines(profile.userId);
-        const foundGuideline = allGuidelines.find((g) => g.id === guidelineId);
+        const allGuidelines = await GuidelineService.getGuidelines(profile.userId);
+        const foundGuideline = allGuidelines.find((g: GuidelineItem) => g.id === guidelineId);
 
         if (!foundGuideline) {
           setError('Guideline not found.');
@@ -130,7 +130,7 @@ const EditGuidelinePage = () => {
         // If this is a personalized guideline, load the original for reference
         if (foundGuideline.originalGuidelineId) {
           const originalGuidelineItem = allGuidelines.find(
-            (g) => g.id === foundGuideline.originalGuidelineId
+            (g: GuidelineItem) => g.id === foundGuideline.originalGuidelineId
           );
           if (originalGuidelineItem) {
             setOriginalGuideline(originalGuidelineItem);
@@ -729,8 +729,6 @@ const EditGuidelinePage = () => {
                   Add Age Range
                 </button>
               </div>
-            </div>
-
             </div>
 
             <div>

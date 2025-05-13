@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 
 import GuidelineService from '../../lib/services/guidelineService';
-import { GuidelineItem, UserPreferences, UserProfile } from '../components/PersonalizedGuidelines';
+import { UserProfile } from '../../lib/types';
+import { GuidelineItem, UserPreferences } from '../components/PersonalizedGuidelines';
 import { ScreeningRecommendation } from '../components/types';
 
 export const useGuidelines = (userProfile: UserProfile | null) => {
@@ -358,7 +359,7 @@ const convertGuidelinesToScreenings = (
         name: guideline.name,
         description: guideline.description,
         frequency: frequencyText,
-        ageRange: guideline.ageRanges.map((r) => r.label).join(', '),
+        ageRange: guideline.ageRanges,
         ageRangeDetails: guideline.ageRanges,
         tags: guideline.tags,
         lastCompleted,
@@ -377,7 +378,7 @@ const convertGuidelinesToScreenings = (
         name: guideline.name || 'Error processing guideline',
         description: 'An error occurred while processing this guideline',
         frequency: '',
-        ageRange: '',
+        ageRange: [],
         ageRangeDetails: [],
         dueDate: 'Unknown',
         status: 'upcoming',
