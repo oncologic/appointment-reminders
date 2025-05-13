@@ -11,7 +11,8 @@ import {
 } from 'react-icons/fa';
 
 import GuidelineService from '../../lib/services/guidelineService';
-import { AgeRange, GuidelineItem, UserProfile } from './PersonalizedGuidelines';
+import { UserProfile } from '../../lib/types';
+import { AgeRange, GuidelineItem } from './PersonalizedGuidelines';
 
 export interface RiskAssessmentTool {
   id: string;
@@ -82,8 +83,8 @@ const GuidelineDetail = ({
   };
 
   // Handle marking a guideline as completed
-  const handleMarkCompleted = () => {
-    const result = GuidelineService.markGuidelineCompleted(updatedGuideline.id);
+  const handleMarkCompleted = async () => {
+    const result = await GuidelineService.markGuidelineCompleted(updatedGuideline.id);
     if (result) {
       setUpdatedGuideline(result);
       setCompletedMessage(
@@ -222,7 +223,7 @@ const GuidelineDetail = ({
                   <FaCheckCircle className="ml-2 inline-block text-green-600" />
                 </h3>
                 <span className="text-sm font-medium bg-white text-blue-800 px-3 py-1 rounded-full">
-                  Applies to you
+                  Your Age Group
                 </span>
               </div>
               <p className="text-gray-700">
