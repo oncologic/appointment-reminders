@@ -178,7 +178,7 @@ const GuidelineCard: React.FC<GuidelineCardProps> = ({
             className="text-xs flex items-center px-2 py-1 bg-blue-400 hover:bg-blue-500 text-white rounded transition-colors"
           >
             <FaClipboardList className="mr-1" />
-            Add
+            Add to My Screenings
           </button>
         </div>
       </div>
