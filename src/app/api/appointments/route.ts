@@ -15,6 +15,7 @@ const mapDbAppointmentToAppointment = (dbAppointment: any) => {
     notes: dbAppointment.notes || undefined,
     detailsPath: `/appointments/${dbAppointment.id}`,
     completed: dbAppointment.completed,
+    screeningId: dbAppointment.screening_id || undefined,
     result: dbAppointment.result
       ? {
           status: dbAppointment.result.status,
@@ -113,6 +114,7 @@ export async function POST(request: NextRequest) {
       notes: appointmentData.notes,
       completed: appointmentData.completed || false,
       result: appointmentData.result || null,
+      screening_id: appointmentData.screeningId || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };

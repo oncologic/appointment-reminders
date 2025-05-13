@@ -15,6 +15,7 @@ const mapDbAppointmentToAppointment = (dbAppointment: any) => {
     notes: dbAppointment.notes || undefined,
     detailsPath: `/appointments/${dbAppointment.id}`,
     completed: dbAppointment.completed,
+    screeningId: dbAppointment.screening_id || undefined,
     result: dbAppointment.result
       ? {
           status: dbAppointment.result.status,
@@ -119,6 +120,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       delete updateData.providerId;
     }
 
+    if (updateData.screeningId) {
+      updateData.screening_id = updateData.screeningId;
+      delete updateData.screeningId;
+    }
+
     // Always update the updated_at timestamp
     updateData.updated_at = new Date().toISOString();
 
@@ -133,6 +139,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       'notes',
       'completed',
       'result',
+      'screening_id',
       'updated_at',
     ];
 

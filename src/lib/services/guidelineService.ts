@@ -932,6 +932,63 @@ export const GuidelineService = {
       return false;
     }
   },
+
+  // Update a screening's completion date
+  updateScreeningCompletionDate: async (
+    guidelineId: string,
+    completionDate: string,
+    userId?: string
+  ): Promise<boolean> => {
+    try {
+      // If userId is not provided, get the current user profile
+      let userIdToUse = userId;
+      if (!userIdToUse) {
+        const userProfile = await GuidelineService.getUserProfile();
+        if (!userProfile || !userProfile.id) {
+          throw new Error('User profile not found or missing ID');
+        }
+        userIdToUse = userProfile.id;
+      }
+
+      // Calculate the next due date based on the guideline's frequency
+      const guidelines = await GuidelineService.getGuidelines();
+      const guideline = guidelines.find((g) => g.id === guidelineId);
+
+      if (!guideline) {
+        throw new Error('Guideline not found');
+      }
+
+      // Set next due date based on the completion date and frequency
+      const completionDateObj = new Date(completionDate);
+      const nextDueDate = new Date(completionDateObj);
+      nextDueDate.setMonth(
+        nextDueDate.getMonth() + (guideline.frequencyMonths || 12) // Default to annual if not specified
+      );
+
+      // Update the screening in the database
+      const response = await fetch(`/api/screenings/${guidelineId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userIdToUse,
+          last_completed_date: completionDate,
+          next_due_date: nextDueDate.toISOString(),
+          status: 'completed',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update screening completion date: ${response.status}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error updating screening completion date:', error);
+      return false;
+    }
+  },
 };
 
 export default GuidelineService;

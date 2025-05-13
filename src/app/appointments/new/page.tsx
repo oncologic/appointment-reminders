@@ -568,6 +568,12 @@ const NewAppointmentPage = () => {
       // Get provider details
       const provider = selectedDoctor ? doctors.find((doc) => doc.id === selectedDoctor) : null;
 
+      // Check if the selected service is a screening from user's screenings list
+      const isScreening =
+        !showCustomService &&
+        selectedService &&
+        screenings.some((screening) => screening.id === selectedService);
+
       // Create appointment data
       const appointmentData = {
         title: showCustomService ? customService : getSelectedServiceName(),
@@ -578,6 +584,8 @@ const NewAppointmentPage = () => {
         date: appointmentDate,
         notes: notes,
         completed: isPastAppointment && isCompleted,
+        // Include screeningId if the service is a screening
+        screeningId: isScreening ? selectedService : undefined,
         result:
           isPastAppointment && isCompleted && appointmentResult
             ? {
@@ -591,6 +599,22 @@ const NewAppointmentPage = () => {
       // Save to API
       await createAppointment(appointmentData);
       console.log('Appointment recorded successfully');
+
+      // If this was a completed appointment for a screening, also update the screening's last_completed_date
+      if (isPastAppointment && isCompleted && isScreening && selectedService) {
+        try {
+          // Update the screening's completion date using the new method
+          await GuidelineService.updateScreeningCompletionDate(
+            selectedService,
+            appointmentDate.toISOString(),
+            user?.id
+          );
+          console.log('Screening completion date updated successfully');
+        } catch (error) {
+          console.error('Error updating screening completion date:', error);
+          // Continue anyway since the appointment was created
+        }
+      }
 
       // Redirect to appointments page
       window.location.href = '/appointments';
@@ -614,42 +638,57 @@ const NewAppointmentPage = () => {
             <h1 className="text-2xl font-semibold text-gray-800">Schedule an Appointment</h1>
           </div>
 
-          {/* Step indicators */}
+          {/* Step indicators - updated for mobile responsiveness */}
           <div className="flex border-b border-gray-200">
             <div
               className={`flex-1 text-center py-3 ${
                 step === 'service' ? 'border-b-2 border-blue-500 font-medium text-blue-600' : ''
               }`}
             >
-              1. Select Service
+              <span className="hidden sm:inline">1. Select Service</span>
+              <span className="sm:hidden flex justify-center items-center">
+                <FaPlus className="mr-1" size={14} /> 1
+              </span>
             </div>
             <div
               className={`flex-1 text-center py-3 ${
                 step === 'provider' ? 'border-b-2 border-blue-500 font-medium text-blue-600' : ''
               }`}
             >
-              2. Select Provider
+              <span className="hidden sm:inline">2. Select Provider</span>
+              <span className="sm:hidden flex justify-center items-center">
+                <FaUserMd className="mr-1" size={14} /> 2
+              </span>
             </div>
             <div
               className={`flex-1 text-center py-3 ${
                 step === 'datetime' ? 'border-b-2 border-blue-500 font-medium text-blue-600' : ''
               }`}
             >
-              3. Date & Time
+              <span className="hidden sm:inline">3. Date & Time</span>
+              <span className="sm:hidden flex justify-center items-center">
+                <FaCalendarAlt className="mr-1" size={14} /> 3
+              </span>
             </div>
             <div
               className={`flex-1 text-center py-3 ${
                 step === 'notes' ? 'border-b-2 border-blue-500 font-medium text-blue-600' : ''
               }`}
             >
-              4. Notes
+              <span className="hidden sm:inline">4. Notes</span>
+              <span className="sm:hidden flex justify-center items-center">
+                <FaRegComment className="mr-1" size={14} /> 4
+              </span>
             </div>
             <div
               className={`flex-1 text-center py-3 ${
                 step === 'confirm' ? 'border-b-2 border-blue-500 font-medium text-blue-600' : ''
               }`}
             >
-              5. Confirm
+              <span className="hidden sm:inline">5. Confirm</span>
+              <span className="sm:hidden flex justify-center items-center">
+                <FaRegClock className="mr-1" size={14} /> 5
+              </span>
             </div>
           </div>
 
@@ -722,8 +761,37 @@ const NewAppointmentPage = () => {
                                     : 'border-gray-200 hover:bg-blue-50 hover:border-blue-200'
                                 }`}
                             >
-                              <h3 className="font-medium text-gray-800">{screening.name}</h3>
-                              <p className="text-sm text-gray-500 mt-1">{screening.description}</p>
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h3 className="font-medium text-gray-800">{screening.name}</h3>
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    {screening.description}
+                                  </p>
+                                </div>
+                                <div className="ml-2">
+                                  {screening.status === 'completed' ? (
+                                    <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                                      Completed
+                                    </span>
+                                  ) : screening.status === 'due' ? (
+                                    <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">
+                                      Due
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                                      Recommended
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              {screening.status === 'completed' && (
+                                <p className="text-xs text-green-600 mt-2">
+                                  Last completed:{' '}
+                                  {screening.dueDate
+                                    ? new Date(screening.dueDate).toLocaleDateString()
+                                    : 'N/A'}
+                                </p>
+                              )}
                             </div>
                           );
                         })}

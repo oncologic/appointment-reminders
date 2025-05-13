@@ -74,8 +74,8 @@ const AppointmentsPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-800">Appointments</h1>
         </div>
 
-        <div className="flex justify-between items-center mb-8">
-          <div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 space-y-4 sm:space-y-0">
+          <div className="w-full sm:w-auto">
             <div className="inline-flex items-center border rounded-lg overflow-hidden">
               <button
                 className={`px-4 py-2 flex items-center ${
@@ -98,17 +98,17 @@ const AppointmentsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 w-full sm:w-auto">
             <Link
               href="/providers"
-              className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg flex items-center hover:bg-gray-50"
+              className="flex-1 sm:flex-none bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg flex items-center justify-center sm:justify-start hover:bg-gray-50"
             >
               <FaUserMd className="mr-2" />
               Providers
             </Link>
             <Link
               href="/appointments/new"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
+              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center sm:justify-start"
             >
               <FaPlus className="mr-2" />
               New appointment
@@ -171,7 +171,14 @@ const AppointmentsPage: React.FC = () => {
                         ></div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <h3 className="font-semibold text-gray-800">{appointment.title}</h3>
+                            <div className="flex items-center">
+                              <h3 className="font-semibold text-gray-800">{appointment.title}</h3>
+                              {appointment.screeningId && (
+                                <span className="ml-2 text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                                  Screening
+                                </span>
+                              )}
+                            </div>
                             <span
                               className={`text-sm ${appointment.completed ? 'text-gray-500' : 'text-blue-600 font-medium'}`}
                             >
@@ -192,6 +199,12 @@ const AppointmentsPage: React.FC = () => {
                               minute: '2-digit',
                             })}
                           </div>
+                          {appointment.screeningId && (
+                            <div className="mt-1 text-xs text-blue-600">
+                              {screenings.find((s) => s.id === appointment.screeningId)?.name ||
+                                'Health Screening'}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </Link>
