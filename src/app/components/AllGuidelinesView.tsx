@@ -67,6 +67,7 @@ const AllGuidelinesView: React.FC<AllGuidelinesViewProps> = ({
         resultsCount={filteredGuidelines.length}
         totalCount={guidelines.length}
         onClearFilters={clearFilters}
+        showTips={true}
       />
 
       {filteredGuidelines.length > 0 && (

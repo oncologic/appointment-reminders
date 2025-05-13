@@ -3,7 +3,8 @@ import {
   UserPreferences,
   UserProfile,
 } from '../../app/components/PersonalizedGuidelines';
-import { getToolsAndResourcesForGuideline } from '../mockData';
+import { ScreeningRecommendation } from '../../app/components/types';
+import { getToolsAndResourcesForGuideline, upcomingScreenings } from '../mockData';
 
 // Type definitions for a guideline
 export interface AgeRange {
@@ -528,24 +529,29 @@ export const GuidelineService = {
         (s) => s.id === guideline.id || s.title.toLowerCase() === guideline.name.toLowerCase()
       );
 
-      const { status, dueDate, lastCompleted, notes } = getScreeningStatusAndDueDate(
-        guideline,
-        userProfile,
-        userPreferences
-      );
+      const status = 'due';
+      const dueDate = new Date().toISOString();
+      const lastCompleted = null;
+      const notes = null;
+
+      // const { status, dueDate, lastCompleted, notes } = getScreeningStatus(
+      //   guideline,
+      //   userProfile,
+      //   userPreferences
+      // );
 
       // Create screening object
       const screening: ScreeningRecommendation = {
         id: guideline.id,
         name: guideline.name,
         description: guideline.description,
-        frequency: guideline.frequency,
-        ageRange: getAgeRangeDisplay(guideline.ageRanges),
+        frequency: guideline.frequency || 'As recommended',
+        ageRange: guideline.ageRanges,
         ageRangeDetails: guideline.ageRanges,
         status,
         dueDate,
-        lastCompleted,
-        notes,
+        lastCompleted: lastCompleted || undefined,
+        notes: notes || undefined,
         tags: guideline.tags,
         // Add previousResults if they exist in the mock data
         previousResults: mockUpcomingScreening?.previousResults || [],

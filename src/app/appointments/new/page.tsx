@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import React, { Suspense, useEffect, useState } from 'react';
@@ -16,6 +17,7 @@ import {
 import { IoLogoMicrosoft } from 'react-icons/io5';
 
 import ScreeningsServicesList from '@/app/components/ScreeningsServicesList';
+import { ScreeningRecommendation } from '@/app/components/types';
 
 import { BookProviderModal } from '../../components/BookProviderModal';
 
@@ -325,13 +327,42 @@ const NewAppointmentPage = () => {
       )
     : [];
 
-  // Filter screenings based on search term
-  const filteredScreenings = searchTerm
-    ? [...myScreenings, ...serviceTypes].filter(
-        (screening) =>
-          screening.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          screening.description.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+  // Transform ServiceType to ScreeningRecommendation
+  const transformToScreeningRecommendation = (service: ServiceType): ScreeningRecommendation => {
+    return {
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      frequency: service.duration || 'As needed',
+      ageRange: service.relevantForAge
+        ? `${service.relevantForAge[0]}-${service.relevantForAge[1] || 'older'}`
+        : 'All ages',
+      ageRangeDetails: service.relevantForAge
+        ? [
+            {
+              min: service.relevantForAge[0],
+              max: service.relevantForAge[1] || null,
+              label: service.relevantForAge[1]
+                ? `${service.relevantForAge[0]}-${service.relevantForAge[1]}`
+                : `${service.relevantForAge[0]}+`,
+              frequency: service.duration || 'As needed',
+            },
+          ]
+        : [],
+      dueDate: new Date().toISOString(),
+      status: 'due',
+    };
+  };
+
+  // Filter screenings based on search term with transformed type
+  const filteredScreeningsFormatted = searchTerm
+    ? [...myScreenings, ...serviceTypes]
+        .filter(
+          (screening) =>
+            screening.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            screening.description.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        .map(transformToScreeningRecommendation)
     : [];
 
   // Filter doctors based on selected service
@@ -955,9 +986,11 @@ const NewAppointmentPage = () => {
                             >
                               <div className="flex items-center">
                                 <div className="w-12 h-12 bg-gray-200 rounded-full overflow-hidden flex-shrink-0">
-                                  <img
+                                  <Image
                                     src={doctor.image || '/doctor-avatar.png'}
                                     alt={doctor.name}
+                                    width={48}
+                                    height={48}
                                     className="w-full h-full object-cover"
                                   />
                                 </div>
@@ -975,19 +1008,19 @@ const NewAppointmentPage = () => {
 
                   {/* Show Screenings & Services */}
                   {(searchFilter === 'all' || searchFilter === 'screenings') &&
-                    filteredScreenings.length > 0 && (
+                    filteredScreeningsFormatted.length > 0 && (
                       <ScreeningsServicesList
-                        screenings={filteredScreenings}
+                        screenings={filteredScreeningsFormatted}
                         searchQuery={searchTerm}
                         onSearch={(query) => setSearchTerm(query)}
                       />
                     )}
 
                   {((searchFilter === 'providers' && filteredDoctors.length === 0) ||
-                    (searchFilter === 'screenings' && filteredScreenings.length === 0) ||
+                    (searchFilter === 'screenings' && filteredScreeningsFormatted.length === 0) ||
                     (searchFilter === 'all' &&
                       filteredDoctors.length === 0 &&
-                      filteredScreenings.length === 0)) && (
+                      filteredScreeningsFormatted.length === 0)) && (
                     <div className="p-4 text-center text-gray-500">
                       No results found matching your search criteria
                     </div>
@@ -1145,9 +1178,11 @@ const NewAppointmentPage = () => {
                     >
                       <div className="flex items-center">
                         <div className="w-12 h-12 bg-gray-200 rounded-full overflow-hidden flex-shrink-0">
-                          <img
+                          <Image
                             src={doctor.image || '/doctor-avatar.png'}
                             alt={doctor.name}
+                            width={48}
+                            height={48}
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -1389,10 +1424,12 @@ const NewAppointmentPage = () => {
                       rel="noopener noreferrer"
                       className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                     >
-                      <img
+                      <Image
                         src="https://www.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_10_2x.png"
                         alt="Google Calendar"
-                        className="w-5 h-5 mr-2"
+                        width={20}
+                        height={20}
+                        className="mr-2"
                       />
                       Google Calendar
                     </a>

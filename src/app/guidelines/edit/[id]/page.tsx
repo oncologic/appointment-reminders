@@ -66,12 +66,13 @@ const EditGuidelinePage = () => {
     notes: '',
   });
 
-  const [resources, setResources] = useState<{ name: string; url: string; description?: string }[]>(
-    []
-  );
+  const [resources, setResources] = useState<
+    { name: string; url: string; description?: string; type: 'resource' | 'risk' }[]
+  >([]);
   const [resourceName, setResourceName] = useState('');
   const [resourceUrl, setResourceUrl] = useState('');
   const [resourceDescription, setResourceDescription] = useState('');
+  const [resourceType, setResourceType] = useState<'resource' | 'risk'>('resource');
   const [originalGuideline, setOriginalGuideline] = useState<GuidelineItem | null>(null);
 
   useEffect(() => {
@@ -245,12 +246,14 @@ const EditGuidelinePage = () => {
       name: resourceName.trim(),
       url: resourceUrl.trim(),
       description: resourceDescription.trim() || undefined,
+      type: resourceType,
     };
 
     setResources([...resources, newResource]);
     setResourceName('');
     setResourceUrl('');
     setResourceDescription('');
+    setResourceType('resource');
   };
 
   const handleRemoveResource = (index: number) => {
@@ -904,6 +907,21 @@ const EditGuidelinePage = () => {
                     className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
                     placeholder="Brief description of this resource"
                   />
+                </div>
+
+                <div>
+                  <label htmlFor="resourceType" className="block text-xs text-gray-500 mb-1">
+                    Resource Type
+                  </label>
+                  <select
+                    id="resourceType"
+                    value={resourceType}
+                    onChange={(e) => setResourceType(e.target.value as 'resource' | 'risk')}
+                    className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
+                  >
+                    <option value="resource">Information Resource</option>
+                    <option value="risk">Risk Assessment Tool</option>
+                  </select>
                 </div>
 
                 <button

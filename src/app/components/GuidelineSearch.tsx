@@ -66,13 +66,13 @@ const GuidelineSearch: React.FC<GuidelineSearchProps> = ({
         {searchQuery && (
           <span>
             {' '}
-            matching "<strong>{searchQuery}</strong>"
+            matching &quot;<strong>{searchQuery}</strong>&quot;
           </span>
         )}
         {selectedCategory && selectedCategory !== 'All Categories' && (
           <span>
             {' '}
-            in <strong>{selectedCategory}</strong>
+            in &quot;<strong>{selectedCategory}</strong>&quot;
           </span>
         )}
       </div>
