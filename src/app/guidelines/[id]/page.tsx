@@ -11,7 +11,8 @@ import GuidelineDetail, {
   GuidelineResource,
   RiskAssessmentTool,
 } from '../../components/GuidelineDetail';
-import { GuidelineItem, UserProfile } from '../../components/PersonalizedGuidelines';
+import { GuidelineItem } from '../../components/PersonalizedGuidelines';
+import { UserProfile } from '@/lib/types';
 
 const GuidelinePage = () => {
   const params = useParams();
@@ -27,39 +28,43 @@ const GuidelinePage = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      setIsLoading(true);
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
 
-      // Load user profile
-      const profile = GuidelineService.getUserProfile();
-      if (!profile) {
-        setError('User profile not found. Please set up your profile first.');
+        // Load user profile
+        const profile = await GuidelineService.getUserProfile();
+        if (!profile) {
+          setError('User profile not found. Please set up your profile first.');
+          setIsLoading(false);
+          return;
+        }
+        setUserProfile(profile);
+
+        // Load guidelines
+        const allGuidelines = GuidelineService.getGuidelines(profile.userId);
+        const foundGuideline = allGuidelines.find((g) => g.id === guidelineId);
+
+        if (!foundGuideline) {
+          setError('Guideline not found.');
+          setIsLoading(false);
+          return;
+        }
+
+        setGuideline(foundGuideline);
+
+        // Load user preferences
+        const prefs = GuidelineService.getUserPreferences();
+        setUserPreferences(prefs);
+      } catch (err) {
+        console.error('Error loading guideline:', err);
+        setError('An error occurred while loading the guideline.');
+      } finally {
         setIsLoading(false);
-        return;
       }
-      setUserProfile(profile);
+    };
 
-      // Load guidelines
-      const allGuidelines = GuidelineService.getGuidelines(profile.userId);
-      const foundGuideline = allGuidelines.find((g) => g.id === guidelineId);
-
-      if (!foundGuideline) {
-        setError('Guideline not found.');
-        setIsLoading(false);
-        return;
-      }
-
-      setGuideline(foundGuideline);
-
-      // Load user preferences
-      const prefs = GuidelineService.getUserPreferences();
-      setUserPreferences(prefs);
-    } catch (err) {
-      console.error('Error loading guideline:', err);
-      setError('An error occurred while loading the guideline.');
-    } finally {
-      setIsLoading(false);
-    }
+    fetchData();
   }, [guidelineId]);
 
   const handleAddToPersonalGuidelines = () => {

@@ -1,5 +1,7 @@
+'use client';
+
 import Link from 'next/link';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FaCalendarAlt,
   FaChevronRight,
@@ -16,15 +18,18 @@ import {
   FaTooth,
   FaUserMd,
   FaUsers,
+  FaSpinner,
 } from 'react-icons/fa';
 
+import useUser from './hooks/useUser';
 import HealthScreenings from './components/HealthScreenings';
 
-const user = {
-  name: 'Ashley Octavia',
-  avatar: '/avatar.png', // Placeholder, add your own image in public/
-  age: 38,
-  gender: 'female',
+// Placeholder user for when data is not yet loaded
+const defaultUser = {
+  firstName: 'Guest',
+  lastName: 'User',
+  age: 0,
+  gender: 'other',
 };
 
 const quickActions = [
@@ -48,6 +53,35 @@ const appointmentsBooked = 7;
 const appointmentsGoal = 10;
 
 const Home: React.FC = () => {
+  const { user, isLoading, error, isAuthenticated } = useUser();
+
+  // Use the API user data or fall back to the default user
+  const userData = user || defaultUser;
+
+  // Show loader while fetching user data
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <FaSpinner className="animate-spin text-blue-600 text-4xl" />
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated && !isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <p className="text-xl mb-4">Please sign in to access your health dashboard</p>
+        <Link
+          href="/login"
+          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition"
+        >
+          Sign In
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -68,9 +102,13 @@ const Home: React.FC = () => {
               ))}
             </div>
             <div className="flex items-center gap-3">
-              <img src={user.avatar} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
+              <img 
+                src="/avatar.png" 
+                alt="avatar" 
+                className="w-8 h-8 rounded-full object-cover" 
+              />
               <div className="hidden sm:block">
-                <p className="font-semibold text-gray-800">{user.name}</p>
+                <p className="font-semibold text-gray-800">{userData.firstName} {userData.lastName}</p>
               </div>
             </div>
           </div>
@@ -84,13 +122,13 @@ const Home: React.FC = () => {
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <div className="flex items-center gap-3 mb-6">
                 <img
-                  src={user.avatar}
+                  src="/avatar.png"
                   alt="avatar"
                   className="w-12 h-12 rounded-full object-cover"
                 />
                 <div>
                   <p className="text-xs text-gray-500">Welcome back,</p>
-                  <p className="font-semibold text-gray-800">{user.name}</p>
+                  <p className="font-semibold text-gray-800">{userData.firstName} {userData.lastName}</p>
                 </div>
               </div>
               <div className="space-y-1">
