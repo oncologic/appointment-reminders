@@ -3,22 +3,28 @@ import React from 'react';
 import { FaChevronRight, FaClock, FaUsers } from 'react-icons/fa';
 import * as Icons from 'react-icons/fa';
 
-import { ScreeningRecommendation } from '@/app/components/types';
+import { ScreeningRecommendation as DBScreeningRecommendation } from '@/app/components/types';
 
-// Extend the ScreeningRecommendation with additional UI properties
-interface ExtendedScreening extends ScreeningRecommendation {
-  title?: string;
-  icon?: string;
-  iconColor?: string;
-  bgColor?: string;
-  statusText?: string;
-  schedulePath?: string;
-  detailsPath?: string;
-  friendRecommendations?: Array<unknown>;
-}
-
+// Unified interface that works with both original and mapped screenings
 interface ScreeningCardProps {
-  screening: ExtendedScreening;
+  screening: {
+    id: string;
+    name?: string;
+    title?: string;
+    description?: string;
+    status: 'due' | 'overdue' | 'completed' | 'upcoming';
+    statusText?: string;
+    frequencyMonths?: number;
+    icon?: string;
+    iconColor?: string;
+    bgColor?: string;
+    schedulePath?: string;
+    detailsPath?: string;
+    friendRecommendations?: Array<unknown>;
+    // Optional fields from DBScreeningRecommendation
+    ageRange?: any[];
+    ageRangeDetails?: any[];
+  };
 }
 
 const ScreeningCard: React.FC<ScreeningCardProps> = ({ screening }) => {

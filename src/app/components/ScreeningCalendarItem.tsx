@@ -2,7 +2,15 @@ import Link from 'next/link';
 import React from 'react';
 import { FaCalendarPlus, FaUserFriends } from 'react-icons/fa';
 
-import { ScreeningRecommendation } from '@/lib/mockData';
+// Remove this import and create a local interface instead
+interface ScreeningRecommendation {
+  id: string;
+  title: string;
+  status: 'due' | 'overdue' | 'completed' | 'upcoming';
+  statusText: string;
+  schedulePath: string;
+  friendRecommendations: any[];
+}
 
 interface ScreeningCalendarItemProps {
   screening: ScreeningRecommendation;
@@ -78,7 +86,7 @@ const ScreeningCalendarItem: React.FC<ScreeningCalendarItemProps> = ({
       </div>
 
       {/* Add a request recommendations link if there are no friend recommendations */}
-      {screening.friendRecommendations.length === 0 && (
+      {screening.friendRecommendations?.length === 0 && (
         <Link href={`/recommendations?screening=${screening.id}`} className="block">
           <div className="flex items-center text-xs text-blue-600 px-1.5 py-0.5 rounded-sm bg-blue-50 hover:bg-blue-100 transition-all text-[10px]">
             <FaUserFriends className="mr-1 flex-shrink-0 text-[10px]" />

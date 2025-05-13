@@ -1,10 +1,46 @@
 import React from 'react';
 
-import { futureScreenings, upcomingScreenings } from '@/lib/mockData';
+import { useGuidelines } from '@/app/hooks/useGuidelines';
+import { useUser } from '@/app/hooks/useUser';
 
 import ScreeningList from './ScreeningList';
 
 const HealthScreenings: React.FC = () => {
+  // Get user profile and screenings from the database
+  const { user } = useUser();
+  const { screenings } = useGuidelines(user);
+
+  // Split screenings into upcoming (due or overdue) and future (upcoming)
+  const upcomingScreenings = screenings
+    .filter((screening) => screening.status === 'due' || screening.status === 'overdue')
+    .map((screening) => ({
+      id: screening.id,
+      title: screening.name,
+      description: screening.description,
+      status: screening.status,
+      statusText: `${screening.status === 'overdue' ? 'Overdue' : 'Due soon'}: ${screening.name}`,
+      schedulePath: `/appointments/new?screening=${screening.id}`,
+      icon: '',
+      iconColor: '',
+      bgColor: '',
+      friendRecommendations: [],
+    }));
+
+  const futureScreenings = screenings
+    .filter((screening) => screening.status === 'upcoming')
+    .map((screening) => ({
+      id: screening.id,
+      title: screening.name,
+      description: screening.description,
+      status: screening.status,
+      statusText: `Recommended: ${screening.name}`,
+      schedulePath: `/appointments/new?screening=${screening.id}`,
+      icon: '',
+      iconColor: '',
+      bgColor: '',
+      friendRecommendations: [],
+    }));
+
   return (
     <div className="lg:col-span-4">
       <ScreeningList

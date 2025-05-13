@@ -1,7 +1,16 @@
 import React from 'react';
 import { FaCalendarPlus, FaClipboardCheck, FaStar, FaUserFriends } from 'react-icons/fa';
 
-import { ScreeningRecommendation } from '@/lib/mockData';
+// Remove this import and create a local interface instead
+interface ScreeningRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  status: 'due' | 'overdue' | 'completed' | 'upcoming';
+  statusText: string;
+  schedulePath: string;
+  friendRecommendations: any[];
+}
 
 interface ScreeningTooltipProps {
   screening: ScreeningRecommendation;
@@ -74,7 +83,7 @@ const ScreeningTooltip: React.FC<ScreeningTooltipProps> = ({ screening, position
       )}
 
       {/* Show friend recommendations if available */}
-      {screening.friendRecommendations.length > 0 && (
+      {screening.friendRecommendations?.length > 0 && (
         <div className="mt-3 border-t border-gray-100 pt-2">
           <p className="text-xs font-medium text-gray-600 mb-2 flex items-center">
             <FaUserFriends className="mr-1 text-blue-600" />
@@ -104,7 +113,7 @@ const ScreeningTooltip: React.FC<ScreeningTooltipProps> = ({ screening, position
       )}
 
       {/* Request recommendations if none available */}
-      {screening.friendRecommendations.length === 0 && (
+      {screening.friendRecommendations?.length === 0 && (
         <div className="mt-3 border-t border-gray-100 pt-2">
           <p className="text-xs text-gray-600 mb-2">No friend recommendations yet.</p>
           <a

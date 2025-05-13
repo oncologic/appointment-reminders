@@ -15,7 +15,9 @@ import {
   FaUserMd,
 } from 'react-icons/fa';
 
-import { Appointment, futureScreenings, upcomingScreenings } from '@/lib/mockData';
+import { useGuidelines } from '@/app/hooks/useGuidelines';
+import { useUser } from '@/app/hooks/useUser';
+import { Appointment } from '@/lib/types';
 
 import MonthCalendar from './MonthCalendar';
 
@@ -29,6 +31,10 @@ const YearCalendar: React.FC<YearCalendarProps> = ({ appointments, initialYear =
   const [showLegend, setShowLegend] = useState<boolean>(false);
   const [showNotifications, setShowNotifications] = useState<boolean>(false);
 
+  // Get user profile and screenings from the database
+  const { user } = useUser();
+  const { screenings } = useGuidelines(user);
+
   // Count appointments by type for the legend
   const appointmentsInYear = appointments.filter((appt) => appt.date.getFullYear() === currentYear);
 
@@ -38,11 +44,17 @@ const YearCalendar: React.FC<YearCalendarProps> = ({ appointments, initialYear =
     (appt) => appt.type === 'Consultation'
   ).length;
 
-  // Get overdue screenings
-  const allScreenings = [...upcomingScreenings, ...futureScreenings];
-  const overdueScreenings = allScreenings.filter(
-    (screening) => screening.status === 'overdue' || screening.status === 'due'
-  );
+  // Get overdue screenings from the database
+  const overdueScreenings = screenings
+    .filter((screening) => screening.status === 'overdue' || screening.status === 'due')
+    .map((screening) => ({
+      id: screening.id,
+      title: screening.name,
+      status: screening.status,
+      statusText: `${screening.status === 'overdue' ? 'Overdue' : 'Due'}: ${screening.name}`,
+      schedulePath: `/appointments/new?screening=${screening.id}`,
+      friendRecommendations: [], // Initialize as empty array since we don't have this data yet
+    }));
 
   const hasNotifications = overdueScreenings.length > 0;
 
@@ -156,7 +168,7 @@ const YearCalendar: React.FC<YearCalendarProps> = ({ appointments, initialYear =
                                 Schedule Now
                               </a>
 
-                              {screening.friendRecommendations.length === 0 && (
+                              {screening.friendRecommendations?.length === 0 && (
                                 <a
                                   href={`/recommendations?screening=${screening.id}`}
                                   className="text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors px-3 py-1.5 rounded flex items-center w-full"
