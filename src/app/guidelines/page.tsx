@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { FaArrowLeft } from 'react-icons/fa';
 
 import { UserProfile } from '@/lib/types';
@@ -11,6 +12,7 @@ import AgeBasedRecommendations from '../components/AgeBasedRecommendations';
 import AllGuidelinesView from '../components/AllGuidelinesView';
 import GuidelineTabs from '../components/GuidelineTabs';
 import GuidelinesBuilder from '../components/GuidelinesBuilder';
+import ManageGuidelinesAdminView from '../components/ManageGuidelinesAdminView';
 import RecommendedScreeningsView from '../components/RecommendedScreeningsView';
 import ScreeningFiltersSidebar from '../components/ScreeningFiltersSidebar';
 import UserProfileForm from '../components/UserProfileForm';
@@ -95,6 +97,46 @@ const GuidelinesPage = () => {
   const hasSelectedGuidelines =
     userPreferences.selectedGuidelineIds && userPreferences.selectedGuidelineIds.length > 0;
 
+  // Add handlers for edit and delete guidelines
+  const handleEditGuideline = (guideline: any) => {
+    // Logic to edit a guideline
+    console.log('Edit guideline:', guideline);
+    // You would typically set some state and show an edit form
+  };
+
+  const handleDeleteGuideline = async (guidelineId: string) => {
+    // Check if userProfile exists
+    if (!userProfile) {
+      toast.error('User profile not found. Please log in again.');
+      return;
+    }
+
+    // Confirm deletion with the user
+    if (
+      window.confirm(
+        'Are you sure you want to delete this guideline? This action cannot be undone.'
+      )
+    ) {
+      try {
+        // Call the service to delete the guideline
+        await GuidelineService.deleteGuideline(
+          guidelineId,
+          userProfile.userId,
+          userProfile.isAdmin
+        );
+
+        // Show success toast
+        toast.success('Guideline deleted successfully');
+
+        // Refresh guidelines data after deletion
+        window.location.reload();
+      } catch (error) {
+        console.error('Error deleting guideline:', error);
+        toast.error('Failed to delete guideline. Please try again later.');
+      }
+    }
+  };
+
   const isLoading = isUserLoading || isGuidelinesLoading;
 
   if (isLoading || !userProfile) {
@@ -148,7 +190,7 @@ const GuidelinesPage = () => {
             handleAddToRecommended={addToRecommended}
           />
         );
-      case GuidelineView.ManageGuidelines:
+      case GuidelineView.NewGuideline:
         return (
           <div className="space-y-6">
             <GuidelinesBuilder userProfile={userProfile} setCurrentView={setCurrentView} />
@@ -160,6 +202,16 @@ const GuidelinesPage = () => {
             userProfile={userProfile}
             setUserProfile={setUserProfile}
             onSave={handleSaveUserProfile}
+          />
+        );
+      case GuidelineView.ManageGuidelinesAdmin:
+        return (
+          <ManageGuidelinesAdminView
+            guidelines={guidelines}
+            userProfile={userProfile}
+            isAdmin={userProfile.isAdmin}
+            onEditGuideline={handleEditGuideline}
+            onDeleteGuideline={handleDeleteGuideline}
           />
         );
       default:
@@ -191,7 +243,12 @@ const GuidelinesPage = () => {
           Recommended health screenings based on your age, gender, and risk factors
         </p>
 
-        <GuidelineTabs currentView={currentView} setCurrentView={setCurrentView} />
+        <GuidelineTabs
+          currentView={currentView}
+          setCurrentView={setCurrentView}
+          isAdmin={userProfile.isAdmin}
+          userId={userProfile.userId}
+        />
 
         {/* Age-based recommendations section - only show in recommended view */}
         {currentView === GuidelineView.MyScreenings && (

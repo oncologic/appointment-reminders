@@ -250,7 +250,7 @@ const ManageGuidelinesPage = () => {
               </label>
             </div>
           </div>
-
+          {/* 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Risk Factors</label>
             <div className="space-y-2">
@@ -306,7 +306,7 @@ const ManageGuidelinesPage = () => {
                 <span className="ml-2 text-sm text-gray-700">Current or former smoker</span>
               </label>
             </div>
-          </div>
+          </div> */}
 
           <div className="pt-4">
             <button

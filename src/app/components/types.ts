@@ -38,6 +38,7 @@ export interface ScreeningRecommendation {
 export enum GuidelineView {
   MyScreenings = 'myScreenings',
   AllGuidelinesView = 'allGuidelines',
-  ManageGuidelines = 'manageGuidelines',
+  NewGuideline = 'newGuideline',
   UserProfile = 'userProfile',
+  ManageGuidelinesAdmin = 'manageGuidelinesAdmin',
 }

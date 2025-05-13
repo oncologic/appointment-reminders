@@ -246,16 +246,60 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       );
     }
 
-    // Delete the guideline (cascade will handle age ranges and resources)
+    // Explicitly delete related records first to ensure clean deletion
+
+    // 1. Delete age ranges associated with this guideline
+    const { error: ageRangesDeleteError } = await supabase
+      .from('guideline_age_ranges')
+      .delete()
+      .eq('guideline_id', id);
+
+    if (ageRangesDeleteError) {
+      console.error('Error deleting guideline age ranges:', ageRangesDeleteError);
+      return NextResponse.json({ error: ageRangesDeleteError.message }, { status: 500 });
+    }
+
+    // 2. Delete resources associated with this guideline
+    const { error: resourcesDeleteError } = await supabase
+      .from('guideline_resources')
+      .delete()
+      .eq('guideline_id', id);
+
+    if (resourcesDeleteError) {
+      console.error('Error deleting guideline resources:', resourcesDeleteError);
+      return NextResponse.json({ error: resourcesDeleteError.message }, { status: 500 });
+    }
+
+    // 3. Delete any user_selected_guidelines references to this guideline
+    const { error: userSelectionsDeleteError } = await supabase
+      .from('user_selected_guidelines')
+      .delete()
+      .eq('guideline_id', id);
+
+    if (userSelectionsDeleteError) {
+      console.error('Error deleting user guideline selections:', userSelectionsDeleteError);
+      // Continue with deletion even if this fails
+    }
+
+    // 4. Delete any screening_results associated with this guideline
+    const { error: screeningResultsDeleteError } = await supabase
+      .from('screening_results')
+      .delete()
+      .eq('guideline_id', id);
+
+    if (screeningResultsDeleteError) {
+      console.error('Error deleting screening results:', screeningResultsDeleteError);
+      // Continue with deletion even if this fails
+    }
+
+    // Finally, delete the guideline itself
     const { error: deleteError } = await supabase.from('guidelines').delete().eq('id', id);
 
     if (deleteError) {
       return NextResponse.json({ error: deleteError.message }, { status: 500 });
     }
 
-    return NextResponse.json({
-      message: 'Guideline deleted successfully',
-    });
+    return NextResponse.json({ message: 'Guideline deleted successfully' });
   } catch (error) {
     console.error('Error deleting guideline:', error);
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
