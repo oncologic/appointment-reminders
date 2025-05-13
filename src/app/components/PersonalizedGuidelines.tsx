@@ -6,6 +6,7 @@ import {
   FaExclamationTriangle,
   FaStar,
 } from 'react-icons/fa';
+
 import { UserProfile } from '@/lib/types';
 
 export interface AgeRange {
@@ -16,6 +17,13 @@ export interface AgeRange {
   frequencyMonths?: number; // Minimum frequency in months (e.g., 12 for annual minimum)
   frequencyMonthsMax?: number; // Maximum frequency in months (e.g., 36 for every 3 years maximum)
   notes?: string;
+}
+
+export interface Resource {
+  name: string;
+  url: string;
+  description?: string;
+  type: 'risk' | 'resource';
 }
 
 export interface GuidelineItem {
@@ -32,12 +40,7 @@ export interface GuidelineItem {
   createdBy?: string;
   tags?: string[];
   originalGuidelineId?: string;
-  resources?: {
-    name: string;
-    url: string;
-    description?: string;
-    type: 'risk' | 'resource';
-  }[];
+  resources?: Resource[];
   lastCompletedDate?: string; // ISO date string when this screening was last completed
   nextDueDate?: string; // ISO date string when this screening is next due
 }

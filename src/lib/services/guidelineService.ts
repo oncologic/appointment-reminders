@@ -247,6 +247,7 @@ export const GuidelineService = {
       body: JSON.stringify({
         guideline,
         ageRanges: guideline.ageRanges,
+        resources: guideline.resources || [],
       }),
     });
 

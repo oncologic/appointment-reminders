@@ -16,6 +16,13 @@ interface AgeRange {
   notes?: string;
 }
 
+interface Resource {
+  name: string;
+  url: string;
+  description?: string;
+  type: 'risk' | 'resource';
+}
+
 interface GuidelineData {
   name: string;
   description: string;
@@ -26,15 +33,22 @@ interface GuidelineData {
   frequency?: string;
   frequencyMonths?: number;
   frequencyMonthsMax?: number;
+  resources?: Resource[];
 }
 
 interface GuidelineFormProps {
   guideline: GuidelineData;
   ageRanges: AgeRange[];
+  resources?: Resource[];
   setCurrentView: (view: GuidelineView) => void;
 }
 
-const GuidelineForm: React.FC<GuidelineFormProps> = ({ guideline, ageRanges, setCurrentView }) => {
+const GuidelineForm: React.FC<GuidelineFormProps> = ({
+  guideline,
+  ageRanges,
+  resources = [],
+  setCurrentView,
+}) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
@@ -51,6 +65,7 @@ const GuidelineForm: React.FC<GuidelineFormProps> = ({ guideline, ageRanges, set
         body: JSON.stringify({
           guideline,
           ageRanges,
+          resources,
         }),
       });
 

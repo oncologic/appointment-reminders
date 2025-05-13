@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const requestData = await request.json();
-    const { guideline, ageRanges } = requestData;
+    const { guideline, ageRanges, resources } = requestData;
 
     // Convert camelCase properties to snake_case to match DB schema
     const guidelineData = {
@@ -148,6 +148,36 @@ export async function POST(request: NextRequest) {
 
       if (ageRangesError) {
         return NextResponse.json({ error: ageRangesError.message }, { status: 500 });
+      }
+    }
+
+    // Insert resources if provided
+    if (resources && resources.length > 0) {
+      // Map the resources to match the database schema
+      const resourcesWithGuidelineId = resources.map(
+        (resource: {
+          name: string;
+          url: string;
+          description?: string;
+          type: 'risk' | 'resource';
+        }) => ({
+          guideline_id: newGuideline.id,
+          name: resource.name,
+          url: resource.url,
+          description: resource.description || null,
+          type: resource.type || 'resource',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+      );
+
+      const { error: resourcesError } = await supabase
+        .from('guideline_resources')
+        .insert(resourcesWithGuidelineId);
+
+      if (resourcesError) {
+        console.error('Error inserting resources:', resourcesError);
+        // Don't fail the entire request just because resources failed
       }
     }
 

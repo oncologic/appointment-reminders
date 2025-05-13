@@ -28,6 +28,13 @@ interface AgeRangeFormState {
   notes: string;
 }
 
+interface Resource {
+  name: string;
+  url: string;
+  description?: string;
+  type: 'risk' | 'resource';
+}
+
 const DEFAULT_GUIDELINE: GuidelineItem = {
   id: '',
   name: '',
@@ -36,6 +43,7 @@ const DEFAULT_GUIDELINE: GuidelineItem = {
   genders: ['all'],
   category: 'General Health',
   visibility: 'private',
+  resources: [],
 };
 
 interface GuidelinesBuilderProps {
@@ -58,6 +66,12 @@ const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderPro
   const [isLoading, setIsLoading] = useState(true);
   const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'public' | 'private'>('all');
   const [tagInput, setTagInput] = useState('');
+
+  // Resources state
+  const [resourceName, setResourceName] = useState('');
+  const [resourceUrl, setResourceUrl] = useState('');
+  const [resourceDescription, setResourceDescription] = useState('');
+  const [resourceType, setResourceType] = useState<'risk' | 'resource'>('resource');
 
   // Load guidelines on component mount
   useEffect(() => {
@@ -85,6 +99,11 @@ const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderPro
       frequencyMonthsMax: '',
       notes: '',
     });
+    // Reset resource fields
+    setResourceName('');
+    setResourceUrl('');
+    setResourceDescription('');
+    setResourceType('resource');
   };
 
   const handleEditGuideline = (guideline: GuidelineItem) => {
@@ -108,6 +127,11 @@ const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderPro
       frequencyMonthsMax: '',
       notes: '',
     });
+    // Reset resource fields
+    setResourceName('');
+    setResourceUrl('');
+    setResourceDescription('');
+    setResourceType('resource');
   };
 
   const handleDeleteGuideline = (id: string) => {
@@ -210,6 +234,11 @@ const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderPro
         notes: '',
       });
       setTagInput('');
+      // Reset resource fields
+      setResourceName('');
+      setResourceUrl('');
+      setResourceDescription('');
+      setResourceType('resource');
       setIsEditing(false);
     } catch (error) {
       console.error('Failed to save guideline:', error);
@@ -352,6 +381,40 @@ const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderPro
       return guidelines;
     }
     return guidelines.filter((g) => g.visibility === visibilityFilter);
+  };
+
+  const handleAddResource = () => {
+    if (!resourceName.trim() || !resourceUrl.trim()) {
+      toast.error('Please enter both a name and URL for the resource');
+      return;
+    }
+
+    const newResource: Resource = {
+      name: resourceName.trim(),
+      url: resourceUrl.trim(),
+      description: resourceDescription.trim() || undefined,
+      type: resourceType,
+    };
+
+    setCurrentGuideline({
+      ...currentGuideline,
+      resources: [...(currentGuideline.resources || []), newResource],
+    });
+
+    // Reset form fields
+    setResourceName('');
+    setResourceUrl('');
+    setResourceDescription('');
+    setResourceType('resource');
+  };
+
+  const handleRemoveResource = (index: number) => {
+    if (!currentGuideline.resources) return;
+
+    setCurrentGuideline({
+      ...currentGuideline,
+      resources: currentGuideline.resources.filter((_, i) => i !== index),
+    });
   };
 
   if (isLoading) {
@@ -653,6 +716,112 @@ const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderPro
                 className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
                 placeholder="e.g. More frequent with risk factors"
               />
+            </div>
+          </div>
+
+          <div>
+            <div className="block text-sm font-medium text-gray-700 mb-1">
+              Resources & Risk Tools
+            </div>
+
+            {/* Display current resources */}
+            <div className="space-y-2 mb-4">
+              {currentGuideline.resources &&
+                currentGuideline.resources.map((resource, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start p-2 border border-gray-200 rounded bg-gray-50"
+                  >
+                    <div className="flex-grow">
+                      <div className="font-medium">{resource.name}</div>
+                      <a
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        {resource.url}
+                      </a>
+                      {resource.description && (
+                        <p className="text-sm text-gray-600 mt-1">{resource.description}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleRemoveResource(index)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+            </div>
+
+            {/* Add new resource */}
+            <div className="border border-gray-200 rounded-md p-3 space-y-3 bg-gray-50">
+              <h4 className="text-sm font-medium text-gray-700">Add Resource</h4>
+              <div>
+                <label htmlFor="resourceName" className="block text-xs text-gray-500 mb-1">
+                  Name*
+                </label>
+                <input
+                  type="text"
+                  id="resourceName"
+                  value={resourceName}
+                  onChange={(e) => setResourceName(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
+                  placeholder="e.g. Risk Assessment Tool"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="resourceUrl" className="block text-xs text-gray-500 mb-1">
+                  URL*
+                </label>
+                <input
+                  type="url"
+                  id="resourceUrl"
+                  value={resourceUrl}
+                  onChange={(e) => setResourceUrl(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
+                  placeholder="https://example.com/resource"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="resourceDescription" className="block text-xs text-gray-500 mb-1">
+                  Description
+                </label>
+                <input
+                  type="text"
+                  id="resourceDescription"
+                  value={resourceDescription}
+                  onChange={(e) => setResourceDescription(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
+                  placeholder="Brief description of this resource"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="resourceType" className="block text-xs text-gray-500 mb-1">
+                  Resource Type
+                </label>
+                <select
+                  id="resourceType"
+                  value={resourceType}
+                  onChange={(e) => setResourceType(e.target.value as 'resource' | 'risk')}
+                  className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
+                >
+                  <option value="resource">Information Resource</option>
+                  <option value="risk">Risk Assessment Tool</option>
+                </select>
+              </div>
+
+              <button
+                onClick={handleAddResource}
+                className="bg-gray-200 text-gray-700 px-3 py-2 rounded hover:bg-gray-300 w-full"
+              >
+                Add Resource
+              </button>
             </div>
           </div>
 
