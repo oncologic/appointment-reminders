@@ -35,7 +35,7 @@ import useUser from './hooks/useUser';
 
 // Placeholder user for when data is not yet loaded
 const defaultUser = {
-  name: 'Guest User',
+  firstName: 'User',
   age: 0,
   gender: 'other',
   id: 'guest',
@@ -70,6 +70,12 @@ const getLastName = (name?: string): string => {
   return nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
 };
 
+// Helper function to get initial from name
+const getInitial = (name?: string): string => {
+  if (!name) return '?';
+  return name.charAt(0).toUpperCase();
+};
+
 // Function to generate celebration message based on completion percentage
 const getCelebrationMessage = (completed: number, total: number): string => {
   const percentage = total > 0 ? (completed / total) * 100 : 0;
@@ -84,6 +90,7 @@ const getCelebrationMessage = (completed: number, total: number): string => {
 
 const Home: React.FC = () => {
   const { user, isLoading, error, isAuthenticated } = useUser();
+
   const { screenings } = useGuidelines(user);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [completedScreeningsCount, setCompletedScreeningsCount] = useState<number>(0);
@@ -179,7 +186,7 @@ const Home: React.FC = () => {
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-blue-800">HealthTracker</h1>
+          <h1 className="text-2xl font-bold text-blue-800">ScreeningTracker</h1>
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-4">
               {navItems.map((item, idx) => (
@@ -194,9 +201,11 @@ const Home: React.FC = () => {
               ))}
             </div>
             <div className="flex items-center gap-3">
-              <img src="/avatar.png" alt="avatar" className="w-8 h-8 rounded-full object-cover" />
+              <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
+                {getInitial(userData?.firstName)}
+              </div>
               <div className="hidden sm:block">
-                <p className="font-semibold text-gray-800">{userData?.name || 'User'}</p>
+                <p className="font-semibold text-gray-800">{userData?.firstName || 'User'}</p>
               </div>
             </div>
           </div>
@@ -209,15 +218,13 @@ const Home: React.FC = () => {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <div className="flex items-center gap-3 mb-6">
-                <img
-                  src="/avatar.png"
-                  alt="avatar"
-                  className="w-12 h-12 rounded-full object-cover"
-                />
+                <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-lg font-semibold">
+                  {getInitial(userData?.firstName)}
+                </div>
                 <div>
                   <p className="text-xs text-gray-500">Welcome back,</p>
                   <p className="font-semibold text-gray-800">
-                    {getFirstName(userData?.name) || 'User'}
+                    {getFirstName(userData?.firstName) || 'User'}
                   </p>
                 </div>
               </div>

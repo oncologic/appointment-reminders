@@ -598,7 +598,6 @@ const NewAppointmentPage = () => {
 
       // Save to API
       await createAppointment(appointmentData);
-      console.log('Appointment recorded successfully');
 
       // If this was a completed appointment for a screening, also update the screening's last_completed_date
       if (isPastAppointment && isCompleted && isScreening && selectedService) {
@@ -609,7 +608,6 @@ const NewAppointmentPage = () => {
             appointmentDate.toISOString(),
             user?.id
           );
-          console.log('Screening completion date updated successfully');
         } catch (error) {
           console.error('Error updating screening completion date:', error);
           // Continue anyway since the appointment was created

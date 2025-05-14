@@ -99,7 +99,6 @@ const GuidelinesPage = () => {
   // Add handlers for edit and delete guidelines
   const handleEditGuideline = (guideline: any) => {
     // Logic to edit a guideline
-    console.log('Edit guideline:', guideline);
     // You would typically set some state and show an edit form
   };
 

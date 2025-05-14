@@ -53,6 +53,18 @@ const getAppointmentIcon = (title: string) => {
   return <FaStethoscope className="text-blue-600 text-xl" />;
 };
 
+// Helper to get the last name initial from provider name
+const getProviderLastNameInitial = (providerName: string = ''): string => {
+  if (!providerName) return '?';
+  const nameParts = providerName.split(' ');
+  // If there are multiple parts, get the initial of the last part (assumed to be last name)
+  if (nameParts.length > 1) {
+    return nameParts[nameParts.length - 1].charAt(0).toUpperCase();
+  }
+  // If just one name, use that
+  return providerName.charAt(0).toUpperCase();
+};
+
 interface UpcomingAppointmentsProps {
   limit?: number;
 }
@@ -157,11 +169,9 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({ limit = 3 }
             >
               <Link href={`/appointments/${appointment.id}`} className="flex items-center">
                 {appointment.doctor ? (
-                  <img
-                    src="/doctor-avatar.png"
-                    alt="doctor"
-                    className="w-12 h-12 rounded-full object-cover mr-4"
-                  />
+                  <div className="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold text-lg mr-4">
+                    {getProviderLastNameInitial(appointment.doctor)}
+                  </div>
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4">
                     {getAppointmentIcon(appointment.title)}

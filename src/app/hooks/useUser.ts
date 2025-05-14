@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { UserProfile } from '@/lib/types';
+
 import { createClient } from '@/lib/supabase/client';
+import { UserProfile } from '@/lib/types';
 
 interface UseUserResult {
   user: UserProfile | null;
@@ -20,32 +21,34 @@ export function useUser(): UseUserResult {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // First check if user is authenticated
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session) {
         setIsAuthenticated(false);
         setUser(null);
         return;
       }
-      
+
       setIsAuthenticated(true);
-      
+
       // Then fetch user profile
       const response = await fetch('/api/users/me');
-      
+
       if (response.status === 401) {
         setIsAuthenticated(false);
         setUser(null);
         return;
       }
-      
+
       if (!response.ok) {
         throw new Error(`Error fetching user: ${response.status}`);
       }
-      
+
       const userData = await response.json();
       setUser(userData);
     } catch (err) {
@@ -67,4 +70,4 @@ export function useUser(): UseUserResult {
   return { user, isLoading, error, isAuthenticated, refetch };
 }
 
-export default useUser; 
+export default useUser;

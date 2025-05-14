@@ -32,8 +32,45 @@ interface ScreeningCardProps {
 }
 
 const ScreeningCard: React.FC<ScreeningCardProps> = ({ screening }) => {
-  // Get the icon component dynamically
-  const IconComponent = screening.icon ? Icons[screening.icon as keyof typeof Icons] : null;
+  // Determine the best icon based on screening name/title when one isn't provided
+  const getDefaultIcon = () => {
+    const nameOrTitle = (screening.title || screening.name || '').toLowerCase();
+
+    if (nameOrTitle.includes('blood') || nameOrTitle.includes('cholesterol')) {
+      return 'FaTint';
+    } else if (nameOrTitle.includes('mammogram') || nameOrTitle.includes('breast')) {
+      return 'FaHeartbeat';
+    } else if (nameOrTitle.includes('colon') || nameOrTitle.includes('colonoscopy')) {
+      return 'FaStethoscope';
+    } else if (nameOrTitle.includes('eye') || nameOrTitle.includes('vision')) {
+      return 'FaEye';
+    } else if (nameOrTitle.includes('dental') || nameOrTitle.includes('teeth')) {
+      return 'FaTooth';
+    } else if (nameOrTitle.includes('skin') || nameOrTitle.includes('dermatology')) {
+      return 'FaAllergies';
+    } else if (nameOrTitle.includes('physical') || nameOrTitle.includes('exam')) {
+      return 'FaUserMd';
+    } else if (
+      nameOrTitle.includes('vaccine') ||
+      nameOrTitle.includes('shot') ||
+      nameOrTitle.includes('immunization')
+    ) {
+      return 'FaSyringe';
+    } else if (nameOrTitle.includes('heart') || nameOrTitle.includes('cardiac')) {
+      return 'FaHeartbeat';
+    } else if (nameOrTitle.includes('lung') || nameOrTitle.includes('pulmonary')) {
+      return 'FaLungs';
+    } else if (nameOrTitle.includes('bone') || nameOrTitle.includes('density')) {
+      return 'FaBone';
+    } else {
+      // Default for any other screening
+      return 'FaClipboardCheck';
+    }
+  };
+
+  // Get the icon component dynamically, use default if not provided
+  const iconName = screening.icon || getDefaultIcon();
+  const IconComponent = iconName ? Icons[iconName as keyof typeof Icons] : null;
 
   // Status color styles
   const getStatusStyle = (status: string) => {

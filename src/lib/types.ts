@@ -1,6 +1,7 @@
 export interface UserProfile {
-  id: string;
-  name: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
   gender: string;
   age: number;
   dateOfBirth?: string;

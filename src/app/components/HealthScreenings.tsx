@@ -135,6 +135,42 @@ const HealthScreenings: React.FC = () => {
         (appt) => appt.title.toLowerCase().includes(screening.name.toLowerCase()) && !appt.completed
       );
 
+      // Generate an icon name based on screening name if not provided
+      const getDefaultIcon = (name: string) => {
+        const lowerName = name.toLowerCase();
+
+        if (lowerName.includes('blood') || lowerName.includes('cholesterol')) {
+          return 'FaTint';
+        } else if (lowerName.includes('mammogram') || lowerName.includes('breast')) {
+          return 'FaHeartbeat';
+        } else if (lowerName.includes('colon') || lowerName.includes('colonoscopy')) {
+          return 'FaStethoscope';
+        } else if (lowerName.includes('eye') || lowerName.includes('vision')) {
+          return 'FaEye';
+        } else if (lowerName.includes('dental') || lowerName.includes('teeth')) {
+          return 'FaTooth';
+        } else if (lowerName.includes('skin') || lowerName.includes('dermatology')) {
+          return 'FaAllergies';
+        } else if (lowerName.includes('physical') || lowerName.includes('exam')) {
+          return 'FaUserMd';
+        } else if (
+          lowerName.includes('vaccine') ||
+          lowerName.includes('shot') ||
+          lowerName.includes('immunization')
+        ) {
+          return 'FaSyringe';
+        } else if (lowerName.includes('heart') || lowerName.includes('cardiac')) {
+          return 'FaHeartbeat';
+        } else if (lowerName.includes('lung') || lowerName.includes('pulmonary')) {
+          return 'FaLungs';
+        } else if (lowerName.includes('bone') || lowerName.includes('density')) {
+          return 'FaBone';
+        } else {
+          // Default for any other screening
+          return 'FaClipboardCheck';
+        }
+      };
+
       return {
         id: screening.id,
         title: screening.name,
@@ -151,10 +187,10 @@ const HealthScreenings: React.FC = () => {
         schedulePath: relatedAppointment
           ? `/appointments/${relatedAppointment.id}`
           : `/appointments/new?screening=${screening.id}`,
-        icon: '',
-        iconColor: '',
-        bgColor: '',
-        friendRecommendations: [],
+        icon: screening.icon || getDefaultIcon(screening.name),
+        iconColor: screening.iconColor || 'text-blue-600',
+        bgColor: screening.bgColor || 'bg-blue-100',
+        friendRecommendations: screening.friendRecommendations || [],
         ageRange: screening.ageRange,
         ageRangeDetails: screening.ageRangeDetails,
       };
@@ -175,6 +211,41 @@ const HealthScreenings: React.FC = () => {
         appt.title.toLowerCase().includes(screening.name.toLowerCase())
       );
 
+      // Generate default icon based on appointment title
+      const getDefaultIcon = (title: string) => {
+        const lowerTitle = title.toLowerCase();
+
+        if (lowerTitle.includes('blood') || lowerTitle.includes('cholesterol')) {
+          return 'FaTint';
+        } else if (lowerTitle.includes('mammogram') || lowerTitle.includes('breast')) {
+          return 'FaHeartbeat';
+        } else if (lowerTitle.includes('colon') || lowerTitle.includes('colonoscopy')) {
+          return 'FaStethoscope';
+        } else if (lowerTitle.includes('eye') || lowerTitle.includes('vision')) {
+          return 'FaEye';
+        } else if (lowerTitle.includes('dental') || lowerTitle.includes('teeth')) {
+          return 'FaTooth';
+        } else if (lowerTitle.includes('skin') || lowerTitle.includes('dermatology')) {
+          return 'FaAllergies';
+        } else if (lowerTitle.includes('physical') || lowerTitle.includes('exam')) {
+          return 'FaUserMd';
+        } else if (
+          lowerTitle.includes('vaccine') ||
+          lowerTitle.includes('shot') ||
+          lowerTitle.includes('immunization')
+        ) {
+          return 'FaSyringe';
+        } else if (lowerTitle.includes('heart') || lowerTitle.includes('cardiac')) {
+          return 'FaHeartbeat';
+        } else if (lowerTitle.includes('lung') || lowerTitle.includes('pulmonary')) {
+          return 'FaLungs';
+        } else if (lowerTitle.includes('bone') || lowerTitle.includes('density')) {
+          return 'FaBone';
+        } else {
+          return 'FaClipboardCheck';
+        }
+      };
+
       return {
         id: appt.id,
         title: appt.title,
@@ -185,9 +256,9 @@ const HealthScreenings: React.FC = () => {
         dueDateFormatted: formatDate(appt.date.toString()),
         durationText: '',
         schedulePath: `/appointments/${appt.id}`,
-        icon: '',
-        iconColor: '',
-        bgColor: '',
+        icon: relatedScreening?.icon || getDefaultIcon(appt.title),
+        iconColor: relatedScreening?.iconColor || 'text-green-600',
+        bgColor: relatedScreening?.bgColor || 'bg-green-100',
         friendRecommendations: [],
         // Add optional fields if related screening exists
         ...(relatedScreening

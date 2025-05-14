@@ -825,8 +825,6 @@ export const GuidelineService = {
         notes: '',
       };
 
-      console.log('Sending screening payload:', screeningPayload);
-
       // Create the screening record
       const response = await fetch('/api/screenings', {
         method: 'POST',
@@ -845,7 +843,6 @@ export const GuidelineService = {
         );
       }
 
-      console.log('Screening created successfully:', responseData);
       return true;
     } catch (error) {
       console.error('Error adding screening for user:', error);

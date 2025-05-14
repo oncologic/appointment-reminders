@@ -35,6 +35,12 @@ export interface ScreeningRecommendation {
   notes?: string;
   tags?: string[];
   previousResults?: ScreeningResult[];
+  icon?: string;
+  iconColor?: string;
+  bgColor?: string;
+  friendRecommendations?: any[];
+  schedulePath?: string;
+  detailsPath?: string;
 }
 
 export enum GuidelineView {
