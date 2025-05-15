@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { FaFilter, FaSearch, FaTimesCircle } from 'react-icons/fa';
 
 import { UserProfile } from '../../lib/types';
@@ -29,10 +29,10 @@ const AllGuidelinesView: React.FC<AllGuidelinesViewProps> = ({
   // Local state for categories
   const [categories, setCategories] = useState<string[]>([]);
 
-  const getUniqueCategories = () => {
+  const getUniqueCategories = useCallback(() => {
     const allCats = guidelines.map((g) => g.category);
     return ['All Categories', ...Array.from(new Set(allCats))];
-  };
+  }, [guidelines]);
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -41,7 +41,7 @@ const AllGuidelinesView: React.FC<AllGuidelinesViewProps> = ({
 
   useEffect(() => {
     setCategories(getUniqueCategories());
-  }, [guidelines]);
+  }, [getUniqueCategories]);
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">

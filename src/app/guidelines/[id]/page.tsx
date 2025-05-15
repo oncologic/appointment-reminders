@@ -70,7 +70,7 @@ const GuidelinePage = () => {
   }, [guidelineId]);
 
   const handleAddToPersonalGuidelines = () => {
-    if (!guideline || !userPreferences) return;
+    if (!guideline || !userPreferences || !userProfile) return;
 
     const updatedIds = [...userPreferences.selectedGuidelineIds, guideline.id];
     const updatedPreferences = {
@@ -78,7 +78,7 @@ const GuidelinePage = () => {
       selectedGuidelineIds: updatedIds,
     };
 
-    GuidelineService.saveUserPreferences(updatedPreferences);
+    GuidelineService.saveUserPreferences(userProfile.userId, updatedPreferences);
     setUserPreferences(updatedPreferences);
   };
 

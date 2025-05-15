@@ -2,7 +2,7 @@
 
 import { User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 import { createBrowserSupabaseClient } from '@/lib/supabase';
 
@@ -28,7 +28,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [supabase] = useState(() => createBrowserSupabaseClient());
   const router = useRouter();
 
-  const refreshSession = async () => {
+  const refreshSession = useCallback(async () => {
     try {
       const { data, error } = await supabase.auth.getSession();
       if (error) throw error;
@@ -39,7 +39,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supabase.auth]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -66,7 +66,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     };
 
     fetchUser();
-  }, [supabase, router]);
+  }, [supabase, router, refreshSession]);
 
   const signOut = async () => {
     setIsLoading(true);

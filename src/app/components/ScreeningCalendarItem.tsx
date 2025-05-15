@@ -2,22 +2,19 @@ import Link from 'next/link';
 import React, { useState } from 'react';
 import { FaCalendarCheck, FaCalendarPlus, FaUserFriends } from 'react-icons/fa';
 
-import { useAppointments } from '@/app/appointments/page';
+import { ScreeningRecommendation as DBScreeningRecommendation } from '@/app/components/types';
+import { useAppointments } from '@/app/hooks/useAppointments';
 import { Appointment } from '@/lib/types';
 
-// Use a more compatible interface for both screening types
-interface CalendarScreeningRecommendation {
-  id: string;
+// Import the shared interface or redefine it to match exactly
+interface CalendarScreeningRecommendation extends DBScreeningRecommendation {
   title: string;
-  name?: string;
-  status: 'due' | 'overdue' | 'completed' | 'upcoming';
   statusText: string;
   schedulePath: string;
+  icon?: string;
+  iconColor?: string;
+  bgColor?: string;
   friendRecommendations: any[];
-  // Optional additional fields
-  description?: string;
-  ageRange?: any[];
-  ageRangeDetails?: any[];
 }
 
 interface ScreeningCalendarItemProps {
