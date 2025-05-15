@@ -920,6 +920,7 @@ export const GuidelineService = {
         return {
           id: screening.id,
           name: guideline?.name || 'Unknown Screening',
+          guidelineId: screening.guideline_id,
           description: guideline?.description || '',
           frequency: guideline?.frequency || 'As recommended',
           frequencyMonths: screening.frequency || guideline?.frequency_months,

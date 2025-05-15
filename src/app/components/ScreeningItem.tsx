@@ -117,6 +117,7 @@ const getDurationText = (dateString?: string): string => {
 const ScreeningItem: React.FC<ScreeningItemProps> = ({ screening, onRemove, userProfile }) => {
   const [showPreviousResults, setShowPreviousResults] = useState(false);
 
+  console.log(screening);
   // Get current age range recommendation based on user's calculated age
   const getCurrentAgeRecommendation = () => {
     if (screening.ageRangeDetails.length === 0) return null;
@@ -351,8 +352,9 @@ const ScreeningItem: React.FC<ScreeningItemProps> = ({ screening, onRemove, user
           </Link>
 
           {/* View Details button */}
+
           <Link
-            href={`/guidelines/${screening.id}`}
+            href={`/guidelines/${screening.guidelineId}`}
             className="inline-flex items-center px-4 py-2 border border-blue-300 text-sm font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50"
           >
             <FaInfoCircle className="mr-2 text-blue-500" /> View Details
