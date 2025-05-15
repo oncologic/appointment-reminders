@@ -192,7 +192,7 @@ const GuidelinesPage = () => {
           <ManageGuidelinesAdminView
             guidelines={guidelines}
             userProfile={userProfile}
-            isAdmin={userProfile.isAdmin}
+            isAdmin={userProfile.isAdmin ?? false}
             onEditGuideline={handleEditGuideline}
             onDeleteGuideline={handleDeleteGuideline}
           />

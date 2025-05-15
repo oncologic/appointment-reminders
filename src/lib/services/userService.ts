@@ -78,7 +78,7 @@ export function convertToUserProfile(dbProfile: UserProfileDB): UserProfile {
     age,
     dateOfBirth: dbProfile.date_of_birth,
     gender: (dbProfile.gender as 'male' | 'female' | 'other') || 'other',
-    riskFactors: {}, // Risk factors would need to be loaded separately
+    // riskFactors: {}, // Risk factors would need to be loaded separately
     isAdmin: dbProfile.admin_role === 'admin',
     userId: dbProfile.user_id,
   };

@@ -15,6 +15,7 @@ export interface UserProfile {
   weight?: string;
   bloodType?: string;
   avatarUrl?: string;
+  isAdmin?: boolean;
 }
 
 // Enhanced UserProfile that includes database fields

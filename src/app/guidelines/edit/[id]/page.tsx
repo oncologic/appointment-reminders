@@ -274,7 +274,11 @@ const EditGuidelinePage = () => {
     };
 
     // Save to service
-    GuidelineService.updateGuideline(updatedGuideline, userProfile.userId, userProfile.isAdmin);
+    GuidelineService.updateGuideline(
+      updatedGuideline,
+      userProfile.userId,
+      userProfile.isAdmin ?? false
+    );
 
     // Navigate back to guideline detail page
     router.push(`/guidelines/${guidelineId}`);
