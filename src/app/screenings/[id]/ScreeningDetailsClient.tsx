@@ -33,7 +33,7 @@ const ScreeningDetailsClient: React.FC<ScreeningDetailsClientProps> = ({
       case 'abnormal':
         return <FaExclamationTriangle className="text-red-500" />;
       default:
-        return <FaCalendarAlt className="text-gray-400" />;
+        return <FaCalendarAlt className="text-gray-600" />;
     }
   };
 
@@ -61,7 +61,10 @@ const ScreeningDetailsClient: React.FC<ScreeningDetailsClientProps> = ({
                     <div>
                       <p className="font-semibold text-gray-800">{result.date}</p>
                       <p className="text-sm text-gray-600 flex items-center">
-                        <FaUserMd className="mr-1" /> {result.provider}
+                        <FaUserMd className="mr-1" />{' '}
+                        {typeof result.provider === 'object'
+                          ? result.provider.name
+                          : result.provider}
                       </p>
                     </div>
                     <div className="flex items-center">

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { FaArrowLeft } from 'react-icons/fa';
 
 import { UserProfile } from '@/lib/types';
@@ -11,6 +12,7 @@ import AgeBasedRecommendations from '../components/AgeBasedRecommendations';
 import AllGuidelinesView from '../components/AllGuidelinesView';
 import GuidelineTabs from '../components/GuidelineTabs';
 import GuidelinesBuilder from '../components/GuidelinesBuilder';
+import ManageGuidelinesAdminView from '../components/ManageGuidelinesAdminView';
 import RecommendedScreeningsView from '../components/RecommendedScreeningsView';
 import ScreeningFiltersSidebar from '../components/ScreeningFiltersSidebar';
 import UserProfileForm from '../components/UserProfileForm';
@@ -72,7 +74,7 @@ const GuidelinesPage = () => {
     }
   };
 
-  // Save user profile - this will update both local storage and API
+  // Save user profile - this will update the database
   const handleSaveUserProfile = async (profile: UserProfile) => {
     setUserProfile(profile);
     await GuidelineService.saveUserProfile(profile);
@@ -85,15 +87,39 @@ const GuidelinesPage = () => {
   const filteredScreenings = getFilteredScreenings(
     filterStatus,
     showCurrentlyRelevant,
-    showFutureRecommendations
+    showFutureRecommendations,
+    false // Don't show archived screenings by default
   );
 
   // Get filtered guidelines for the All Guidelines view
   const filteredGuidelines = getFilteredGuidelines(searchQuery, selectedCategory);
 
   // Check if user has selected any guidelines
-  const hasSelectedGuidelines =
-    userPreferences.selectedGuidelineIds && userPreferences.selectedGuidelineIds.length > 0;
+  const hasSelectedGuidelines = screenings.length > 0;
+
+  // Add handlers for edit and delete guidelines
+  const handleEditGuideline = (guideline: any) => {
+    // Logic to edit a guideline
+    // You would typically set some state and show an edit form
+  };
+
+  const handleDeleteGuideline = async (guidelineId: string) => {
+    if (confirm('Are you sure you want to delete this guideline?')) {
+      try {
+        // Pass the required parameters to the deleteGuideline method
+        await GuidelineService.deleteGuideline(
+          guidelineId,
+          userProfile?.userId || '',
+          userProfile?.isAdmin || false
+        );
+        // Refresh the guidelines list
+        // This is usually handled by the hook, but you can trigger a refresh here as well
+      } catch (error) {
+        console.error('Error deleting guideline:', error);
+        alert('There was an error deleting the guideline.');
+      }
+    }
+  };
 
   const isLoading = isUserLoading || isGuidelinesLoading;
 
@@ -148,10 +174,10 @@ const GuidelinesPage = () => {
             handleAddToRecommended={addToRecommended}
           />
         );
-      case GuidelineView.ManageGuidelines:
+      case GuidelineView.NewGuideline:
         return (
           <div className="space-y-6">
-            <GuidelinesBuilder userProfile={userProfile} />
+            <GuidelinesBuilder userProfile={userProfile} setCurrentView={setCurrentView} />
           </div>
         );
       case GuidelineView.UserProfile:
@@ -162,6 +188,16 @@ const GuidelinesPage = () => {
             onSave={handleSaveUserProfile}
           />
         );
+      case GuidelineView.ManageGuidelinesAdmin:
+        return (
+          <ManageGuidelinesAdminView
+            guidelines={guidelines}
+            userProfile={userProfile}
+            isAdmin={userProfile.isAdmin ?? false}
+            onEditGuideline={handleEditGuideline}
+            onDeleteGuideline={handleDeleteGuideline}
+          />
+        );
       default:
         return null;
     }
@@ -169,7 +205,7 @@ const GuidelinesPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-4">
           <Link
             href="/"
@@ -180,8 +216,7 @@ const GuidelinesPage = () => {
 
           <div className="flex items-center gap-2">
             <span className="text-gray-600">
-              Welcome, {userProfile.firstName} {userProfile.lastName} ({userProfile.age},{' '}
-              {userProfile.gender})
+              Welcome, {userProfile.firstName} ({userProfile.age}, {userProfile.gender})
             </span>
           </div>
         </div>
@@ -191,7 +226,12 @@ const GuidelinesPage = () => {
           Recommended health screenings based on your age, gender, and risk factors
         </p>
 
-        <GuidelineTabs currentView={currentView} setCurrentView={setCurrentView} />
+        <GuidelineTabs
+          currentView={currentView}
+          setCurrentView={setCurrentView}
+          isAdmin={userProfile.isAdmin}
+          userId={userProfile.userId}
+        />
 
         {/* Age-based recommendations section - only show in recommended view */}
         {currentView === GuidelineView.MyScreenings && (

@@ -15,19 +15,28 @@ import {
   FaUserMd,
 } from 'react-icons/fa';
 
-import { Appointment, futureScreenings, upcomingScreenings } from '@/lib/mockData';
+import { useGuidelines } from '@/app/hooks/useGuidelines';
+import { useUser } from '@/app/hooks/useUser';
+import { Appointment } from '@/lib/types';
 
+import { useAppointments } from '../appointments/page';
 import MonthCalendar from './MonthCalendar';
 
 interface YearCalendarProps {
-  appointments: Appointment[];
   initialYear?: number;
 }
 
-const YearCalendar: React.FC<YearCalendarProps> = ({ appointments, initialYear = 2025 }) => {
+const YearCalendar: React.FC<YearCalendarProps> = ({ initialYear = 2025 }) => {
+  // Get appointments from context instead of props
+  const { appointments, isLoading, error } = useAppointments();
+
   const [currentYear, setCurrentYear] = useState<number>(initialYear);
   const [showLegend, setShowLegend] = useState<boolean>(false);
   const [showNotifications, setShowNotifications] = useState<boolean>(false);
+
+  // Get user profile and screenings from the database
+  const { user } = useUser();
+  const { screenings } = useGuidelines(user);
 
   // Count appointments by type for the legend
   const appointmentsInYear = appointments.filter((appt) => appt.date.getFullYear() === currentYear);
@@ -38,11 +47,17 @@ const YearCalendar: React.FC<YearCalendarProps> = ({ appointments, initialYear =
     (appt) => appt.type === 'Consultation'
   ).length;
 
-  // Get overdue screenings
-  const allScreenings = [...upcomingScreenings, ...futureScreenings];
-  const overdueScreenings = allScreenings.filter(
-    (screening) => screening.status === 'overdue' || screening.status === 'due'
-  );
+  // Get overdue screenings from the database
+  const overdueScreenings = screenings
+    .filter((screening) => screening.status === 'overdue' || screening.status === 'due')
+    .map((screening) => ({
+      id: screening.id,
+      title: screening.name,
+      status: screening.status,
+      statusText: `${screening.status === 'overdue' ? 'Overdue' : 'Due'}: ${screening.name}`,
+      schedulePath: `/appointments/new?screening=${screening.id}`,
+      friendRecommendations: [], // Initialize as empty array since we don't have this data yet
+    }));
 
   const hasNotifications = overdueScreenings.length > 0;
 
@@ -62,6 +77,36 @@ const YearCalendar: React.FC<YearCalendarProps> = ({ appointments, initialYear =
   const toggleNotifications = () => {
     setShowNotifications((prev) => !prev);
   };
+
+  // If still loading appointments, show a loading state
+  if (isLoading) {
+    return (
+      <div className="animate-pulse p-4">
+        <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
+        <div className="grid grid-cols-3 gap-4">
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="h-32 bg-gray-100 rounded-lg"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // If there was an error loading appointments, show an error state
+  if (error) {
+    return (
+      <div className="text-center py-6">
+        <p className="text-red-500">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 text-blue-600 hover:text-blue-800 underline"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -109,7 +154,7 @@ const YearCalendar: React.FC<YearCalendarProps> = ({ appointments, initialYear =
           {/* Notifications Button */}
           {hasNotifications && (
             <div className="relative">
-              <button
+              {/* <button
                 onClick={toggleNotifications}
                 className="p-2 rounded-full hover:bg-blue-50 transition relative"
                 aria-label="Notifications"
@@ -120,7 +165,7 @@ const YearCalendar: React.FC<YearCalendarProps> = ({ appointments, initialYear =
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {overdueScreenings.length}
                 </span>
-              </button>
+              </button> */}
 
               {/* Notifications Panel */}
               {showNotifications && (
@@ -156,7 +201,7 @@ const YearCalendar: React.FC<YearCalendarProps> = ({ appointments, initialYear =
                                 Schedule Now
                               </a>
 
-                              {screening.friendRecommendations.length === 0 && (
+                              {screening.friendRecommendations?.length === 0 && (
                                 <a
                                   href={`/recommendations?screening=${screening.id}`}
                                   className="text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors px-3 py-1.5 rounded flex items-center w-full"
@@ -247,19 +292,16 @@ const YearCalendar: React.FC<YearCalendarProps> = ({ appointments, initialYear =
                         <div className="flex items-center border-l-4 border-blue-600 bg-gray-200 opacity-80 w-6 h-3 mr-2"></div>
                         <span className="text-xs text-gray-700">Needs Booking</span>
                       </div>
+                      <div className="flex items-center">
+                        <div className="flex items-center border-l-4 border-green-600 bg-gray-200 opacity-70 w-6 h-3 mr-2"></div>
+                        <span className="text-xs text-gray-700">Appointment Scheduled</span>
+                      </div>
                     </div>
                   </div>
 
                   <div>
                     <p className="text-xs font-medium text-gray-600 mb-1">Actions</p>
                     <div className="grid grid-cols-1 gap-1">
-                      <div className="flex items-center">
-                        <div className="w-auto h-5 bg-blue-50 text-blue-600 text-[10px] px-1 rounded-sm flex items-center mr-2">
-                          <FaUserFriends className="mr-1 text-[8px]" />
-                          Request recommendations
-                        </div>
-                        <span className="text-xs text-gray-700">Ask friends</span>
-                      </div>
                       <div className="flex items-center">
                         <div className="w-auto h-5 bg-gray-50 text-gray-600 text-[10px] px-1 rounded-sm flex items-center mr-2">
                           <FaClipboardCheck className="mr-1 text-[8px]" />

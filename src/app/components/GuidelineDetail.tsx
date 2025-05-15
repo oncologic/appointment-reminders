@@ -99,12 +99,12 @@ const GuidelineDetail = ({
   };
 
   // Handle creating a personalized copy of this guideline
-  const handleCreatePersonalCopy = () => {
+  const handleCreatePersonalCopy = async () => {
     if (!userProfile) return;
 
     try {
       // Create a personalized copy using the service method
-      const personalizedGuideline = GuidelineService.createPersonalizedGuideline(
+      const personalizedGuideline = await GuidelineService.createPersonalizedGuideline(
         guideline.id,
         userProfile.userId
       );
@@ -125,14 +125,19 @@ const GuidelineDetail = ({
   // Get original guideline if this is a personalized version
   const [originalGuideline, setOriginalGuideline] = useState<GuidelineItem | null>(null);
   useEffect(() => {
-    if (guideline.originalGuidelineId) {
-      const original = GuidelineService.getGuidelines().find(
-        (g) => g.id === guideline.originalGuidelineId
-      );
-      if (original) {
-        setOriginalGuideline(original);
+    const loadOriginalGuideline = async () => {
+      if (guideline.originalGuidelineId) {
+        const guidelines = await GuidelineService.getGuidelines();
+        const original = guidelines.find(
+          (g: GuidelineItem) => g.id === guideline.originalGuidelineId
+        );
+        if (original) {
+          setOriginalGuideline(original);
+        }
       }
-    }
+    };
+
+    loadOriginalGuideline();
   }, [guideline.originalGuidelineId]);
 
   // Filter resources to show based on expandable view
@@ -147,7 +152,7 @@ const GuidelineDetail = ({
             {!isPersonalized && onAddToPersonal && (
               <button
                 onClick={onAddToPersonal}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600"
               >
                 <FaBookmark className="mr-1" /> Add to My Guidelines
               </button>
@@ -162,7 +167,7 @@ const GuidelineDetail = ({
             )}
             <Link
               href={`/appointments/new?screening=${encodeURIComponent(updatedGuideline.name)}`}
-              className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+              className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-green-500 hover:bg-green-600"
             >
               <FaCalendarPlus className="mr-1" /> Schedule
             </Link>
@@ -195,12 +200,12 @@ const GuidelineDetail = ({
               </div>
             </div>
 
-            <button
+            {/* <button
               onClick={handleMarkCompleted}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
             >
               <FaCheckCircle className="mr-2" /> Mark as Completed Today
-            </button>
+            </button> */}
           </div>
 
           {completedMessage && (

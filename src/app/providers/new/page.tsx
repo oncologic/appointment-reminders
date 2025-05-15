@@ -86,9 +86,6 @@ const NewProviderPage: React.FC = () => {
       languages: formData.languages ? formData.languages.split(',').map((l) => l.trim()) : [],
       bio: formData.bio || undefined,
     };
-
-    console.log('New Provider:', newProvider);
-
     // Navigate back to providers list
     router.push('/providers');
   };

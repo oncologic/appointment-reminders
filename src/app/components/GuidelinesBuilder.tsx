@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { FaGlobe, FaLock, FaPlus, FaSave, FaTag, FaTrash, FaUndo } from 'react-icons/fa';
 
 import GuidelineService from '../../lib/services/guidelineService';
 import { UserProfile } from '../../lib/types';
+import GuidelineForm from './GuidelineForm';
 import { AgeRange, GuidelineItem } from './PersonalizedGuidelines';
+import { GuidelineView } from './types';
 
 export const CATEGORIES = [
   'General Health',
@@ -25,6 +28,13 @@ interface AgeRangeFormState {
   notes: string;
 }
 
+interface Resource {
+  name: string;
+  url: string;
+  description?: string;
+  type: 'risk' | 'resource';
+}
+
 const DEFAULT_GUIDELINE: GuidelineItem = {
   id: '',
   name: '',
@@ -33,14 +43,15 @@ const DEFAULT_GUIDELINE: GuidelineItem = {
   genders: ['all'],
   category: 'General Health',
   visibility: 'private',
-  tags: [],
+  resources: [],
 };
 
 interface GuidelinesBuilderProps {
   userProfile: UserProfile;
+  setCurrentView: (view: GuidelineView) => void;
 }
 
-const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
+const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderProps) => {
   const [guidelines, setGuidelines] = useState<GuidelineItem[]>([]);
   const [currentGuideline, setCurrentGuideline] = useState<GuidelineItem>({ ...DEFAULT_GUIDELINE });
   const [isEditing, setIsEditing] = useState(false);
@@ -56,11 +67,27 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
   const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'public' | 'private'>('all');
   const [tagInput, setTagInput] = useState('');
 
+  // Resources state
+  const [resourceName, setResourceName] = useState('');
+  const [resourceUrl, setResourceUrl] = useState('');
+  const [resourceDescription, setResourceDescription] = useState('');
+  const [resourceType, setResourceType] = useState<'risk' | 'resource'>('resource');
+
   // Load guidelines on component mount
   useEffect(() => {
-    const loadedGuidelines = GuidelineService.getGuidelines(userProfile.userId);
-    setGuidelines(loadedGuidelines);
-    setIsLoading(false);
+    const loadGuidelines = async () => {
+      try {
+        const loadedGuidelines = await GuidelineService.getGuidelines(userProfile.userId);
+        setGuidelines(loadedGuidelines);
+      } catch (error) {
+        console.error('Error loading guidelines:', error);
+        toast.error('Failed to load guidelines');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadGuidelines();
   }, [userProfile.userId]);
 
   const generateId = () => {
@@ -73,7 +100,6 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
       ...DEFAULT_GUIDELINE,
       id: generateId(),
       visibility: userProfile.isAdmin ? 'public' : 'private', // Default to private unless admin
-      tags: [],
     });
     setAgeRange({
       min: '18',
@@ -83,6 +109,11 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
       frequencyMonthsMax: '',
       notes: '',
     });
+    // Reset resource fields
+    setResourceName('');
+    setResourceUrl('');
+    setResourceDescription('');
+    setResourceType('resource');
   };
 
   const handleEditGuideline = (guideline: GuidelineItem) => {
@@ -92,7 +123,7 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
       guideline.createdBy !== userProfile.userId &&
       guideline.visibility === 'public'
     ) {
-      alert("You don't have permission to edit this public guideline.");
+      toast.error("You don't have permission to edit this public guideline.");
       return;
     }
 
@@ -106,9 +137,14 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
       frequencyMonthsMax: '',
       notes: '',
     });
+    // Reset resource fields
+    setResourceName('');
+    setResourceUrl('');
+    setResourceDescription('');
+    setResourceType('resource');
   };
 
-  const handleDeleteGuideline = (id: string) => {
+  const handleDeleteGuideline = async (id: string) => {
     const guideline = guidelines.find((g) => g.id === id);
 
     // Check if user has permission to delete this guideline
@@ -117,35 +153,40 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
       guideline?.createdBy !== userProfile.userId &&
       guideline?.visibility === 'public'
     ) {
-      alert("You don't have permission to delete this public guideline.");
+      toast.error("You don't have permission to delete this public guideline.");
       return;
     }
 
-    const updatedGuidelines = GuidelineService.deleteGuideline(
-      id,
-      userProfile.userId,
-      userProfile.isAdmin
-    );
-    setGuidelines(updatedGuidelines);
+    try {
+      const updatedGuidelines = await GuidelineService.deleteGuideline(
+        id,
+        userProfile.userId,
+        userProfile.isAdmin ?? false
+      );
+      setGuidelines(updatedGuidelines);
+      toast.success('Guideline deleted successfully');
+    } catch (error) {
+      console.error('Error deleting guideline:', error);
+      toast.error('Failed to delete guideline');
+    }
   };
 
   const handleResetDefaults = () => {
     if (!userProfile.isAdmin) {
-      alert('Only administrators can reset guidelines to defaults.');
+      toast.error('Only administrators can reset guidelines to defaults.');
       return;
     }
 
     if (window.confirm('This will reset all guidelines to default values. Are you sure?')) {
-      GuidelineService.resetToDefaults();
-      const loadedGuidelines = GuidelineService.getGuidelines(userProfile.userId);
-      setGuidelines(loadedGuidelines);
+      // This function doesn't exist anymore since we're using the API
+      toast.error('This functionality is not available when using the API.');
     }
   };
 
-  const handleSaveGuideline = () => {
+  const handleSaveGuideline = async () => {
     // Make sure we have at least one age range
     if (currentGuideline.ageRanges.length === 0) {
-      alert('Please add at least one age range for this guideline.');
+      toast.error('Please add at least one age range for this guideline.');
       return;
     }
 
@@ -171,34 +212,52 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
       }
     }
 
-    if (isEditing) {
-      const updatedGuidelines = GuidelineService.updateGuideline(
-        guidelineToSave,
-        userProfile.userId,
-        userProfile.isAdmin
-      );
-      setGuidelines(updatedGuidelines);
-    } else {
-      const updatedGuidelines = GuidelineService.addGuideline(
-        guidelineToSave,
-        userProfile.userId,
-        userProfile.isAdmin
-      );
-      setGuidelines(updatedGuidelines);
-    }
+    try {
+      let updatedGuidelines;
 
-    // Reset form
-    setCurrentGuideline({ ...DEFAULT_GUIDELINE });
-    setAgeRange({
-      min: '18',
-      max: '',
-      frequency: '',
-      frequencyMonths: '',
-      frequencyMonthsMax: '',
-      notes: '',
-    });
-    setTagInput('');
-    setIsEditing(false);
+      if (isEditing) {
+        updatedGuidelines = await GuidelineService.updateGuideline(
+          guidelineToSave,
+          userProfile.userId,
+          userProfile.isAdmin ?? false
+        );
+
+        toast.success('Guideline updated successfully!');
+      } else {
+        updatedGuidelines = await GuidelineService.addGuideline(
+          guidelineToSave,
+          userProfile.userId,
+          userProfile.isAdmin ?? false
+        );
+
+        toast.success('Guideline created successfully!');
+        // Navigate to All Guidelines view
+        setCurrentView(GuidelineView.AllGuidelinesView);
+      }
+
+      setGuidelines(updatedGuidelines);
+
+      // Reset form
+      setCurrentGuideline({ ...DEFAULT_GUIDELINE });
+      setAgeRange({
+        min: '18',
+        max: '',
+        frequency: '',
+        frequencyMonths: '',
+        frequencyMonthsMax: '',
+        notes: '',
+      });
+      setTagInput('');
+      // Reset resource fields
+      setResourceName('');
+      setResourceUrl('');
+      setResourceDescription('');
+      setResourceType('resource');
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to save guideline:', error);
+      toast.error('Failed to save guideline. Please try again.');
+    }
   };
 
   const handleAddAgeRange = () => {
@@ -338,6 +397,40 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
     return guidelines.filter((g) => g.visibility === visibilityFilter);
   };
 
+  const handleAddResource = () => {
+    if (!resourceName.trim() || !resourceUrl.trim()) {
+      toast.error('Please enter both a name and URL for the resource');
+      return;
+    }
+
+    const newResource: Resource = {
+      name: resourceName.trim(),
+      url: resourceUrl.trim(),
+      description: resourceDescription.trim() || undefined,
+      type: resourceType,
+    };
+
+    setCurrentGuideline({
+      ...currentGuideline,
+      resources: [...(currentGuideline.resources || []), newResource],
+    });
+
+    // Reset form fields
+    setResourceName('');
+    setResourceUrl('');
+    setResourceDescription('');
+    setResourceType('resource');
+  };
+
+  const handleRemoveResource = (index: number) => {
+    if (!currentGuideline.resources) return;
+
+    setCurrentGuideline({
+      ...currentGuideline,
+      resources: currentGuideline.resources.filter((_, i) => i !== index),
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-6">
@@ -364,7 +457,7 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
             <select
               value={visibilityFilter}
               onChange={(e) => setVisibilityFilter(e.target.value as 'all' | 'public' | 'private')}
-              className="border border-gray-300 rounded p-1 text-sm"
+              className="border border-gray-300 rounded p-1 text-sm text-gray-700"
             >
               <option value="all">All Guidelines</option>
               <option value="public">Public Only</option>
@@ -379,12 +472,6 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
           <h3 className="text-lg font-medium text-gray-700">
             {isEditing ? 'Edit Guideline' : 'Add New Guideline'}
           </h3>
-          <button
-            onClick={handleAddGuideline}
-            className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-          >
-            <FaPlus className="text-sm" /> New Guideline
-          </button>
         </div>
 
         <div className="space-y-4">
@@ -647,49 +734,109 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
           </div>
 
           <div>
-            <div className="block text-sm font-medium text-gray-700 mb-1">Tags</div>
-
-            {/* Display current tags */}
-            <div className="flex flex-wrap gap-2 mb-2">
-              {currentGuideline.tags?.map((tag) => (
-                <span
-                  key={tag}
-                  className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full text-sm flex items-center gap-1"
-                >
-                  {tag}
-                  <button
-                    onClick={() => handleRemoveTag(tag)}
-                    className="text-gray-600 hover:text-red-600 ml-1"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
+            <div className="block text-sm font-medium text-gray-700 mb-1">
+              Resources & Risk Tools
             </div>
 
-            {/* Add new tag */}
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                className="border border-gray-300 rounded-md p-2 text-gray-700 flex-grow"
-                placeholder="Add a tag (e.g. cancer, heart)"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddTag();
-                  }
-                }}
-              />
+            {/* Display current resources */}
+            <div className="space-y-2 mb-4 text-gray-700">
+              {currentGuideline.resources &&
+                currentGuideline.resources.map((resource, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start p-2 border border-gray-200 rounded bg-gray-50"
+                  >
+                    <div className="flex-grow">
+                      <div className="font-medium">{resource.name}</div>
+                      <a
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        {resource.url}
+                      </a>
+                      {resource.description && (
+                        <p className="text-sm text-gray-600 mt-1">{resource.description}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleRemoveResource(index)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+            </div>
+
+            {/* Add new resource */}
+            <div className="border border-gray-200 rounded-md p-3 space-y-3 bg-gray-50">
+              <h4 className="text-sm font-medium text-gray-700">Add Resource</h4>
+              <div>
+                <label htmlFor="resourceName" className="block text-xs text-gray-500 mb-1">
+                  Name*
+                </label>
+                <input
+                  type="text"
+                  id="resourceName"
+                  value={resourceName}
+                  onChange={(e) => setResourceName(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
+                  placeholder="e.g. Risk Assessment Tool"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="resourceUrl" className="block text-xs text-gray-500 mb-1">
+                  URL*
+                </label>
+                <input
+                  type="url"
+                  id="resourceUrl"
+                  value={resourceUrl}
+                  onChange={(e) => setResourceUrl(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
+                  placeholder="https://example.com/resource"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="resourceDescription" className="block text-xs text-gray-500 mb-1">
+                  Description
+                </label>
+                <input
+                  type="text"
+                  id="resourceDescription"
+                  value={resourceDescription}
+                  onChange={(e) => setResourceDescription(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
+                  placeholder="Brief description of this resource"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="resourceType" className="block text-xs text-gray-500 mb-1">
+                  Resource Type
+                </label>
+                <select
+                  id="resourceType"
+                  value={resourceType}
+                  onChange={(e) => setResourceType(e.target.value as 'resource' | 'risk')}
+                  className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
+                >
+                  <option value="resource">Information Resource</option>
+                  <option value="risk">Risk Assessment Tool</option>
+                </select>
+              </div>
+
               <button
-                onClick={handleAddTag}
-                className="bg-gray-200 text-gray-700 px-3 py-2 rounded hover:bg-gray-300 flex items-center gap-1"
+                onClick={handleAddResource}
+                className="bg-gray-200 text-gray-700 px-3 py-2 rounded hover:bg-gray-300 w-full"
               >
-                <FaTag className="text-sm" /> Add
+                Add Resource
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Press Enter or click Add to add a tag</p>
           </div>
 
           <div className="pt-4">
@@ -707,105 +854,6 @@ const GuidelinesBuilder = ({ userProfile }: GuidelinesBuilderProps) => {
             </button>
           </div>
         </div>
-      </div>
-
-      <div>
-        <h3 className="text-lg font-medium text-gray-700 mb-3">Current Guidelines</h3>
-        {guidelines.length === 0 ? (
-          <p className="text-gray-500 italic">No guidelines added yet.</p>
-        ) : (
-          <div className="space-y-3">
-            {filterGuidelines(guidelines).map((guideline) => (
-              <div
-                key={guideline.id}
-                className="border border-gray-200 rounded-md p-3 hover:bg-gray-50"
-              >
-                <div className="flex justify-between">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-gray-800">{guideline.name}</h4>
-                    {guideline.visibility === 'public' ? (
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <FaGlobe className="text-xs" /> Public
-                      </span>
-                    ) : (
-                      <span className="text-xs bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <FaLock className="text-xs" /> Private
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    {(userProfile.isAdmin ||
-                      guideline.createdBy === userProfile.userId ||
-                      guideline.visibility === 'private') && (
-                      <>
-                        <button
-                          onClick={() => handleEditGuideline(guideline)}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteGuideline(guideline.id)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          Delete
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 mt-1">{guideline.description}</p>
-
-                {/* Age ranges with frequency details */}
-                {guideline.ageRanges.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-xs font-semibold text-gray-700">
-                      Age-Specific Recommendations:
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-1 mt-1">
-                      {guideline.ageRanges.map((range, index) => (
-                        <div key={index} className="text-xs bg-gray-50 p-1 rounded">
-                          <span className="font-medium">{range.label}:</span>{' '}
-                          {range.frequency || guideline.frequency}
-                          {range.notes && (
-                            <span className="block italic text-gray-500">{range.notes}</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                    {guideline.frequency}
-                  </span>
-                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                    {guideline.category}
-                  </span>
-                  <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">
-                    Gender:{' '}
-                    {guideline.genders.includes('all') ? 'All' : guideline.genders.join(', ')}
-                  </span>
-                </div>
-
-                {/* Tags */}
-                {guideline.tags && guideline.tags.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {guideline.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs capitalize"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

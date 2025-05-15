@@ -19,4 +19,5 @@ export interface Provider {
   }[];
   profileImage?: string;
   bio?: string;
+  user_id?: string; // Link to specific user
 }

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import { UserProfile } from '@/lib/types';
+import { useEffect, useRef, useState } from 'react';
+
 import { createClient } from '@/lib/supabase/client';
+import { UserProfile } from '@/lib/types';
 
 interface UseUserResult {
   user: UserProfile | null;
@@ -15,37 +16,40 @@ export function useUser(): UseUserResult {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const firstLoadRef = useRef(true);
 
   const fetchUser = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // First check if user is authenticated
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session) {
         setIsAuthenticated(false);
         setUser(null);
         return;
       }
-      
+
       setIsAuthenticated(true);
-      
+
       // Then fetch user profile
       const response = await fetch('/api/users/me');
-      
+
       if (response.status === 401) {
         setIsAuthenticated(false);
         setUser(null);
         return;
       }
-      
+
       if (!response.ok) {
         throw new Error(`Error fetching user: ${response.status}`);
       }
-      
+
       const userData = await response.json();
       setUser(userData);
     } catch (err) {
@@ -57,6 +61,12 @@ export function useUser(): UseUserResult {
   };
 
   useEffect(() => {
+    // Check if this is a development double render and avoid it
+    if (process.env.NODE_ENV === 'development' && !firstLoadRef.current) {
+      return;
+    }
+
+    firstLoadRef.current = false;
     fetchUser();
   }, []);
 
@@ -67,4 +77,4 @@ export function useUser(): UseUserResult {
   return { user, isLoading, error, isAuthenticated, refetch };
 }
 
-export default useUser; 
+export default useUser;

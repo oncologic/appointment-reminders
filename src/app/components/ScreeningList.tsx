@@ -2,9 +2,21 @@ import Link from 'next/link';
 import React from 'react';
 import { FaChevronRight } from 'react-icons/fa';
 
-import { ScreeningRecommendation } from '@/lib/mockData';
-
 import ScreeningCard from './ScreeningCard';
+
+// Define local interface instead of importing from mockData
+interface ScreeningRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  status: 'due' | 'overdue' | 'completed' | 'upcoming';
+  statusText: string;
+  schedulePath: string;
+  icon?: string;
+  iconColor?: string;
+  bgColor?: string;
+  friendRecommendations: any[];
+}
 
 interface ScreeningListProps {
   title: string;

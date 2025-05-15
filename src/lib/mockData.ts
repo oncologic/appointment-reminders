@@ -12,6 +12,8 @@ export interface ScreeningRecommendation {
   statusText: string;
   schedulePath: string;
   detailsPath?: string;
+  guidelineId?: string;
+  archived?: boolean;
   friendRecommendations: FriendRecommendation[];
   previousResults?: ScreeningResult[];
 }

@@ -30,7 +30,7 @@ const GuidelineSearch: React.FC<GuidelineSearchProps> = ({
       <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <FaSearch className="text-gray-400" />
+            <FaSearch className="text-gray-600" />
           </div>
           <input
             type="text"
@@ -38,7 +38,7 @@ const GuidelineSearch: React.FC<GuidelineSearchProps> = ({
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={
               showTips
-                ? 'Try &quot;blood pressure&quot;, &quot;mammogram&quot;, or &quot;diabetes&quot;'
+                ? 'Try blood pressure, mammogram, or diabetes etc.'
                 : 'Search guidelines and screenings'
             }
             className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -49,7 +49,7 @@ const GuidelineSearch: React.FC<GuidelineSearchProps> = ({
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full py-2 px-3 border border-gray-300 text-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             {categories.map((category) => (
               <option key={category} value={category}>

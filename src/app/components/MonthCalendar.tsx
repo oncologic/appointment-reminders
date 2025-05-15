@@ -3,16 +3,25 @@
 import Link from 'next/link';
 import React, { useState } from 'react';
 
-import {
-  Appointment,
-  ScreeningRecommendation,
-  futureScreenings,
-  upcomingScreenings,
-} from '@/lib/mockData';
+import { ScreeningRecommendation as DBScreeningRecommendation } from '@/app/components/types';
+import { useGuidelines } from '@/app/hooks/useGuidelines';
+import { useUser } from '@/app/hooks/useUser';
+import { Appointment } from '@/lib/types';
 
 import AppointmentTooltip from './AppointmentTooltip';
 import ScreeningCalendarItem from './ScreeningCalendarItem';
 import ScreeningTooltip from './ScreeningTooltip';
+
+// Combined interface that includes properties needed for calendar display
+interface CalendarScreeningRecommendation extends DBScreeningRecommendation {
+  title: string;
+  statusText: string;
+  schedulePath: string;
+  icon?: string;
+  iconColor?: string;
+  bgColor?: string;
+  friendRecommendations: any[];
+}
 
 interface MonthCalendarProps {
   month: number;
@@ -21,25 +30,25 @@ interface MonthCalendarProps {
 }
 
 // Helper function to map screenings to suggested months
-const getSuggestedMonth = (screening: ScreeningRecommendation): number => {
+const getSuggestedMonth = (screening: CalendarScreeningRecommendation): number => {
   // Simple mapping based on status and title
   if (screening.status === 'overdue') {
     return new Date().getMonth(); // Current month for overdue
   } else if (screening.status === 'due') {
     return (new Date().getMonth() + 1) % 12; // Next month for due
-  } else if (screening.title.includes('Physical')) {
+  } else if (screening.name?.includes('Physical')) {
     return 0; // January
-  } else if (screening.title.includes('Mammogram')) {
+  } else if (screening.name?.includes('Mammogram')) {
     return 9; // October (breast cancer awareness month)
-  } else if (screening.title.includes('Colonoscopy')) {
+  } else if (screening.name?.includes('Colonoscopy')) {
     return 2; // March (colorectal cancer awareness month)
-  } else if (screening.title.includes('Cholesterol')) {
+  } else if (screening.name?.includes('Cholesterol')) {
     return 8; // September
-  } else if (screening.title.includes('Cervical')) {
+  } else if (screening.name?.includes('Cervical')) {
     return 0; // January (cervical health awareness month)
-  } else if (screening.title.includes('Skin')) {
+  } else if (screening.name?.includes('Skin')) {
     return 4; // May (skin cancer awareness month)
-  } else if (screening.title.includes('Breast')) {
+  } else if (screening.name?.includes('Breast')) {
     return 9; // October
   }
 
@@ -49,10 +58,16 @@ const getSuggestedMonth = (screening: ScreeningRecommendation): number => {
 
 const MonthCalendar: React.FC<MonthCalendarProps> = ({ month, year, appointments }) => {
   const [hoveredAppointment, setHoveredAppointment] = useState<Appointment | null>(null);
-  const [hoveredScreening, setHoveredScreening] = useState<ScreeningRecommendation | null>(null);
+  const [hoveredScreening, setHoveredScreening] = useState<CalendarScreeningRecommendation | null>(
+    null
+  );
   const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(
     null
   );
+
+  // Get user profile and screenings from the database
+  const { user } = useUser();
+  const { screenings } = useGuidelines(user);
 
   // Get the first day of the month
   const firstDayOfMonth = new Date(year, month, 1);
@@ -75,27 +90,27 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({ month, year, appointments
     (appt) => appt.date.getMonth() === month && appt.date.getFullYear() === year
   );
 
-  // Filter screenings for this month
-  const allScreenings = [...upcomingScreenings, ...futureScreenings];
-  const monthScreenings = allScreenings.filter(
-    (screening) => screening.status !== 'completed' && getSuggestedMonth(screening) === month
-  );
+  // Filter screenings for this month and adapt to calendar format
+  const monthScreenings: CalendarScreeningRecommendation[] = screenings
+    .filter(
+      (screening) =>
+        screening.status !== 'completed' &&
+        getSuggestedMonth(screening as unknown as CalendarScreeningRecommendation) === month
+    )
+    .map((screening) => ({
+      ...screening,
+      title: screening.name,
+      statusText: `${screening.status === 'overdue' ? 'Overdue' : screening.status === 'due' ? 'Due' : 'Upcoming'}: ${screening.name}`,
+      schedulePath: `/appointments/new?screening=${screening.id}`,
+      icon: '',
+      iconColor: screening.status === 'overdue' ? 'text-red-500' : 'text-orange-400',
+      bgColor: screening.status === 'overdue' ? 'bg-red-100' : 'bg-orange-100',
+      friendRecommendations: [], // Initialize as empty array since we don't have this data yet
+    }));
 
   // Helper function to check if a screening should be shown in this year
-  const shouldShowScreeningInYear = (screening: ScreeningRecommendation): boolean => {
+  const shouldShowScreeningInYear = (screening: CalendarScreeningRecommendation): boolean => {
     if (screening.status === 'completed') return false;
-
-    // Extract year from statusText if it has one
-    const yearMatch = screening.statusText.match(/\(\s*age\s+(\d+)\s*\)/i);
-    const ageYear = yearMatch ? parseInt(yearMatch[1]) : null;
-
-    if (ageYear) {
-      // Show in the year when the age would be reached
-      const currentYear = new Date().getFullYear();
-      const userAge = 38; // From the user data in page.tsx
-      const yearWhenDue = currentYear + (ageYear - userAge);
-      return year === yearWhenDue;
-    }
 
     // If due soon or overdue, always show in current year and next year
     if (screening.status === 'overdue' || screening.status === 'due') {
@@ -118,7 +133,7 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({ month, year, appointments
   });
 
   // Group screenings by day (distribute evenly through the month)
-  const screeningsByDay: Record<number, ScreeningRecommendation[]> = {};
+  const screeningsByDay: Record<number, CalendarScreeningRecommendation[]> = {};
   monthScreenings
     .filter((screening) => shouldShowScreeningInYear(screening))
     .forEach((screening, index) => {
@@ -182,7 +197,7 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({ month, year, appointments
   // Handle screening hover
   const handleScreeningMouseEnter = (
     e: React.MouseEvent<HTMLDivElement>,
-    screening: ScreeningRecommendation
+    screening: CalendarScreeningRecommendation
   ) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setHoveredScreening(screening);

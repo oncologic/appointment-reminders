@@ -1,9 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  FaBell,
   FaCalendarAlt,
+  FaCalendarPlus,
+  FaCheck,
+  FaChevronDown,
   FaChevronRight,
   FaClipboardCheck,
   FaComments,
@@ -12,27 +16,33 @@ import {
   FaNotesMedical,
   FaPhoneAlt,
   FaPlus,
-  FaSearch,
   FaShareAlt,
+  FaShieldAlt,
+  FaSignOutAlt,
+  FaSpinner,
   FaStar,
   FaTooth,
+  FaTrophy,
   FaUserMd,
   FaUsers,
-  FaSpinner,
-  FaSignOutAlt,
-  FaChevronDown,
 } from 'react-icons/fa';
 
-import useUser from './hooks/useUser';
-import HealthScreenings from './components/HealthScreenings';
+import { fetchAppointments } from '@/lib/appointmentService';
 import { createClient } from '@/lib/supabase/client';
+import { Appointment, UserProfile } from '@/lib/types';
+
+import HealthScreenings from './components/HealthScreenings';
+import UpcomingAppointments from './components/UpcomingAppointments';
+import useGuidelines from './hooks/useGuidelines';
+import useUser from './hooks/useUser';
 
 // Placeholder user for when data is not yet loaded
 const defaultUser = {
-  firstName: 'Guest',
+  firstName: 'User',
   lastName: 'User',
   age: 0,
   gender: 'other',
+  id: 'guest',
 };
 
 const quickActions = [
@@ -46,20 +56,47 @@ const quickActions = [
 
 const navItems = [
   { label: 'Home', icon: <FaHome />, href: '/' },
-  { label: 'Search', icon: <FaSearch />, href: '#' },
   { label: 'Appointments', icon: <FaCalendarAlt />, href: '/appointments' },
   { label: 'Guidelines', icon: <FaClipboardCheck />, href: '/guidelines' },
   { label: 'Friend Recommendations', icon: <FaUsers />, href: '/friend-recommendations' },
 ];
 
-const appointmentsBooked = 7;
-const appointmentsGoal = 10;
+// Helper function to get first name from full name
+const getFirstName = (name?: string): string => {
+  if (!name) return '';
+  return name.split(' ')[0] || name;
+};
+
+// Helper function to get last name from full name
+const getLastName = (name?: string): string => {
+  if (!name) return '';
+  const nameParts = name.split(' ');
+  return nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+};
+
+// Helper function to get initial from name
+const getInitial = (name?: string): string => {
+  if (!name) return '?';
+  return name.charAt(0).toUpperCase();
+};
+
+// Function to generate celebration message based on completion percentage
+const getCelebrationMessage = (completed: number, total: number): string => {
+  const percentage = total > 0 ? (completed / total) * 100 : 0;
+
+  if (percentage === 100) return "Amazing! You've completed all your health screenings! 🎉";
+  if (percentage >= 75) return "Great progress! You're taking excellent care of your health! 🌟";
+  if (percentage >= 50) return 'Halfway there! Keep up the good work with your health journey! 💪';
+  if (percentage >= 25) return "Good start! You're on your way to better health! 👍";
+  if (percentage > 0) return "You've begun your health journey! Schedule your next screening! 🚀";
+  return 'Your health matters! Schedule your first screening today! ❤️';
+};
 
 const Home: React.FC = () => {
   const { user, isLoading, error, isAuthenticated } = useUser();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
+
   // Function to handle sign out
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -74,15 +111,102 @@ const Home: React.FC = () => {
         setIsDropdownOpen(false);
       }
     }
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
+  const { screenings } = useGuidelines(user);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [completedScreeningsCount, setCompletedScreeningsCount] = useState<number>(0);
+  const [scheduledScreeningsCount, setScheduledScreeningsCount] = useState<number>(0);
+  const [isAppointmentsLoading, setIsAppointmentsLoading] = useState<boolean>(true);
+
   // Use the API user data or fall back to the default user
   const userData = user || defaultUser;
+
+  // Calculate total screenings as the goal
+  const totalScreenings = screenings.length;
+
+  // Fetch appointments once at the parent level
+  useEffect(() => {
+    const getAppointmentsData = async () => {
+      try {
+        setIsAppointmentsLoading(true);
+        const appointmentsData = await fetchAppointments();
+        setAppointments(appointmentsData);
+
+        // Get current year
+        const currentYear = new Date().getFullYear();
+
+        // Count completed screenings (completed appointments that match screening IDs)
+        // Count only screenings completed this year
+        const completedCount = appointmentsData.filter((appt) => {
+          // Check if appointment is completed
+          if (!appt.completed) return false;
+
+          // Check if appointment has a date and it's in the current year
+          const appointmentDate = new Date(appt.date);
+          const isCurrentYear = appointmentDate.getFullYear() === currentYear;
+          if (!isCurrentYear) return false;
+
+          // First check for direct screeningId match
+          if (
+            appt.screeningId &&
+            screenings.some((screening) => screening.id === appt.screeningId)
+          ) {
+            return true;
+          }
+
+          // Fallback to title matching if no screeningId is available
+          return screenings.some((screening) =>
+            appt.title.toLowerCase().includes(screening.name.toLowerCase())
+          );
+        }).length;
+
+        // Count scheduled screenings (future appointments that match screening IDs in the current year)
+        const scheduledCount = appointmentsData.filter((appt) => {
+          // Skip completed appointments (already counted above)
+          if (appt.completed) return false;
+
+          // Check if appointment has a date and it's in the current year
+          const appointmentDate = new Date(appt.date);
+          const isCurrentYear = appointmentDate.getFullYear() === currentYear;
+          if (!isCurrentYear) return false;
+
+          // Check if the appointment is in the future
+          const isInFuture = appointmentDate > new Date();
+          if (!isInFuture) return false;
+
+          // First check for direct screeningId match
+          if (
+            appt.screeningId &&
+            screenings.some((screening) => screening.id === appt.screeningId)
+          ) {
+            return true;
+          }
+
+          // Fallback to title matching if no screeningId is available
+          return screenings.some((screening) =>
+            appt.title.toLowerCase().includes(screening.name.toLowerCase())
+          );
+        }).length;
+
+        setCompletedScreeningsCount(completedCount);
+        setScheduledScreeningsCount(scheduledCount);
+      } catch (error) {
+        console.error('Error fetching appointments:', error);
+      } finally {
+        setIsAppointmentsLoading(false);
+      }
+    };
+
+    if (isAuthenticated && screenings.length > 0) {
+      getAppointmentsData();
+    }
+  }, [isAuthenticated, screenings]);
 
   // Show loader while fetching user data
   if (isLoading) {
@@ -101,7 +225,9 @@ const Home: React.FC = () => {
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
             <FaUserMd className="text-2xl text-blue-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Appointment Reminders</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Welcome to Appointment Reminders
+          </h2>
           <p className="text-gray-600 mb-6">Please sign in to access your dashboard</p>
           <Link
             href="/login"
@@ -114,12 +240,18 @@ const Home: React.FC = () => {
     );
   }
 
+  // Calculate percentage for screenings completed
+  const completionPercentage =
+    totalScreenings > 0
+      ? Math.min(100, Math.round((completedScreeningsCount / totalScreenings) * 100))
+      : 0;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-blue-800">HealthTracker</h1>
+          <h1 className="text-2xl font-bold text-blue-800">ScreeningTracker</h1>
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-4">
               {navItems.map((item, idx) => (
@@ -135,23 +267,23 @@ const Home: React.FC = () => {
             </div>
             <div className="flex items-center gap-3">
               <div className="relative" ref={dropdownRef}>
-                <button 
+                <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="flex items-center gap-2 cursor-pointer focus:outline-none"
                 >
-                  <img 
-                    src="/avatar.png" 
-                    alt="avatar" 
-                    className="w-8 h-8 rounded-full object-cover" 
-                  />
+                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-lg font-semibold">
+                    {getInitial(userData?.firstName)}
+                  </div>
                   <div className="hidden sm:flex items-center gap-1">
-                    <p className="font-semibold text-gray-800">{userData.firstName} {userData.lastName}</p>
-                    <FaChevronDown className={`text-gray-500 text-xs transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                    <p className="font-semibold text-gray-800">{userData.firstName}</p>
+                    <FaChevronDown
+                      className={`text-gray-500 text-xs transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                    />
                   </div>
                 </button>
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-md py-2 z-10">
-                    <button 
+                    <button
                       onClick={handleSignOut}
                       className="w-full text-left px-4 py-2 flex items-center gap-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700"
                     >
@@ -172,14 +304,14 @@ const Home: React.FC = () => {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <div className="flex items-center gap-3 mb-6">
-                <img
-                  src="/avatar.png"
-                  alt="avatar"
-                  className="w-12 h-12 rounded-full object-cover"
-                />
+                <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-lg font-semibold">
+                  {getInitial(userData?.firstName)}
+                </div>
                 <div>
                   <p className="text-xs text-gray-500">Welcome back,</p>
-                  <p className="font-semibold text-gray-800">{userData.firstName} {userData.lastName}</p>
+                  <p className="font-semibold text-gray-800">
+                    {getFirstName(userData?.firstName) || 'User'}
+                  </p>
                 </div>
               </div>
               <div className="space-y-1">
@@ -199,89 +331,126 @@ const Home: React.FC = () => {
 
           {/* Main content */}
           <div className="lg:col-span-6">
-            {/* Dashboard Stats */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <div className="flex items-center">
-                <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center mr-4">
-                  <FaCalendarAlt className="text-2xl text-blue-600" />
+            {/* Dashboard Stats - Upgraded premium version */}
+            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg shadow-lg mb-6 overflow-hidden">
+              <div className="p-6">
+                <div className="mb-4">
+                  <h3 className="text-white font-medium text-lg mb-1">Screenings Progress</h3>
+                  <p className="text-blue-100 text-sm">Keeping track of your health journey</p>
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-gray-600 font-medium mb-1">Appointments this year</h3>
-                  <div className="flex items-center">
-                    <span className="text-3xl font-bold text-blue-700">{appointmentsBooked}</span>
-                    <span className="text-lg text-gray-400 ml-2">/ {appointmentsGoal}</span>
+
+                <div className="flex items-center mb-5">
+                  <div className="w-20 h-20 rounded-full bg-white bg-opacity-20 flex items-center justify-center mr-5 relative">
+                    {completionPercentage >= 100 ? (
+                      <FaTrophy className="text-3xl text-yellow-300" />
+                    ) : completionPercentage >= 50 ? (
+                      <FaShieldAlt className="text-3xl text-white" />
+                    ) : (
+                      <FaHeartbeat className="text-3xl text-white" />
+                    )}
+
+                    {/* Circle progress indicator */}
+                    <svg className="absolute inset-0" width="80" height="80" viewBox="0 0 80 80">
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="36"
+                        fill="none"
+                        stroke="rgba(255,255,255,0.2)"
+                        strokeWidth="8"
+                      />
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="36"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="8"
+                        strokeDasharray={`${36 * 2 * Math.PI}`}
+                        strokeDashoffset={`${36 * 2 * Math.PI * (1 - completionPercentage / 100)}`}
+                        strokeLinecap="round"
+                        transform="rotate(-90 40 40)"
+                      />
+                    </svg>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: `${(appointmentsBooked / appointmentsGoal) * 100}%` }}
-                    ></div>
+
+                  <div className="flex-1">
+                    <div className="flex justify-between items-baseline mb-1">
+                      <span className="text-4xl font-bold text-white">
+                        {completedScreeningsCount}
+                      </span>
+                      <span className="text-xl text-blue-100">/ {totalScreenings}</span>
+                    </div>
+                    <p className="text-blue-100 mb-2">Screenings completed</p>
+                    <div className="w-full bg-white bg-opacity-20 rounded-full h-2 mb-3">
+                      <div
+                        className="bg-white h-2 rounded-full"
+                        style={{ width: `${completionPercentage}%` }}
+                      ></div>
+                    </div>
+
+                    {/* Add the scheduled screenings section */}
+                    <div className="flex items-center">
+                      <div className="flex-1">
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xl font-bold text-white">
+                            {scheduledScreeningsCount}
+                          </span>
+                          <span className="text-sm text-blue-100">/ {totalScreenings}</span>
+                        </div>
+                        <p className="text-blue-100 text-sm mb-2">Screenings scheduled this year</p>
+                        <div className="w-full bg-white bg-opacity-20 rounded-full h-2">
+                          <div
+                            className="bg-white bg-opacity-50 h-2 rounded-full"
+                            style={{
+                              width: `${Math.min(100, Math.round((scheduledScreeningsCount / totalScreenings) * 100))}%`,
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                      <div className="ml-2 p-1.5 bg-white bg-opacity-20 rounded-full">
+                        <FaCalendarAlt className="text-white text-lg" />
+                      </div>
+                    </div>
                   </div>
+                </div>
+
+                {/* Celebration message */}
+                <div className="bg-white bg-opacity-10 rounded-lg p-4 flex items-start">
+                  <FaBell className="text-yellow-300 text-xl mr-3 mt-1 flex-shrink-0" />
+                  <p className="text-white">
+                    {getCelebrationMessage(scheduledScreeningsCount, totalScreenings)}
+                  </p>
                 </div>
               </div>
-            </div>
 
-            {/* Appointments */}
-            <div className="bg-white rounded-lg shadow-sm mb-6">
-              <div className="flex justify-between items-center p-5 border-b">
-                <h2 className="text-xl font-semibold text-gray-800">Upcoming Appointments</h2>
+              {/* Bottom action buttons */}
+              <div className="bg-indigo-700 px-6 py-3 flex justify-between">
+                <Link
+                  href="/guidelines"
+                  className="text-blue-100 hover:text-white flex items-center text-sm font-medium"
+                >
+                  <FaCalendarPlus className="mr-2" /> Schedule screening
+                </Link>
                 <Link
                   href="/appointments"
-                  className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                  className="text-blue-100 hover:text-white flex items-center text-sm font-medium"
                 >
-                  View all
-                  <FaChevronRight className="text-sm" />
+                  <FaChevronRight className="text-sm" /> View all
                 </Link>
               </div>
-              <div className="p-5">
-                <div className="border border-gray-100 rounded-lg p-4 mb-4 hover:bg-blue-50 transition">
-                  <div className="flex items-center">
-                    <img
-                      src="/doctor-avatar.png"
-                      alt="doctor"
-                      className="w-12 h-12 rounded-full object-cover mr-4"
-                    />
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-800">Aaron David Supratman, MD</p>
-                      <p className="text-gray-500 text-sm">Gastroenterology</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="bg-blue-100 text-blue-800 text-xs rounded px-2 py-1">
-                          Monday, May 9, 2022
-                        </span>
-                        <span className="bg-blue-100 text-blue-800 text-xs rounded px-2 py-1">
-                          8:00 - 8:45 am
-                        </span>
-                      </div>
-                    </div>
-                    <FaChevronRight className="text-gray-400" />
-                  </div>
-                </div>
-                <div className="border border-gray-100 rounded-lg p-4 hover:bg-blue-50 transition">
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4">
-                      <FaTooth className="text-green-600 text-xl" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-800">Dental Cleaning</p>
-                      <p className="text-gray-500 text-sm">Dr. Sarah Johnson</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="bg-blue-100 text-blue-800 text-xs rounded px-2 py-1">
-                          Wednesday, May 18, 2022
-                        </span>
-                        <span className="bg-blue-100 text-blue-800 text-xs rounded px-2 py-1">
-                          10:30 - 11:30 am
-                        </span>
-                      </div>
-                    </div>
-                    <FaChevronRight className="text-gray-400" />
-                  </div>
-                </div>
-              </div>
             </div>
+
+            {/* Appointments - Pass down the fetched appointments */}
+            <UpcomingAppointments
+              limit={2}
+              appointments={appointments}
+              isLoading={isAppointmentsLoading}
+            />
           </div>
 
-          {/* Right column - Health Screenings */}
-          <HealthScreenings />
+          {/* Right column - Health Screenings - Pass down the fetched appointments */}
+          <HealthScreenings appointments={appointments} isLoading={isAppointmentsLoading} />
         </div>
       </main>
 

@@ -4,13 +4,15 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { FaArrowLeft, FaCog, FaUser } from 'react-icons/fa';
 
+import { UserProfile } from '@/lib/types';
+
 import GuidelinesBuilder from '../../components/GuidelinesBuilder';
 import PersonalizedGuidelines, {
   GuidelineItem,
   UserPreferences,
 } from '../../components/PersonalizedGuidelines';
+import { GuidelineView } from '../../components/types';
 import useUser from '../../hooks/useUser';
-import { UserProfile } from '@/lib/types';
 
 enum View {
   PersonalizedView,
@@ -21,10 +23,12 @@ enum View {
 
 const ManageGuidelinesPage = () => {
   const [guidelines, setGuidelines] = useState<GuidelineItem[]>([]);
-  const [userPreferences, setUserPreferences] = useState<UserPreferences>({ selectedGuidelineIds: [] });
+  const [userPreferences, setUserPreferences] = useState<UserPreferences>({
+    selectedGuidelineIds: [],
+  });
   const [currentView, setCurrentView] = useState<View>(View.PersonalizedView);
   const [localUserProfile, setLocalUserProfile] = useState<UserProfile | null>(null);
-  
+
   // Use the user hook to fetch the user profile from the API
   const { user: apiUserProfile, isLoading, error, refetch } = useUser();
 
@@ -34,7 +38,7 @@ const ManageGuidelinesPage = () => {
       const response = await fetch(`/api/guidelines?userId=${userId}`);
       if (response.ok) {
         const data = await response.json();
-        setGuidelines(data);
+        setGuidelines(data.guidelines || data);
       } else {
         console.error('Failed to fetch guidelines:', await response.text());
         setGuidelines([]);
@@ -73,7 +77,7 @@ const ManageGuidelinesPage = () => {
 
   const handleSavePreferences = async (preferences: UserPreferences) => {
     setUserPreferences(preferences);
-    
+
     if (localUserProfile) {
       try {
         const response = await fetch(`/api/users/${localUserProfile.userId}/preferences`, {
@@ -83,7 +87,7 @@ const ManageGuidelinesPage = () => {
           },
           body: JSON.stringify(preferences),
         });
-        
+
         if (!response.ok) {
           console.error('Failed to save preferences:', await response.text());
         }
@@ -101,7 +105,7 @@ const ManageGuidelinesPage = () => {
 
   const handleSaveUserProfile = async (updatedProfile: UserProfile) => {
     setLocalUserProfile(updatedProfile);
-    
+
     // Save updated profile to the API
     try {
       if (updatedProfile.userId) {
@@ -112,7 +116,7 @@ const ManageGuidelinesPage = () => {
           gender: updatedProfile.gender,
           // Add other fields as needed
         };
-        
+
         const response = await fetch(`/api/users/${updatedProfile.userId}`, {
           method: 'PATCH',
           headers: {
@@ -120,32 +124,32 @@ const ManageGuidelinesPage = () => {
           },
           body: JSON.stringify(apiUpdateData),
         });
-        
+
         if (!response.ok) {
           console.error('Failed to update user profile:', await response.text());
         } else {
           // Refresh user data after successful update
           await refetch();
         }
-        
+
         // Risk factors might need a separate API call
-        if (updatedProfile.riskFactors) {
-          try {
-            const riskResponse = await fetch(`/api/users/${updatedProfile.userId}/risk-factors`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(updatedProfile.riskFactors),
-            });
-            
-            if (!riskResponse.ok) {
-              console.error('Failed to update risk factors:', await riskResponse.text());
-            }
-          } catch (error) {
-            console.error('Error updating risk factors:', error);
-          }
-        }
+        // if (updatedProfile.riskFactors) {
+        //   try {
+        //     const riskResponse = await fetch(`/api/users/${updatedProfile.userId}/risk-factors`, {
+        //       method: 'PUT',
+        //       headers: {
+        //         'Content-Type': 'application/json',
+        //       },
+        //       body: JSON.stringify(updatedProfile.riskFactors),
+        //     });
+
+        //     if (!riskResponse.ok) {
+        //       console.error('Failed to update risk factors:', await riskResponse.text());
+        //     }
+        //   } catch (error) {
+        //     console.error('Error updating risk factors:', error);
+        //   }
+        // }
       }
     } catch (error) {
       console.error('Error updating user profile:', error);
@@ -155,7 +159,7 @@ const ManageGuidelinesPage = () => {
   // Render the user profile form
   const renderUserProfileForm = () => {
     if (!localUserProfile) return null;
-    
+
     return (
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Update Your Profile</h2>
@@ -163,26 +167,36 @@ const ManageGuidelinesPage = () => {
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="userFirstName" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="userFirstName"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 First Name
               </label>
               <input
                 type="text"
                 id="userFirstName"
                 value={localUserProfile.firstName}
-                onChange={(e) => setLocalUserProfile({ ...localUserProfile, firstName: e.target.value })}
+                onChange={(e) =>
+                  setLocalUserProfile({ ...localUserProfile, firstName: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
               />
             </div>
             <div>
-              <label htmlFor="userLastName" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="userLastName"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Last Name
               </label>
               <input
                 type="text"
                 id="userLastName"
                 value={localUserProfile.lastName}
-                onChange={(e) => setLocalUserProfile({ ...localUserProfile, lastName: e.target.value })}
+                onChange={(e) =>
+                  setLocalUserProfile({ ...localUserProfile, lastName: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded-md p-2 text-gray-700"
               />
             </div>
@@ -236,7 +250,7 @@ const ManageGuidelinesPage = () => {
               </label>
             </div>
           </div>
-
+          {/* 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Risk Factors</label>
             <div className="space-y-2">
@@ -292,7 +306,7 @@ const ManageGuidelinesPage = () => {
                 <span className="ml-2 text-sm text-gray-700">Current or former smoker</span>
               </label>
             </div>
-          </div>
+          </div> */}
 
           <div className="pt-4">
             <button
@@ -316,7 +330,7 @@ const ManageGuidelinesPage = () => {
 
     // Filter guidelines to only show public ones or ones created by the current user
     const visibleGuidelines = guidelines.filter(
-      (g) => g.visibility === 'public' || (g.createdBy === localUserProfile?.userId)
+      (g) => g.visibility === 'public' || g.createdBy === localUserProfile?.userId
     );
 
     visibleGuidelines.forEach((guideline) => {
@@ -406,7 +420,7 @@ const ManageGuidelinesPage = () => {
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <p className="text-gray-700">Please sign in to view this page.</p>
           <button
-            onClick={() => window.location.href = '/login'}
+            onClick={() => (window.location.href = '/login')}
             className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Sign In
@@ -485,7 +499,16 @@ const ManageGuidelinesPage = () => {
 
         {currentView === View.AllGuidelines && renderAllGuidelines()}
         {currentView === View.ManageGuidelines && (
-          <GuidelinesBuilder userProfile={localUserProfile} />
+          <GuidelinesBuilder
+            userProfile={localUserProfile}
+            setCurrentView={(view) => {
+              if (view === GuidelineView.AllGuidelinesView) {
+                setCurrentView(View.AllGuidelines);
+              } else {
+                setCurrentView(View.PersonalizedView);
+              }
+            }}
+          />
         )}
         {currentView === View.UserProfile && renderUserProfileForm()}
       </div>

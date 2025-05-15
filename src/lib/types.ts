@@ -1,14 +1,21 @@
 export interface UserProfile {
+  userId: string;
   firstName: string;
   lastName: string;
+  gender: string;
   age: number;
-  dateOfBirth?: string; // ISO date string format
-  gender: 'male' | 'female' | 'other';
-  riskFactors: {
-    [key: string]: boolean | string;
-  };
-  isAdmin: boolean;
-  userId: string;
+  dateOfBirth?: string;
+  email?: string;
+  familyHistory?: string[];
+  conditions?: string[];
+  medications?: string[];
+  allergies?: string[];
+  lastPhysical?: string;
+  height?: string;
+  weight?: string;
+  bloodType?: string;
+  avatarUrl?: string;
+  isAdmin?: boolean;
 }
 
 // Enhanced UserProfile that includes database fields
@@ -23,4 +30,30 @@ export interface UserProfileDB {
   created_at: string;
   updated_at: string;
   admin_role?: string;
-} 
+}
+
+// Appointment type
+export interface Appointment {
+  id: string;
+  date: Date;
+  title: string;
+  type: 'Examination' | 'Treatment' | 'Consultation';
+  provider: string;
+  providerId?: string;
+  location: string;
+  notes?: string;
+  detailsPath: string;
+  completed: boolean;
+  // Additional fields for tooltip display
+  description?: string;
+  startTime?: string;
+  endTime?: string;
+  doctor?: string;
+  // Link to user screening
+  screeningId: string | null; // Corresponds to guideline_id in user_screenings table
+  result?: {
+    status: string;
+    notes: string;
+    date: string;
+  };
+}

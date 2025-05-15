@@ -1,3 +1,5 @@
+import { Appointment } from '@/lib/types';
+
 import { AgeRange } from './PersonalizedGuidelines';
 
 export interface ScreeningResult {
@@ -23,21 +25,33 @@ export interface ScreeningResult {
 export interface ScreeningRecommendation {
   id: string;
   name: string;
+  guidelineId?: string;
   description: string;
-  frequency: string;
+  frequency?: string;
+  frequencyMonths?: number;
+  startAge?: number;
   ageRange: AgeRange[];
   ageRangeDetails: AgeRange[];
-  tags?: string[];
+  status: 'due' | 'upcoming' | 'overdue' | 'completed';
+  dueDate?: string;
   lastCompleted?: string;
-  dueDate: string;
-  status: 'completed' | 'due' | 'overdue' | 'upcoming';
   notes?: string;
+  tags?: string[];
   previousResults?: ScreeningResult[];
+  icon?: string;
+  iconColor?: string;
+  bgColor?: string;
+  friendRecommendations?: any[];
+  schedulePath?: string;
+  detailsPath?: string;
+  appointments?: Appointment[];
+  archived?: boolean;
 }
 
 export enum GuidelineView {
-  MyScreenings,
-  AllGuidelinesView,
-  ManageGuidelines,
-  UserProfile,
+  MyScreenings = 'myScreenings',
+  AllGuidelinesView = 'allGuidelines',
+  NewGuideline = 'newGuideline',
+  UserProfile = 'userProfile',
+  ManageGuidelinesAdmin = 'manageGuidelinesAdmin',
 }

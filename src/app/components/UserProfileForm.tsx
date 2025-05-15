@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { FaUser, FaSpinner } from 'react-icons/fa';
+import { FaSpinner, FaUser } from 'react-icons/fa';
 
-import { UserProfile } from '@/lib/types';
 import { createClient } from '@/lib/supabase/client';
+import { UserProfile } from '@/lib/types';
 
 interface UserProfileFormProps {
   userProfile: UserProfile | null;
@@ -60,31 +60,33 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({
 
   // Initialize DOB if it doesn't exist but age does
   const initialDOB = userProfile.dateOfBirth || generateDOB(userProfile.age);
-  
+
   // Save profile to API
   const saveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     setErrorMessage(null);
-    
+
     try {
       // Get current user from Supabase
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session) {
         setErrorMessage('Not authenticated. Please log in.');
         return;
       }
-      
+
       // Prepare data for API
       const userData = {
         first_name: userProfile.firstName,
         last_name: userProfile.lastName,
         date_of_birth: userProfile.dateOfBirth,
-        gender: userProfile.gender
+        gender: userProfile.gender,
       };
-      
+
       // Update user profile via API
       const response = await fetch(`/api/users/${userProfile.userId}`, {
         method: 'PATCH',
@@ -93,15 +95,14 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({
         },
         body: JSON.stringify(userData),
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to update profile');
       }
-      
+
       // Call the onSave callback with the updated profile
       onSave(userProfile);
-      
     } catch (error) {
       console.error('Error saving profile:', error);
       setErrorMessage(error instanceof Error ? error.message : 'An unknown error occurred');
@@ -213,7 +214,7 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({
             </label>
           </div>
         </div>
-
+        {/* 
         <div>
           <p className="block text-sm font-medium text-gray-700 mb-1">Risk Factors</p>
           <div className="space-y-2">
@@ -271,7 +272,7 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({
               <span className="ml-2 text-sm text-gray-700">Family History of Colon Cancer</span>
             </label>
           </div>
-        </div>
+        </div> */}
 
         <div>
           <button

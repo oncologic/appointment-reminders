@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
 
-import { upcomingScreenings } from '@/lib/mockData';
+import { useGuidelines } from '@/app/hooks/useGuidelines';
+import { useUser } from '@/app/hooks/useUser';
 
 import { BookProviderModal } from './BookProviderModal';
 import ScreeningServiceCard from './ScreeningServiceCard';
@@ -39,12 +40,16 @@ const ScreeningServiceAdapter = ({
   const [selectedProvider, setSelectedProvider] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Enrich services with previous results and status from mock data
+  // Get user profile and screenings from the database
+  const { user } = useUser();
+  const { screenings } = useGuidelines(user);
+
+  // Enrich services with previous results and status from real screening data
   const enrichedServices = useMemo(() => {
     return services.map((service) => {
       // Find if there's matching screening data
-      const matchingScreening = upcomingScreenings.find(
-        (s) => s.title.toLowerCase() === service.name.toLowerCase()
+      const matchingScreening = screenings.find(
+        (s) => s.name.toLowerCase() === service.name.toLowerCase()
       );
 
       return {
@@ -53,7 +58,7 @@ const ScreeningServiceAdapter = ({
         status: matchingScreening?.status,
       };
     });
-  }, [services]);
+  }, [services, screenings]);
 
   // Filter services based on search term
   const filteredServices = useMemo(() => {
