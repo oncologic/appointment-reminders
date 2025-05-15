@@ -115,12 +115,13 @@ During development, Google OAuth might require additional verification if you're
 
 ## Deployment
 
-The application can be deployed on [Vercel](https://vercel.com/):
+When deploying to Vercel or another hosting provider, make sure to:
 
-1. Push your code to a GitHub repository
-2. Import the project in Vercel
-3. Configure environment variables
-4. Deploy
+1. Set up environment variables in your Vercel project with the same values as in `.env.local`
+2. Update your Supabase project settings:
+   - Go to Authentication > URL Configuration
+   - Add your Vercel deployment URL to the "Site URL" (e.g., `https://your-app.vercel.app`)
+   - Add your Vercel callback URL to "Redirect URLs" (e.g., `https://your-app.vercel.app/auth/callback`)
 
 Alternatively, build the application locally and deploy to any hosting provider that supports Node.js:
 

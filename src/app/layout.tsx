@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 
+import FirstVisitPopup from '@/components/FirstVisitPopup';
+import FooterDisclaimer from '@/components/FooterDisclaimer';
 import AuthProvider from '@/components/auth/AuthProvider';
 
 import './globals.css';
@@ -20,9 +22,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} text-gray-700`}>
+      <body className={`${inter.className} text-gray-700 pb-12`}>
         <AuthProvider>
+          <FirstVisitPopup />
           {children}
+          <FooterDisclaimer />
           <Toaster position="top-right" />
         </AuthProvider>
       </body>
