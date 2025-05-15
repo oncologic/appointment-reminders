@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FaBell,
   FaCalendarAlt,
@@ -23,15 +23,16 @@ import {
   FaTrophy,
   FaUserMd,
   FaUsers,
+  FaSpinner,
+  FaSignOutAlt,
+  FaChevronDown,
 } from 'react-icons/fa';
 
 import { fetchAppointments } from '@/lib/appointmentService';
 import { Appointment, UserProfile } from '@/lib/types';
 
 import HealthScreenings from './components/HealthScreenings';
-import UpcomingAppointments from './components/UpcomingAppointments';
-import { useGuidelines } from './hooks/useGuidelines';
-import useUser from './hooks/useUser';
+import { createClient } from '@/lib/supabase/client';
 
 // Placeholder user for when data is not yet loaded
 const defaultUser = {
@@ -90,6 +91,29 @@ const getCelebrationMessage = (completed: number, total: number): string => {
 
 const Home: React.FC = () => {
   const { user, isLoading, error, isAuthenticated } = useUser();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Function to handle sign out
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  };
+
+  // Handle clicks outside of dropdown to close it
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const { screenings } = useGuidelines(user);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -193,14 +217,20 @@ const Home: React.FC = () => {
   // Redirect to login if not authenticated
   if (!isAuthenticated && !isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <p className="text-xl mb-4">Please sign in to access your health dashboard</p>
-        <Link
-          href="/login"
-          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition"
-        >
-          Sign In
-        </Link>
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
+        <div className="bg-white rounded-lg shadow-sm p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
+            <FaUserMd className="text-2xl text-blue-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Appointment Reminders</h2>
+          <p className="text-gray-600 mb-6">Please sign in to access your dashboard</p>
+          <Link
+            href="/login"
+            className="w-full block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-medium"
+          >
+            Sign In
+          </Link>
+        </div>
       </div>
     );
   }
@@ -231,11 +261,32 @@ const Home: React.FC = () => {
               ))}
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
-                {getInitial(userData?.firstName)}
-              </div>
-              <div className="hidden sm:block">
-                <p className="font-semibold text-gray-800">{userData?.firstName || 'User'}</p>
+              <div className="relative" ref={dropdownRef}>
+                <button 
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center gap-2 cursor-pointer focus:outline-none"
+                >
+                  <img 
+                    src="/avatar.png" 
+                    alt="avatar" 
+                    className="w-8 h-8 rounded-full object-cover" 
+                  />
+                  <div className="hidden sm:flex items-center gap-1">
+                    <p className="font-semibold text-gray-800">{userData.firstName} {userData.lastName}</p>
+                    <FaChevronDown className={`text-gray-500 text-xs transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-md py-2 z-10">
+                    <button 
+                      onClick={handleSignOut}
+                      className="w-full text-left px-4 py-2 flex items-center gap-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                    >
+                      <FaSignOutAlt className="text-gray-500" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
