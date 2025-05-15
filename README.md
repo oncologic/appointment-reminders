@@ -2,6 +2,8 @@
 
 A Next.js application for managing healthcare appointments and reminders.
 
+> **Note:** This project was developed during OncoLogic's 2025 Hackathon. As a prototype, it may contain bugs and requires additional enhancements and security checks before being used in a production environment.
+
 ## Features
 
 - User authentication with Supabase
@@ -126,6 +128,25 @@ Alternatively, build the application locally and deploy to any hosting provider 
 npm run build
 npm run start
 ```
+
+## Collaboration
+
+If you'd like to contribute to this project:
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please ensure your code follows the project's style guidelines and passes all tests.
+
+### Development Guidelines
+
+- Use functional React components and ES6 syntax
+- Follow the existing project structure
+- Add tests for new functionality
+- Update documentation for any changes
 
 ## License
 
