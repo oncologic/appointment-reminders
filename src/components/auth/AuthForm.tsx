@@ -122,7 +122,7 @@ export default function AuthForm({ next = '/' }: AuthFormProps) {
           </div>
           <p className="text-xl font-semibold text-gray-800 mb-2">Successfully signed in!</p>
           <p className="text-gray-600 mb-6">
-            If you're not automatically redirected, please click the button below.
+            If you&apos;re not automatically redirected, please click the button below.
           </p>
           <button
             onClick={() => router.push('/')}

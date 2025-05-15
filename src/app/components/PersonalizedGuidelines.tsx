@@ -208,7 +208,7 @@ const PersonalizedGuidelines = ({
       ...userPreferences,
       selectedGuidelineIds,
     });
-  }, [selectedGuidelineIds]);
+  }, [selectedGuidelineIds, userPreferences, onSavePreferences]);
 
   return (
     <div>

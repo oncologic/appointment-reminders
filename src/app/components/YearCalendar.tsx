@@ -19,7 +19,7 @@ import { useGuidelines } from '@/app/hooks/useGuidelines';
 import { useUser } from '@/app/hooks/useUser';
 import { Appointment } from '@/lib/types';
 
-import { useAppointments } from '../appointments/page';
+import { useAppointments } from '../hooks/useAppointments';
 import MonthCalendar from './MonthCalendar';
 
 interface YearCalendarProps {

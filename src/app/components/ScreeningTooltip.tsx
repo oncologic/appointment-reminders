@@ -8,7 +8,7 @@ import {
   FaUserFriends,
 } from 'react-icons/fa';
 
-import { useAppointments } from '@/app/appointments/page';
+import { useAppointments } from '@/app/hooks/useAppointments';
 
 // Use a compatible interface with MonthCalendar
 interface CalendarScreeningRecommendation {

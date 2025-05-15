@@ -74,7 +74,21 @@ const ScreeningsServicesList = ({
         {sortedScreenings.map((screening) => (
           <ScreeningServiceCard
             key={screening.id}
-            screening={screening}
+            service={{
+              id: screening.id,
+              name: screening.name,
+              description: screening.description || '',
+              duration: screening.frequency || 'N/A',
+            }}
+            enrichedData={{
+              ...screening,
+              id: screening.id,
+              name: screening.name,
+              description: screening.description || '',
+              duration: screening.frequency || 'N/A',
+              previousResults: screening.previousResults,
+              status: screening.status,
+            }}
             onSelectProvider={handleProviderSelect}
           />
         ))}
