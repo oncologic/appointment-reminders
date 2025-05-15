@@ -63,7 +63,6 @@ export function useUser(): UseUserResult {
   useEffect(() => {
     // Check if this is a development double render and avoid it
     if (process.env.NODE_ENV === 'development' && !firstLoadRef.current) {
-      console.log('Skipping duplicate user fetch in development strict mode');
       return;
     }
 

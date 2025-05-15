@@ -30,7 +30,7 @@ const GuidelineSearch: React.FC<GuidelineSearchProps> = ({
       <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <FaSearch className="text-gray-400" />
+            <FaSearch className="text-gray-600" />
           </div>
           <input
             type="text"

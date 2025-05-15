@@ -212,7 +212,7 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
                       </span>
                     </div>
                   </div>
-                  <FaChevronRight className="text-gray-400" />
+                  <FaChevronRight className="text-gray-600" />
                 </Link>
               </div>
             ))}

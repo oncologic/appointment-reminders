@@ -1,3 +1,5 @@
+import { Appointment } from '@/lib/types';
+
 import { AgeRange } from './PersonalizedGuidelines';
 
 export interface ScreeningResult {
@@ -41,6 +43,7 @@ export interface ScreeningRecommendation {
   friendRecommendations?: any[];
   schedulePath?: string;
   detailsPath?: string;
+  appointments?: Appointment[];
 }
 
 export enum GuidelineView {

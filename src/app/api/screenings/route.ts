@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const userId = searchParams.get('userId');
+  const includeAppointments = searchParams.get('includeAppointments') !== 'false'; // Default to true
 
   // Create Supabase client
   const supabase = createClient();
@@ -32,6 +33,102 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // If appointments should be included, fetch them for each screening
+  if (includeAppointments) {
+    // Get all appointments for the user
+    const { data: allAppointments, error: appointmentsError } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('user_id', userIdToUse);
+
+    if (appointmentsError) {
+      return NextResponse.json({ error: appointmentsError.message }, { status: 500 });
+    }
+
+    // Map database appointments to Appointment interface
+    const mappedAppointments = allAppointments.map((dbAppointment) => ({
+      id: dbAppointment.id,
+      date: new Date(dbAppointment.appointment_date),
+      title: dbAppointment.title,
+      type: dbAppointment.type,
+      provider: dbAppointment.provider_name,
+      providerId: dbAppointment.provider_id,
+      location: dbAppointment.location,
+      notes: dbAppointment.notes || undefined,
+      detailsPath: `/appointments/${dbAppointment.id}`,
+      completed: dbAppointment.completed,
+      screeningId: dbAppointment.screening_id,
+      result: dbAppointment.result
+        ? {
+            status: dbAppointment.result.status,
+            notes: dbAppointment.result.notes,
+            date: dbAppointment.result.date,
+          }
+        : undefined,
+    }));
+
+    // Create a map to quickly look up screenings by both id and guideline_id
+    const screeningsById = screenings.reduce(
+      (acc, screening) => {
+        acc[screening.id] = screening;
+        if (screening.guideline_id) {
+          acc[screening.guideline_id] = screening;
+        }
+        return acc;
+      },
+      {} as Record<string, any>
+    );
+
+    // Create a map to quickly look up appointments by screening ID
+    const appointmentsByScreeningId = mappedAppointments.reduce(
+      (acc, appointment) => {
+        if (appointment.screeningId) {
+          // Try to match to a screening
+          const matchedScreening = screeningsById[appointment.screeningId];
+          if (matchedScreening) {
+            const screeningKey = matchedScreening.id;
+            if (!acc[screeningKey]) {
+              acc[screeningKey] = [];
+            }
+            acc[screeningKey].push(appointment);
+          } else {
+            // If no direct match, still keep the appointment under its original screening_id
+            if (!acc[appointment.screeningId]) {
+              acc[appointment.screeningId] = [];
+            }
+            acc[appointment.screeningId].push(appointment);
+          }
+        }
+        return acc;
+      },
+      {} as Record<string, any[]>
+    );
+
+    // Return screenings with their associated appointments
+    const screeningsWithAppointments = screenings.map((screening) => {
+      // Check for appointments matched to this screening's ID
+      const appointments = appointmentsByScreeningId[screening.id] || [];
+
+      // Also check for appointments matched to this screening's guideline_id
+      const guidelineAppointments = appointmentsByScreeningId[screening.guideline_id] || [];
+
+      // Combine both sets of appointments, avoiding duplicates by ID
+      const allAppointments = [...appointments];
+      for (const appt of guidelineAppointments) {
+        if (!allAppointments.some((a) => a.id === appt.id)) {
+          allAppointments.push(appt);
+        }
+      }
+
+      return {
+        ...screening,
+        appointments: allAppointments,
+      };
+    });
+
+    return NextResponse.json({ screenings: screeningsWithAppointments });
   }
 
   return NextResponse.json({ screenings });

@@ -29,6 +29,10 @@ const mapDbAppointmentToAppointment = (dbAppointment: any) => {
 // GET all appointments for the current user
 export async function GET(request: NextRequest) {
   try {
+    // Parse query parameters
+    const url = new URL(request.url);
+    const screeningId = url.searchParams.get('screeningId');
+
     // Create a Supabase client for the current request
     const supabase = createClient();
 
@@ -48,15 +52,18 @@ export async function GET(request: NextRequest) {
     // Get the current user's ID
     const userId = session.user.id;
 
-    // Query appointments filtered by user_id
-    const { data, error } = await supabase
-      .from('appointments')
-      .select('*')
-      .eq('user_id', userId)
-      .order('appointment_date', { ascending: false });
+    // Start building the query
+    let query = supabase.from('appointments').select('*').eq('user_id', userId);
+
+    // Add screeningId filter if provided
+    if (screeningId) {
+      query = query.eq('screening_id', screeningId);
+    }
+
+    // Execute the query with ordering
+    const { data, error } = await query.order('appointment_date', { ascending: false });
 
     if (error) {
-      console.error('Supabase error:', error);
       return NextResponse.json({ error: 'Failed to fetch appointments' }, { status: 500 });
     }
 

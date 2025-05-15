@@ -60,6 +60,56 @@ export async function fetchAppointmentById(id: string): Promise<Appointment> {
 }
 
 /**
+ * Fetches appointments associated with a specific screening ID
+ */
+export async function fetchAppointmentsByScreeningId(screeningId: string): Promise<Appointment[]> {
+  try {
+    // First try to get appointments directly from the screenings API
+    const response = await fetch(`/api/screenings/${screeningId}?includeAppointments=true`);
+
+    if (!response.ok) {
+      // Handle unauthorized, not found, or other errors
+      if (response.status === 401) {
+        throw new Error('You must be logged in to view appointments');
+      }
+      if (response.status === 404) {
+        throw new Error('Screening not found or you do not have access to this screening');
+      }
+      throw new Error(`Failed to fetch appointments for screening: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const screeningAppointments = data.appointments || [];
+
+    // If we didn't find any appointments through the screenings API,
+    // try to fetch all appointments and filter them
+    if (screeningAppointments.length === 0) {
+      // Get all appointments and manually filter
+      const allAppointmentsResponse = await fetch('/api/appointments');
+
+      if (allAppointmentsResponse.ok) {
+        const allAppointments = await allAppointmentsResponse.json();
+
+        // Filter appointments by screeningId
+        const matchingAppointments = allAppointments.filter(
+          (appointment: Appointment) => appointment.screeningId === screeningId
+        );
+
+        if (matchingAppointments.length > 0) {
+          return matchingAppointments;
+        }
+      }
+    }
+
+    // Return the appointments array from the screenings API
+    return screeningAppointments;
+  } catch (error) {
+    console.error(`Error fetching appointments for screening ID ${screeningId}:`, error);
+    throw error;
+  }
+}
+
+/**
  * Creates a new appointment
  */
 export async function createAppointment(

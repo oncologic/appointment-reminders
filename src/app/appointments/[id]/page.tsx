@@ -480,8 +480,8 @@ const AppointmentDetailsPage: React.FC = () => {
                     }
                     className="flex items-center px-3 py-2 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition text-sm"
                   >
-                    <FaCalendarAlt className="mr-1 text-gray-600" />
-                    <span>Reschedule</span>
+                    <FaCalendarAlt className="mr-1 text-gray-700" />
+                    <span className="text-gray-700">Reschedule</span>
                   </button>
                 </>
               )}

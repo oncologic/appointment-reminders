@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const guidelineId = params.id;
+  const searchParams = request.nextUrl.searchParams;
+  const includeAppointments = searchParams.get('includeAppointments') === 'true';
 
   // Create Supabase client
   const supabase = createClient();
@@ -34,6 +36,68 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
   if (!screening) {
     return NextResponse.json({ error: 'Screening not found' }, { status: 404 });
+  }
+
+  // If appointments are requested, fetch them as well
+  if (includeAppointments) {
+    // First check by guideline_id (which is the screening_id in appointments)
+    const { data: appointmentsByGuidelineId, error: appointmentsError1 } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('screening_id', guidelineId)
+      .eq('user_id', userId);
+
+    if (appointmentsError1) {
+      return NextResponse.json({ error: appointmentsError1.message }, { status: 500 });
+    }
+
+    // Also check by screening.id in case that's used instead
+    const { data: appointmentsById, error: appointmentsError2 } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('screening_id', screening.id)
+      .eq('user_id', userId);
+
+    if (appointmentsError2) {
+      return NextResponse.json({ error: appointmentsError2.message }, { status: 500 });
+    }
+
+    // Combine both results, avoiding duplicates
+    const combinedAppointments = [...appointmentsByGuidelineId];
+    for (const appt of appointmentsById) {
+      if (!combinedAppointments.some((a) => a.id === appt.id)) {
+        combinedAppointments.push(appt);
+      }
+    }
+
+    // Sort by appointment date descending
+    combinedAppointments.sort(
+      (a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime()
+    );
+
+    // Map database appointments to Appointment interface
+    const mappedAppointments = combinedAppointments.map((dbAppointment) => ({
+      id: dbAppointment.id,
+      date: new Date(dbAppointment.appointment_date),
+      title: dbAppointment.title,
+      type: dbAppointment.type,
+      provider: dbAppointment.provider_name,
+      providerId: dbAppointment.provider_id,
+      location: dbAppointment.location,
+      notes: dbAppointment.notes || undefined,
+      detailsPath: `/appointments/${dbAppointment.id}`,
+      completed: dbAppointment.completed,
+      screeningId: dbAppointment.screening_id,
+      result: dbAppointment.result
+        ? {
+            status: dbAppointment.result.status,
+            notes: dbAppointment.result.notes,
+            date: dbAppointment.result.date,
+          }
+        : undefined,
+    }));
+
+    return NextResponse.json({ screening, appointments: mappedAppointments });
   }
 
   return NextResponse.json({ screening });

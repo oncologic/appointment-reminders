@@ -871,7 +871,7 @@ export const GuidelineService = {
   // Get user screenings from the database
   getUserScreenings: async (userId: string): Promise<ScreeningRecommendation[]> => {
     try {
-      const response = await fetch(`/api/screenings?userId=${userId}`);
+      const response = await fetch(`/api/screenings?userId=${userId}&includeAppointments=true`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch user screenings: ${response.status}`);
@@ -901,6 +901,22 @@ export const GuidelineService = {
           }
         }
 
+        // Process appointments if available
+        const appointments = screening.appointments || [];
+
+        // Convert dates in appointments from strings to Date objects
+        const processedAppointments = appointments.map((appointment: any) => {
+          // If appointments are already processed, return as is
+          if (appointment.date instanceof Date) {
+            return appointment;
+          }
+
+          return {
+            ...appointment,
+            date: new Date(appointment.date),
+          };
+        });
+
         return {
           id: screening.guideline_id,
           name: guideline?.name || 'Unknown Screening',
@@ -916,6 +932,7 @@ export const GuidelineService = {
           notes: screening.notes,
           tags: guideline?.tags || [],
           previousResults: [],
+          appointments: processedAppointments,
         };
       });
     } catch (error) {
@@ -959,10 +976,10 @@ export const GuidelineService = {
       let userIdToUse = userId;
       if (!userIdToUse) {
         const userProfile = await GuidelineService.getUserProfile();
-        if (!userProfile || !userProfile.id) {
+        if (!userProfile || !userProfile.userId) {
           throw new Error('User profile not found or missing ID');
         }
-        userIdToUse = userProfile.id;
+        userIdToUse = userProfile.userId;
       }
 
       // Calculate the next due date based on the guideline's frequency
