@@ -68,6 +68,7 @@ For testing purposes:
 
 - **Magic Link**: Use any email address during development. Supabase will send a magic link to the provided email.
 - **Google OAuth**: This requires setting up your own Google OAuth credentials.
+- **Sandbox/Test URL**: Deployed at https://appointment-reminders.vercel.app/
 
 ### Setting Up Google OAuth (For Developers)
 
