@@ -356,6 +356,11 @@ const GuidelineCard: React.FC<GuidelineCardProps> = ({
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     This is the age when you should start this screening.
+                    {userProfile && startAge && startAge > userProfile.age && (
+                      <span className="block mt-1 text-blue-600">
+                        This screening will be scheduled for your {startAge}th birthday.
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>

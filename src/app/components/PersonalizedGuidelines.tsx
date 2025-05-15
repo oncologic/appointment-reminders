@@ -43,6 +43,7 @@ export interface GuidelineItem {
   resources?: Resource[];
   lastCompletedDate?: string; // ISO date string when this screening was last completed
   nextDueDate?: string; // ISO date string when this screening is next due
+  startAge?: number; // The explicit age at which this screening should start
 }
 
 export interface UserPreferences {

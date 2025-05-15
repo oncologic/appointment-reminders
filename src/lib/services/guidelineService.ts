@@ -719,9 +719,13 @@ export const GuidelineService = {
         .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       // Find the minimum recommended age for this screening
-      const minRecommendedAge = guideline.ageRanges.length
-        ? Math.min(...guideline.ageRanges.map((range) => range.min))
-        : null;
+      const minRecommendedAge =
+        guideline.ageRanges.length > 0
+          ? Math.min(...guideline.ageRanges.map((range) => range.min))
+          : null;
+
+      // Get start age from the guideline if specified explicitly
+      const startAge = guideline.startAge !== undefined ? guideline.startAge : minRecommendedAge;
 
       // Get the frequency in months (from guideline or age-specific recommendation)
       let frequencyMonths = guideline.frequencyMonths || 12; // Default to annual if not specified
@@ -756,35 +760,77 @@ export const GuidelineService = {
 
       // CASE 2: First time adding this screening
       else {
-        // If minimum age to start screening exists and user is old enough
-        if (minRecommendedAge !== null && userProfile && userProfile.age >= minRecommendedAge) {
-          // If the age to start screening is in the past, set due date to end of current month
-          const today = new Date();
-          const endOfMonth = new Date(
-            today.getFullYear(),
-            today.getMonth() + 1,
-            0,
-            23,
-            59,
-            59,
-            999
-          );
+        // If a start age is specified and user profile exists
+        if (startAge !== null && userProfile) {
+          // Check if the user has DOB information (preferred for exact birthday calculation)
+          if (userProfile.dateOfBirth) {
+            const userDOB = new Date(userProfile.dateOfBirth);
 
-          return endOfMonth.toISOString();
+            // If start age is in the future
+            if (userProfile.age < startAge) {
+              // Calculate the exact birthday when user will reach the start age
+              const targetYear = userDOB.getFullYear() + startAge;
+              const targetMonth = userDOB.getMonth();
+              const targetDay = userDOB.getDate();
+
+              const exactBirthdayDueDate = new Date(
+                targetYear,
+                targetMonth,
+                targetDay,
+                23,
+                59,
+                59,
+                999
+              );
+              return exactBirthdayDueDate.toISOString();
+            }
+            // User is already at or past the start age
+            else {
+              // Set due date to end of current month
+              const today = new Date();
+              const endOfMonth = new Date(
+                today.getFullYear(),
+                today.getMonth() + 1,
+                0,
+                23,
+                59,
+                59,
+                999
+              );
+              return endOfMonth.toISOString();
+            }
+          }
+          // No DOB but we have age (less accurate)
+          else {
+            // If start age is in the future
+            if (userProfile.age < startAge) {
+              // Calculate approximate year when they'll reach start age
+              const currentYear = new Date().getFullYear();
+              const yearsUntilStartAge = startAge - userProfile.age;
+              const targetYear = currentYear + yearsUntilStartAge;
+
+              // Set due date to December 31st of that year (approximate)
+              const dueDate = new Date(targetYear, 11, 31, 23, 59, 59, 999);
+              return dueDate.toISOString();
+            }
+            // User is already at or past the start age
+            else {
+              // Set due date to end of current month
+              const today = new Date();
+              const endOfMonth = new Date(
+                today.getFullYear(),
+                today.getMonth() + 1,
+                0,
+                23,
+                59,
+                59,
+                999
+              );
+              return endOfMonth.toISOString();
+            }
+          }
         }
-        // If the user is not yet old enough for the screening
-        else if (minRecommendedAge !== null && userProfile && userProfile.age < minRecommendedAge) {
-          // Calculate when they will reach the minimum age
-          const userBirthYear = userProfile.dateOfBirth
-            ? new Date(userProfile.dateOfBirth).getFullYear()
-            : new Date().getFullYear() - userProfile.age;
 
-          // Set due date to when they reach the minimum age (end of that month)
-          const yearWhenMinAgeReached = userBirthYear + minRecommendedAge;
-          const dueDate = new Date(yearWhenMinAgeReached, 11, 31, 23, 59, 59, 999); // December 31st of that year
-
-          return dueDate.toISOString();
-        }
         // Default case - use standard frequency from current date
         else {
           const nextDue = new Date(fromDate);
@@ -898,6 +944,11 @@ export const GuidelineService = {
         guideline.frequencyMonths = frequencyMonths;
       }
 
+      // Set custom start age if provided
+      if (startAge !== undefined) {
+        guideline.startAge = startAge;
+      }
+
       // Calculate the next due date using our enhanced function
       const today = new Date();
       const nextDueDate = await GuidelineService.calculateNextDueDate(guideline, today);
@@ -914,7 +965,7 @@ export const GuidelineService = {
         user_id: userId,
         personalized: false,
         frequency: frequencyMonths || guideline.frequencyMonths || 12,
-        start_age: defaultStartAge,
+        start_age: startAge || defaultStartAge,
         status: 'due',
         next_due_date: nextDueDate,
         notes: '',
