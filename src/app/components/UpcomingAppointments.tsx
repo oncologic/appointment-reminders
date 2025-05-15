@@ -77,6 +77,7 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
   isLoading: propIsLoading,
 }) => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [totalAppointments, setTotalAppointments] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -85,12 +86,12 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
     if (propAppointments) {
       // Filter to only get upcoming appointments (not completed)
       // And sort by date (closest first)
-      const upcomingAppointments = propAppointments
+      const allUpcomingAppointments = propAppointments
         .filter((appt) => !appt.completed)
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        .slice(0, limit);
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-      setAppointments(upcomingAppointments);
+      setTotalAppointments(allUpcomingAppointments.length);
+      setAppointments(allUpcomingAppointments.slice(0, limit));
       setIsLoading(propIsLoading || false);
       return;
     }
@@ -103,12 +104,12 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
 
         // Filter to only get upcoming appointments (not completed)
         // And sort by date (closest first)
-        const upcomingAppointments = data
+        const allUpcomingAppointments = data
           .filter((appt) => !appt.completed)
-          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-          .slice(0, limit);
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-        setAppointments(upcomingAppointments);
+        setTotalAppointments(allUpcomingAppointments.length);
+        setAppointments(allUpcomingAppointments.slice(0, limit));
       } catch (err) {
         console.error('Error fetching appointments:', err);
         setError('Failed to load appointments. Please try again later.');
@@ -181,39 +182,49 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
             </Link>
           </p>
         ) : (
-          appointments.map((appointment, index) => (
-            <div
-              key={appointment.id}
-              className={`border border-gray-100 rounded-lg p-4 hover:bg-blue-50 transition ${
-                index < appointments.length - 1 ? 'mb-4' : ''
-              }`}
-            >
-              <Link href={`/appointments/${appointment.id}`} className="flex items-center">
-                {appointment.doctor ? (
-                  <div className="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold text-lg mr-4">
-                    {getProviderLastNameInitial(appointment.doctor)}
+          <>
+            {appointments.map((appointment, index) => (
+              <div
+                key={appointment.id}
+                className={`border border-gray-100 rounded-lg p-4 hover:bg-blue-50 transition ${
+                  index < appointments.length - 1 ? 'mb-4' : ''
+                }`}
+              >
+                <Link href={`/appointments/${appointment.id}`} className="flex items-center">
+                  {appointment.doctor ? (
+                    <div className="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold text-lg mr-4">
+                      {getProviderLastNameInitial(appointment.doctor)}
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4">
+                      {getAppointmentIcon(appointment.title)}
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800">{appointment.title}</p>
+                    <p className="text-gray-500 text-sm">{appointment.provider}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="bg-blue-100 text-blue-800 text-xs rounded px-2 py-1">
+                        {formatDate(appointment.date)}
+                      </span>
+                      <span className="bg-blue-100 text-blue-800 text-xs rounded px-2 py-1">
+                        {formatTime(appointment.date, appointment.endTime)}
+                      </span>
+                    </div>
                   </div>
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4">
-                    {getAppointmentIcon(appointment.title)}
-                  </div>
-                )}
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-800">{appointment.title}</p>
-                  <p className="text-gray-500 text-sm">{appointment.provider}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="bg-blue-100 text-blue-800 text-xs rounded px-2 py-1">
-                      {formatDate(appointment.date)}
-                    </span>
-                    <span className="bg-blue-100 text-blue-800 text-xs rounded px-2 py-1">
-                      {formatTime(appointment.date, appointment.endTime)}
-                    </span>
-                  </div>
-                </div>
-                <FaChevronRight className="text-gray-400" />
-              </Link>
-            </div>
-          ))
+                  <FaChevronRight className="text-gray-400" />
+                </Link>
+              </div>
+            ))}
+
+            {totalAppointments > appointments.length && (
+              <div className="text-center mt-4 text-gray-500 text-sm">
+                <Link href="/appointments" className="hover:text-blue-600 transition-colors">
+                  ...and {totalAppointments - appointments.length} more
+                </Link>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

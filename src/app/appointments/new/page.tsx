@@ -20,7 +20,7 @@ import ScreeningsServicesList from '@/app/components/ScreeningsServicesList';
 import { ScreeningRecommendation } from '@/app/components/types';
 import { useGuidelines } from '@/app/hooks/useGuidelines';
 import { createAppointment } from '@/lib/appointmentService';
-import { fetchProviders } from '@/lib/providerService';
+import { createCustomProvider, fetchProviders } from '@/lib/providerService';
 import GuidelineService from '@/lib/services/guidelineService';
 import { UserProfile } from '@/lib/types';
 
@@ -565,6 +565,27 @@ const NewAppointmentPage = () => {
         appointmentDate.setHours(hour, parseInt(minutes), 0, 0);
       }
 
+      // Handle custom provider creation if needed
+      let providerId = selectedDoctor;
+
+      if (showCustomDoctor && customDoctor.name.trim() !== '') {
+        try {
+          // Create a custom provider in the database
+          const newProvider = await createCustomProvider({
+            name: customDoctor.name,
+            specialty: customDoctor.specialization || undefined,
+          });
+
+          // Use the newly created provider's ID
+          if (newProvider && newProvider.id) {
+            providerId = newProvider.id;
+          }
+        } catch (error) {
+          console.error('Error creating custom provider:', error);
+          // Continue anyway, we'll just use the custom provider name without ID
+        }
+      }
+
       // Get provider details
       const provider = selectedDoctor ? doctors.find((doc) => doc.id === selectedDoctor) : null;
 
@@ -579,7 +600,7 @@ const NewAppointmentPage = () => {
         title: showCustomService ? customService : getSelectedServiceName(),
         type: 'Consultation' as const, // Default to consultation, can be inferred from service if needed
         provider: showCustomDoctor ? customDoctor.name : getSelectedDoctorName(),
-        providerId: selectedDoctor || undefined,
+        providerId: providerId || undefined,
         location: provider?.location || 'Not specified',
         date: appointmentDate,
         notes: notes,
@@ -606,7 +627,7 @@ const NewAppointmentPage = () => {
           await GuidelineService.updateScreeningCompletionDate(
             selectedService,
             appointmentDate.toISOString(),
-            user?.id
+            user?.userId
           );
         } catch (error) {
           console.error('Error updating screening completion date:', error);
@@ -1206,7 +1227,7 @@ const NewAppointmentPage = () => {
                     className="px-6 py-2 rounded-md font-medium bg-blue-600 text-white hover:bg-blue-700"
                     onClick={() => setStep('confirm')}
                   >
-                    Next: Confirm Appointment
+                    Next: Record Appointment
                   </button>
                 </div>
               </div>
@@ -1215,7 +1236,7 @@ const NewAppointmentPage = () => {
             {/* Step 5: Confirm */}
             {step === 'confirm' && (
               <div>
-                <h2 className="text-xl font-semibold mb-4">Confirm Appointment</h2>
+                <h2 className="text-xl font-semibold mb-4">Record Appointment</h2>
 
                 <div className="mb-6 p-4 bg-blue-50 rounded-lg">
                   <h3 className="font-medium text-lg mb-2">Appointment Summary</h3>
@@ -1292,7 +1313,7 @@ const NewAppointmentPage = () => {
                     className="px-6 py-2 rounded-md font-medium bg-green-600 text-white hover:bg-green-700"
                     onClick={recordAppointment}
                   >
-                    {isPastAppointment ? 'Record Appointment' : 'Confirm Appointment'}
+                    {isPastAppointment ? 'Record Appointment' : 'Record Appointment'}
                   </button>
                 </div>
               </div>

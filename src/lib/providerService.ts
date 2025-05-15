@@ -93,3 +93,39 @@ export async function getProvidersBySpecialty(specialty: string): Promise<Provid
     throw error;
   }
 }
+
+/**
+ * Creates a custom provider for the current user
+ */
+export async function createCustomProvider(providerData: {
+  name: string;
+  specialty?: string;
+}): Promise<Provider> {
+  try {
+    const response = await fetch('/api/providers', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(providerData),
+    });
+
+    if (!response.ok) {
+      // Handle specific error cases
+      if (response.status === 401) {
+        throw new Error('You must be logged in to create a provider');
+      }
+      if (response.status === 400) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Invalid provider data');
+      }
+      throw new Error(`Failed to create provider: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error creating custom provider:', error);
+    throw error;
+  }
+}
