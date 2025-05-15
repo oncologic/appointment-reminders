@@ -19,14 +19,17 @@ import { useGuidelines } from '@/app/hooks/useGuidelines';
 import { useUser } from '@/app/hooks/useUser';
 import { Appointment } from '@/lib/types';
 
+import { useAppointments } from '../appointments/page';
 import MonthCalendar from './MonthCalendar';
 
 interface YearCalendarProps {
-  appointments: Appointment[];
   initialYear?: number;
 }
 
-const YearCalendar: React.FC<YearCalendarProps> = ({ appointments, initialYear = 2025 }) => {
+const YearCalendar: React.FC<YearCalendarProps> = ({ initialYear = 2025 }) => {
+  // Get appointments from context instead of props
+  const { appointments, isLoading, error } = useAppointments();
+
   const [currentYear, setCurrentYear] = useState<number>(initialYear);
   const [showLegend, setShowLegend] = useState<boolean>(false);
   const [showNotifications, setShowNotifications] = useState<boolean>(false);
@@ -74,6 +77,36 @@ const YearCalendar: React.FC<YearCalendarProps> = ({ appointments, initialYear =
   const toggleNotifications = () => {
     setShowNotifications((prev) => !prev);
   };
+
+  // If still loading appointments, show a loading state
+  if (isLoading) {
+    return (
+      <div className="animate-pulse p-4">
+        <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
+        <div className="grid grid-cols-3 gap-4">
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="h-32 bg-gray-100 rounded-lg"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // If there was an error loading appointments, show an error state
+  if (error) {
+    return (
+      <div className="text-center py-6">
+        <p className="text-red-500">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 text-blue-600 hover:text-blue-800 underline"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div>

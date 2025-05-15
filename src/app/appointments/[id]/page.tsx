@@ -15,9 +15,6 @@ import {
 } from 'react-icons/fa';
 
 import AppointmentResult from '@/app/components/AppointmentResult';
-import { ScreeningRecommendation } from '@/app/components/types';
-import { useGuidelines } from '@/app/hooks/useGuidelines';
-import { useUser } from '@/app/hooks/useUser';
 import {
   deleteAppointment,
   fetchAppointmentById,
@@ -220,9 +217,6 @@ const AppointmentDetailsPage: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [recommendationSubmitted, setRecommendationSubmitted] = useState(false);
 
-  const { user } = useUser();
-  const { screenings } = useGuidelines(user);
-
   useEffect(() => {
     const loadAppointment = async () => {
       if (!params.id) {
@@ -256,11 +250,6 @@ const AppointmentDetailsPage: React.FC = () => {
 
     loadAppointment();
   }, [params.id]);
-
-  // Find the associated screening if present
-  const associatedScreening = appointment?.screeningId
-    ? screenings.find((s: ScreeningRecommendation) => s.id === appointment.screeningId)
-    : null;
 
   const handleRecommendSubmit = (comment: string) => {
     // In a real app, this would save the recommendation to a database
@@ -566,61 +555,6 @@ const AppointmentDetailsPage: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Add screening info section */}
-        {!isLoading && !error && appointment && appointment.screeningId && (
-          <div className="bg-white rounded-lg shadow-sm mb-4 p-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <span className="inline-block w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
-              Health Screening Information
-            </h2>
-
-            {associatedScreening ? (
-              <div>
-                <div className="mb-3">
-                  <h3 className="font-medium text-gray-800 text-sm">{associatedScreening.name}</h3>
-                  <p className="text-gray-600 text-sm mt-1">{associatedScreening.description}</p>
-                </div>
-
-                <div className="flex items-center">
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full mr-2 ${
-                      associatedScreening.status === 'completed'
-                        ? 'bg-green-100 text-green-800'
-                        : associatedScreening.status === 'due'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : associatedScreening.status === 'overdue'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-blue-100 text-blue-800'
-                    }`}
-                  >
-                    {associatedScreening.status.charAt(0).toUpperCase() +
-                      associatedScreening.status.slice(1)}
-                  </span>
-
-                  <span className="text-sm text-gray-600">
-                    Recommended every {associatedScreening.frequency}
-                  </span>
-                </div>
-
-                {appointment.completed && (
-                  <div className="mt-3 p-3 bg-green-50 rounded-md border border-green-100">
-                    <p className="text-green-800 text-sm">
-                      This appointment fulfills this health screening recommendation.
-                      {associatedScreening.status === 'completed' &&
-                        ' Your next screening will be due based on the recommended frequency.'}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-gray-600 text-sm">
-                This appointment is linked to a health screening that may have been removed from
-                your recommendations.
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Results Section */}
         <AppointmentResult

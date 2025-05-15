@@ -363,7 +363,7 @@ const Home: React.FC = () => {
                 <div className="bg-white bg-opacity-10 rounded-lg p-4 flex items-start">
                   <FaBell className="text-yellow-300 text-xl mr-3 mt-1 flex-shrink-0" />
                   <p className="text-white">
-                    {getCelebrationMessage(completedScreeningsCount, totalScreenings)}
+                    {getCelebrationMessage(scheduledScreeningsCount, totalScreenings)}
                   </p>
                 </div>
               </div>
