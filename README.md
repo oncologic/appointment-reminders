@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Appointment Reminders
+
+A Next.js application for managing healthcare appointments and reminders.
+
+## Features
+
+- User authentication with Supabase
+- Appointment scheduling and management
+- Dashboard to view upcoming appointments
+- Screening and recommendation system
+
+## Prerequisites
+
+- Node.js 18.x or higher
+- npm or yarn
+- Supabase account (for authentication and database)
 
 ## Getting Started
 
-First, run the development server:
+1. Clone the repository:
+
+```bash
+git clone <repository-url>
+cd appointment-reminders
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Set up environment variables:
+
+Create a `.env.local` file in the root directory with the following variables:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+You can get these values from your Supabase project dashboard.
+
+4. Run the development server:
 
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+- `/src/app` - Next.js application routes and pages
+- `/src/components` - Reusable React components
+- `/src/lib` - Utility functions and services
+- `/src/lib/supabase` - Supabase client configuration
 
-## Learn More
+## Available Scripts
 
-To learn more about Next.js, take a look at the following resources:
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run format` - Format code with Prettier
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Technologies Used
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+- [Next.js](https://nextjs.org/) - React framework
+- [React](https://reactjs.org/) - UI library
+- [Supabase](https://supabase.io/) - Backend as a Service (authentication & database)
+- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
+- [TypeScript](https://www.typescriptlang.org/) - Type checking
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The application can be deployed on [Vercel](https://vercel.com/):
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+1. Push your code to a GitHub repository
+2. Import the project in Vercel
+3. Configure environment variables
+4. Deploy
+
+Alternatively, build the application locally and deploy to any hosting provider that supports Node.js:
+
+```bash
+npm run build
+npm run start
+```
+
+## License
+
+See the [LICENSE](LICENSE) file for more information.
