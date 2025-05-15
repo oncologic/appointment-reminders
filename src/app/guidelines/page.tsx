@@ -87,7 +87,8 @@ const GuidelinesPage = () => {
   const filteredScreenings = getFilteredScreenings(
     filterStatus,
     showCurrentlyRelevant,
-    showFutureRecommendations
+    showFutureRecommendations,
+    false // Don't show archived screenings by default
   );
 
   // Get filtered guidelines for the All Guidelines view

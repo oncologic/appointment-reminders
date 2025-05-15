@@ -45,6 +45,7 @@ export interface ScreeningRecommendation {
   schedulePath?: string;
   detailsPath?: string;
   appointments?: Appointment[];
+  archived?: boolean;
 }
 
 export enum GuidelineView {

@@ -158,7 +158,8 @@ export const useGuidelines = (userProfile: UserProfile | null) => {
   const getFilteredScreenings = (
     filterStatus: string[],
     showCurrentlyRelevant: boolean,
-    showFutureRecommendations: boolean
+    showFutureRecommendations: boolean,
+    showArchived: boolean
   ) => {
     return screenings.filter(
       (s) =>
@@ -166,7 +167,9 @@ export const useGuidelines = (userProfile: UserProfile | null) => {
         filterStatus.includes(s.status) &&
         // Apply time frame filter
         ((showCurrentlyRelevant && !s.notes?.includes('Will become relevant')) ||
-          (showFutureRecommendations && s.notes?.includes('Will become relevant')))
+          (showFutureRecommendations && s.notes?.includes('Will become relevant'))) &&
+        // Apply archived filter
+        (showArchived || !s.archived)
     );
   };
 
@@ -206,12 +209,12 @@ export const useGuidelines = (userProfile: UserProfile | null) => {
   };
 
   // Remove guideline from recommended list
-  const removeFromRecommended = async (guidelineId: string) => {
+  const removeFromRecommended = async (id: string) => {
     if (!userProfile) return;
 
     try {
       // Remove the screening from the database
-      const success = await GuidelineService.removeUserScreening(userProfile.userId, guidelineId);
+      const success = await GuidelineService.removeUserScreening(userProfile.userId, id);
 
       if (success) {
         // Refresh screenings from the database

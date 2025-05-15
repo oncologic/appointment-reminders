@@ -704,30 +704,106 @@ export const GuidelineService = {
     guideline: GuidelineItem,
     fromDate = new Date()
   ): Promise<string> => {
-    const userProfile = await GuidelineService.getUserProfile();
-    if (!userProfile) {
-      // If no user profile, just use default frequency
-      const defaultFrequency = guideline.frequencyMonths || 12; // Default to annual
+    try {
+      const userProfile = await GuidelineService.getUserProfile();
+
+      // Get all appointments for this screening/guideline to check history
+      const appointments = await fetch(`/api/screenings/${guideline.id}?includeAppointments=true`)
+        .then((res) => (res.ok ? res.json() : { appointments: [] }))
+        .then((data) => data.appointments || [])
+        .catch(() => []);
+
+      // Sort appointments by date (newest first)
+      const sortedAppointments = appointments
+        .filter((appt: any) => appt.date)
+        .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      // Find the minimum recommended age for this screening
+      const minRecommendedAge = guideline.ageRanges.length
+        ? Math.min(...guideline.ageRanges.map((range) => range.min))
+        : null;
+
+      // Get the frequency in months (from guideline or age-specific recommendation)
+      let frequencyMonths = guideline.frequencyMonths || 12; // Default to annual if not specified
+
+      if (userProfile) {
+        // Find the relevant age range for the user
+        const relevantAgeRange = guideline.ageRanges.find(
+          (range) =>
+            userProfile.age >= range.min && (range.max === null || userProfile.age <= range.max)
+        );
+
+        // Use age-specific frequency if available
+        if (relevantAgeRange?.frequencyMonths) {
+          frequencyMonths = relevantAgeRange.frequencyMonths;
+        }
+      }
+
+      // CASE 1: If there are previous appointments for this screening
+      if (sortedAppointments.length > 0) {
+        // Use the most recent appointment date + frequency
+        const mostRecentAppointment = sortedAppointments[0];
+        const mostRecentDate = new Date(mostRecentAppointment.date);
+
+        const nextDue = new Date(mostRecentDate);
+        nextDue.setMonth(nextDue.getMonth() + frequencyMonths);
+
+        // Set time to end of day for better display
+        nextDue.setHours(23, 59, 59, 999);
+
+        return nextDue.toISOString();
+      }
+
+      // CASE 2: First time adding this screening
+      else {
+        // If minimum age to start screening exists and user is old enough
+        if (minRecommendedAge !== null && userProfile && userProfile.age >= minRecommendedAge) {
+          // If the age to start screening is in the past, set due date to end of current month
+          const today = new Date();
+          const endOfMonth = new Date(
+            today.getFullYear(),
+            today.getMonth() + 1,
+            0,
+            23,
+            59,
+            59,
+            999
+          );
+
+          return endOfMonth.toISOString();
+        }
+        // If the user is not yet old enough for the screening
+        else if (minRecommendedAge !== null && userProfile && userProfile.age < minRecommendedAge) {
+          // Calculate when they will reach the minimum age
+          const userBirthYear = userProfile.dateOfBirth
+            ? new Date(userProfile.dateOfBirth).getFullYear()
+            : new Date().getFullYear() - userProfile.age;
+
+          // Set due date to when they reach the minimum age (end of that month)
+          const yearWhenMinAgeReached = userBirthYear + minRecommendedAge;
+          const dueDate = new Date(yearWhenMinAgeReached, 11, 31, 23, 59, 59, 999); // December 31st of that year
+
+          return dueDate.toISOString();
+        }
+        // Default case - use standard frequency from current date
+        else {
+          const nextDue = new Date(fromDate);
+          nextDue.setMonth(nextDue.getMonth() + frequencyMonths);
+          nextDue.setHours(23, 59, 59, 999);
+
+          return nextDue.toISOString();
+        }
+      }
+    } catch (error) {
+      console.error('Error calculating next due date:', error);
+
+      // Fallback to simple calculation
       const nextDue = new Date(fromDate);
-      nextDue.setMonth(nextDue.getMonth() + defaultFrequency);
+      nextDue.setMonth(nextDue.getMonth() + (guideline.frequencyMonths || 12));
+      nextDue.setHours(23, 59, 59, 999);
+
       return nextDue.toISOString();
     }
-
-    // Find the relevant age range for the user
-    const relevantAgeRange = guideline.ageRanges.find(
-      (range) =>
-        userProfile.age >= range.min && (range.max === null || userProfile.age <= range.max)
-    );
-
-    // Get the minimum frequency in months (age-specific or default)
-    const minFrequencyMonths = relevantAgeRange?.frequencyMonths || guideline.frequencyMonths || 12; // Default to annual if not specified
-
-    // For a follow-up/next due date, use the minimum frequency
-    // (We want to remind users at the earliest they might need it)
-    const nextDue = new Date(fromDate);
-    nextDue.setMonth(nextDue.getMonth() + minFrequencyMonths);
-
-    return nextDue.toISOString();
   },
 
   // Helper: Convert guideline to screening recommendation format
@@ -817,13 +893,14 @@ export const GuidelineService = {
         throw new Error('Guideline not found');
       }
 
-      // Calculate the next due date based on frequency
-      const now = new Date();
-      const nextDueDate = new Date();
-      nextDueDate.setMonth(now.getMonth() + (frequencyMonths || guideline.frequencyMonths || 12));
+      // Set custom frequency if provided
+      if (frequencyMonths) {
+        guideline.frequencyMonths = frequencyMonths;
+      }
 
-      // Set the time to end of day (23:59:59) to make the display cleaner
-      nextDueDate.setHours(23, 59, 59, 0);
+      // Calculate the next due date using our enhanced function
+      const today = new Date();
+      const nextDueDate = await GuidelineService.calculateNextDueDate(guideline, today);
 
       // Find the default start age if not provided
       const defaultStartAge =
@@ -839,7 +916,7 @@ export const GuidelineService = {
         frequency: frequencyMonths || guideline.frequencyMonths || 12,
         start_age: defaultStartAge,
         status: 'due',
-        next_due_date: nextDueDate.toISOString(),
+        next_due_date: nextDueDate,
         notes: '',
       };
 
@@ -869,9 +946,15 @@ export const GuidelineService = {
   },
 
   // Get user screenings from the database
-  getUserScreenings: async (userId: string): Promise<ScreeningRecommendation[]> => {
+  getUserScreenings: async (
+    userId: string,
+    includeArchived = false
+  ): Promise<ScreeningRecommendation[]> => {
     try {
-      const response = await fetch(`/api/screenings?userId=${userId}&includeAppointments=true`);
+      const includeArchivedParam = includeArchived ? '&includeArchived=true' : '';
+      const response = await fetch(
+        `/api/screenings?userId=${userId}&includeAppointments=true${includeArchivedParam}`
+      );
 
       if (!response.ok) {
         throw new Error(`Failed to fetch user screenings: ${response.status}`);
@@ -943,15 +1026,16 @@ export const GuidelineService = {
   },
 
   // Remove a screening from the database
-  removeUserScreening: async (userId: string, guidelineId: string): Promise<boolean> => {
+  removeUserScreening: async (userId: string, id: string): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/screenings/${guidelineId}`, {
-        method: 'DELETE',
+      const response = await fetch(`/api/screenings/${id}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           user_id: userId,
+          archived: true,
         }),
       });
 

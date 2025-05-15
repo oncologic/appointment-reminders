@@ -6,6 +6,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   const guidelineId = params.id;
   const searchParams = request.nextUrl.searchParams;
   const includeAppointments = searchParams.get('includeAppointments') === 'true';
+  const includeArchived = searchParams.get('includeArchived') === 'true'; // Default to false
 
   // Create Supabase client
   const supabase = createClient();
@@ -23,12 +24,18 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   const userId = session.user.id;
 
   // Query for the specific screening
-  const { data: screening, error } = await supabase
+  let query = supabase
     .from('user_screenings')
     .select('*, guidelines(*)')
     .eq('guideline_id', guidelineId)
-    .eq('user_id', userId)
-    .single();
+    .eq('user_id', userId);
+
+  // Only show non-archived screenings by default
+  if (!includeArchived) {
+    query = query.eq('archived', false);
+  }
+
+  const { data: screening, error } = await query.single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -154,4 +161,97 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   }
 
   return NextResponse.json({ success: true });
+}
+
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  const idParam = params.id;
+
+  // Create Supabase client
+  const supabase = createClient();
+
+  // Get session for authentication
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  // Only allow authenticated users
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const userId = session.user.id;
+
+  try {
+    // Parse request body
+    const requestData = await request.json();
+
+    // Determine which user ID to use (for admin purposes or requested user_id)
+    const targetUserId = requestData.user_id || userId;
+
+    // For security, only allow updating other users' screenings if admin
+    // For now, only allow users to update their own screenings
+    if (targetUserId !== userId) {
+      // Here you'd add admin role check before proceeding
+      return NextResponse.json(
+        { error: "Unauthorized to update other users' screenings" },
+        { status: 403 }
+      );
+    }
+
+    // Set updated_at timestamp
+    const updateData = {
+      ...requestData,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Remove user_id from updateData as it's used for lookup, not update
+    delete updateData.user_id;
+
+    // First try to find the screening record to determine if we need to update by id or guideline_id
+    const { data: existingScreening, error: findError } = await supabase
+      .from('user_screenings')
+      .select('id, guideline_id')
+      .eq('user_id', targetUserId)
+      .or(`id.eq.${idParam},guideline_id.eq.${idParam}`)
+      .single();
+
+    if (findError) {
+      console.error('Error finding screening:', findError);
+      return NextResponse.json({ error: findError.message }, { status: 500 });
+    }
+
+    if (!existingScreening) {
+      return NextResponse.json({ error: 'Screening not found' }, { status: 404 });
+    }
+
+    // Determine which ID to use for the update based on what we found
+    const filterField = existingScreening.id === idParam ? 'id' : 'guideline_id';
+
+    // Update the screening record
+    const { data: updatedScreening, error } = await supabase
+      .from('user_screenings')
+      .update(updateData)
+      .eq(filterField, idParam)
+      .eq('user_id', targetUserId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating screening:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      screening: updatedScreening,
+      message: 'Screening updated successfully',
+    });
+  } catch (error) {
+    console.error('Error updating screening:', error);
+    return NextResponse.json(
+      {
+        error: 'An unexpected error occurred',
+      },
+      { status: 500 }
+    );
+  }
 }

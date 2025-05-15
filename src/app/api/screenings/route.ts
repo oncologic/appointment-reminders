@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const userId = searchParams.get('userId');
   const includeAppointments = searchParams.get('includeAppointments') !== 'false'; // Default to true
+  const includeArchived = searchParams.get('includeArchived') === 'true'; // Default to false
 
   // Create Supabase client
   const supabase = createClient();
@@ -26,10 +27,17 @@ export async function GET(request: NextRequest) {
   }
 
   // Query for screenings belonging to the user
-  const { data: screenings, error } = await supabase
+  let query = supabase
     .from('user_screenings')
     .select('*, guidelines(*)')
     .eq('user_id', userIdToUse);
+
+  // Filter out archived screenings unless includeArchived is true
+  if (!includeArchived) {
+    query = query.eq('archived', false);
+  }
+
+  const { data: screenings, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
