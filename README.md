@@ -53,6 +53,41 @@ yarn dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
+## Authentication Setup
+
+This application uses two authentication methods:
+
+1. **Magic Link (Email)** - Passwordless authentication via email link
+2. **Google OAuth** - Sign in with Google
+
+### Testing Authentication
+
+For testing purposes:
+
+- **Magic Link**: Use any email address during development. Supabase will send a magic link to the provided email.
+- **Google OAuth**: This requires setting up your own Google OAuth credentials.
+
+### Setting Up Google OAuth (For Developers)
+
+1. Create a project in the [Google Cloud Console](https://console.cloud.google.com/)
+2. Go to "APIs & Services" > "Credentials"
+3. Click "Create Credentials" > "OAuth client ID"
+4. Set the application type to "Web application"
+5. Add authorized JavaScript origins:
+   - For development: `http://localhost:3000`
+   - For production: Your domain (e.g., `https://your-app.vercel.app`)
+6. Add authorized redirect URIs:
+   - For development: `http://localhost:3000/auth/callback`
+   - For production: `https://your-app.vercel.app/auth/callback`
+7. Copy the Client ID and Client Secret
+8. In your Supabase dashboard:
+   - Go to Authentication > Providers > Google
+   - Enable Google auth
+   - Enter your Client ID and Client Secret
+   - Save changes
+
+During development, Google OAuth might require additional verification if you're using a personal Google account. For testing purposes, Magic Link authentication is recommended.
+
 ## Project Structure
 
 - `/src/app` - Next.js application routes and pages
