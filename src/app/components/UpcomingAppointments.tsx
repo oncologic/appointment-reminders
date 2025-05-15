@@ -67,14 +67,35 @@ const getProviderLastNameInitial = (providerName: string = ''): string => {
 
 interface UpcomingAppointmentsProps {
   limit?: number;
+  appointments?: Appointment[];
+  isLoading?: boolean;
 }
 
-const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({ limit = 3 }) => {
+const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
+  limit = 3,
+  appointments: propAppointments,
+  isLoading: propIsLoading,
+}) => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // If appointments are provided via props, use them
+    if (propAppointments) {
+      // Filter to only get upcoming appointments (not completed)
+      // And sort by date (closest first)
+      const upcomingAppointments = propAppointments
+        .filter((appt) => !appt.completed)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        .slice(0, limit);
+
+      setAppointments(upcomingAppointments);
+      setIsLoading(propIsLoading || false);
+      return;
+    }
+
+    // Otherwise fetch appointments from API
     const getAppointments = async () => {
       try {
         setIsLoading(true);
@@ -97,7 +118,7 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({ limit = 3 }
     };
 
     getAppointments();
-  }, [limit]);
+  }, [limit, propAppointments, propIsLoading]);
 
   if (isLoading) {
     return (

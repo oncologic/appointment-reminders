@@ -102,15 +102,31 @@ type TransformedScreening = {
   ageRangeDetails?: any[];
 };
 
-const HealthScreenings: React.FC = () => {
+interface HealthScreeningsProps {
+  appointments?: Appointment[];
+  isLoading?: boolean;
+}
+
+const HealthScreenings: React.FC<HealthScreeningsProps> = ({
+  appointments: propAppointments,
+  isLoading: propIsLoading,
+}) => {
   // Get user profile and screenings from the database
   const { user } = useUser();
   const { screenings } = useGuidelines(user);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch appointments from the API
+  // Use provided appointments or fetch them if not provided
   useEffect(() => {
+    // If appointments are provided via props, use them
+    if (propAppointments) {
+      setAppointments(propAppointments);
+      setIsLoading(propIsLoading || false);
+      return;
+    }
+
+    // Otherwise fetch appointments from API
     const getAppointments = async () => {
       try {
         setIsLoading(true);
@@ -124,7 +140,7 @@ const HealthScreenings: React.FC = () => {
     };
 
     getAppointments();
-  }, []);
+  }, [propAppointments, propIsLoading]);
 
   // Map screenings to upcoming appointments
   const upcomingScreenings: TransformedScreening[] = screenings

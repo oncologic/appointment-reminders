@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import GuidelineService from '../../lib/services/guidelineService';
 import { UserProfile } from '../../lib/types';
@@ -74,10 +74,19 @@ export const useGuidelines = (userProfile: UserProfile | null) => {
   });
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const firstLoadRef = useRef(true);
 
   // Load guidelines and user screenings from the database
   useEffect(() => {
     if (!userProfile) return;
+
+    // Check if this is a development double render and avoid it
+    if (process.env.NODE_ENV === 'development' && !firstLoadRef.current) {
+      console.log('Skipping duplicate data fetch in development strict mode');
+      return;
+    }
+
+    firstLoadRef.current = false;
 
     const loadData = async () => {
       try {

@@ -387,23 +387,41 @@ export const GuidelineService = {
   },
 
   // Get user profile
-  getUserProfile: async (): Promise<UserProfile | null> => {
-    try {
-      const response = await fetch('/api/users/me');
+  getUserProfile: (() => {
+    // Add a simple cache to prevent duplicate calls
+    let cachedUserProfile: UserProfile | null = null;
+    let profileCacheTime = 0;
+    const CACHE_TTL = 10000; // 10 seconds
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          return null; // Not authenticated
-        }
-        throw new Error(`Error fetching user profile: ${response.status}`);
+    return async (): Promise<UserProfile | null> => {
+      // Check if we have a valid cached profile
+      const now = Date.now();
+      if (cachedUserProfile && now - profileCacheTime < CACHE_TTL) {
+        return cachedUserProfile;
       }
 
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting user profile:', error);
-      return null;
-    }
-  },
+      try {
+        const response = await fetch('/api/users/me');
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            return null; // Not authenticated
+          }
+          throw new Error(`Error fetching user profile: ${response.status}`);
+        }
+
+        const userData = await response.json();
+        // Cache the result
+        cachedUserProfile = userData;
+        profileCacheTime = now;
+
+        return userData;
+      } catch (error) {
+        console.error('Error getting user profile:', error);
+        return null;
+      }
+    };
+  })(),
 
   // Save user profile (updates existing profile)
   saveUserProfile: async (profile: UserProfile): Promise<boolean> => {

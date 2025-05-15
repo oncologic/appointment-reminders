@@ -102,7 +102,7 @@ const Home: React.FC = () => {
   // Calculate total screenings as the goal
   const totalScreenings = screenings.length;
 
-  // Fetch appointments to count completed screenings
+  // Fetch appointments once at the parent level
   useEffect(() => {
     const getAppointmentsData = async () => {
       try {
@@ -331,12 +331,16 @@ const Home: React.FC = () => {
               </div>
             </div>
 
-            {/* Appointments */}
-            <UpcomingAppointments limit={2} />
+            {/* Appointments - Pass down the fetched appointments */}
+            <UpcomingAppointments
+              limit={2}
+              appointments={appointments}
+              isLoading={isAppointmentsLoading}
+            />
           </div>
 
-          {/* Right column - Health Screenings */}
-          <HealthScreenings />
+          {/* Right column - Health Screenings - Pass down the fetched appointments */}
+          <HealthScreenings appointments={appointments} isLoading={isAppointmentsLoading} />
         </div>
       </main>
 

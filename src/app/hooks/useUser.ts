@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { createClient } from '@/lib/supabase/client';
 import { UserProfile } from '@/lib/types';
@@ -16,6 +16,7 @@ export function useUser(): UseUserResult {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const firstLoadRef = useRef(true);
 
   const fetchUser = async () => {
     try {
@@ -60,6 +61,13 @@ export function useUser(): UseUserResult {
   };
 
   useEffect(() => {
+    // Check if this is a development double render and avoid it
+    if (process.env.NODE_ENV === 'development' && !firstLoadRef.current) {
+      console.log('Skipping duplicate user fetch in development strict mode');
+      return;
+    }
+
+    firstLoadRef.current = false;
     fetchUser();
   }, []);
 
