@@ -154,7 +154,7 @@ const YearCalendar: React.FC<YearCalendarProps> = ({ initialYear = 2025 }) => {
           {/* Notifications Button */}
           {hasNotifications && (
             <div className="relative">
-              <button
+              {/* <button
                 onClick={toggleNotifications}
                 className="p-2 rounded-full hover:bg-blue-50 transition relative"
                 aria-label="Notifications"
@@ -165,7 +165,7 @@ const YearCalendar: React.FC<YearCalendarProps> = ({ initialYear = 2025 }) => {
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {overdueScreenings.length}
                 </span>
-              </button>
+              </button> */}
 
               {/* Notifications Panel */}
               {showNotifications && (
@@ -292,19 +292,16 @@ const YearCalendar: React.FC<YearCalendarProps> = ({ initialYear = 2025 }) => {
                         <div className="flex items-center border-l-4 border-blue-600 bg-gray-200 opacity-80 w-6 h-3 mr-2"></div>
                         <span className="text-xs text-gray-700">Needs Booking</span>
                       </div>
+                      <div className="flex items-center">
+                        <div className="flex items-center border-l-4 border-green-600 bg-gray-200 opacity-70 w-6 h-3 mr-2"></div>
+                        <span className="text-xs text-gray-700">Appointment Scheduled</span>
+                      </div>
                     </div>
                   </div>
 
                   <div>
                     <p className="text-xs font-medium text-gray-600 mb-1">Actions</p>
                     <div className="grid grid-cols-1 gap-1">
-                      <div className="flex items-center">
-                        <div className="w-auto h-5 bg-blue-50 text-blue-600 text-[10px] px-1 rounded-sm flex items-center mr-2">
-                          <FaUserFriends className="mr-1 text-[8px]" />
-                          Request recommendations
-                        </div>
-                        <span className="text-xs text-gray-700">Ask friends</span>
-                      </div>
                       <div className="flex items-center">
                         <div className="w-auto h-5 bg-gray-50 text-gray-600 text-[10px] px-1 rounded-sm flex items-center mr-2">
                           <FaClipboardCheck className="mr-1 text-[8px]" />
