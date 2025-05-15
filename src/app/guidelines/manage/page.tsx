@@ -133,23 +133,23 @@ const ManageGuidelinesPage = () => {
         }
 
         // Risk factors might need a separate API call
-        if (updatedProfile.riskFactors) {
-          try {
-            const riskResponse = await fetch(`/api/users/${updatedProfile.userId}/risk-factors`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(updatedProfile.riskFactors),
-            });
+        // if (updatedProfile.riskFactors) {
+        //   try {
+        //     const riskResponse = await fetch(`/api/users/${updatedProfile.userId}/risk-factors`, {
+        //       method: 'PUT',
+        //       headers: {
+        //         'Content-Type': 'application/json',
+        //       },
+        //       body: JSON.stringify(updatedProfile.riskFactors),
+        //     });
 
-            if (!riskResponse.ok) {
-              console.error('Failed to update risk factors:', await riskResponse.text());
-            }
-          } catch (error) {
-            console.error('Error updating risk factors:', error);
-          }
-        }
+        //     if (!riskResponse.ok) {
+        //       console.error('Failed to update risk factors:', await riskResponse.text());
+        //     }
+        //   } catch (error) {
+        //     console.error('Error updating risk factors:', error);
+        //   }
+        // }
       }
     } catch (error) {
       console.error('Error updating user profile:', error);

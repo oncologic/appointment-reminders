@@ -216,8 +216,7 @@ const GuidelinesPage = () => {
 
           <div className="flex items-center gap-2">
             <span className="text-gray-600">
-              Welcome, {userProfile.firstName} {userProfile.lastName} ({userProfile.age},{' '}
-              {userProfile.gender})
+              Welcome, {userProfile.firstName} ({userProfile.age}, {userProfile.gender})
             </span>
           </div>
         </div>
