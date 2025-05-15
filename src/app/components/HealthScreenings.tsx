@@ -31,6 +31,28 @@ const formatDate = (dateString?: string): string => {
   }
 };
 
+// Check if a date is within the next 6 months
+const isDueSoon = (dateString?: string): boolean => {
+  if (!dateString) return false;
+
+  try {
+    const dueDate = new Date(dateString);
+    const today = new Date();
+    const sixMonthsFromNow = new Date();
+    sixMonthsFromNow.setMonth(today.getMonth() + 6);
+
+    // Check if date is valid
+    if (isNaN(dueDate.getTime())) {
+      return false;
+    }
+
+    // Return true if due date is between now and 6 months from now
+    return dueDate >= today && dueDate <= sixMonthsFromNow;
+  } catch (e) {
+    return false;
+  }
+};
+
 // Calculate the duration text from now to a future date (copied from ScreeningItem.tsx)
 const getDurationText = (dateString?: string): string => {
   if (!dateString) return '';
@@ -145,6 +167,12 @@ const HealthScreenings: React.FC<HealthScreeningsProps> = ({
   // Map screenings to upcoming appointments
   const upcomingScreenings: TransformedScreening[] = screenings
     .filter((screening) => screening.status === 'due' || screening.status === 'overdue')
+    .sort((a, b) => {
+      // Sort by dueDate (ascending - soonest first)
+      const dateA = new Date(a.dueDate || '');
+      const dateB = new Date(b.dueDate || '');
+      return dateA.getTime() - dateB.getTime();
+    })
     .map((screening) => {
       // Find related appointment if it exists
       const relatedAppointment = appointments.find(
@@ -192,7 +220,7 @@ const HealthScreenings: React.FC<HealthScreeningsProps> = ({
         title: screening.name,
         description: screening.description,
         status: screening.status,
-        statusText: `${screening.status === 'overdue' ? 'Overdue' : 'Due soon'}: ${screening.name}`,
+        statusText: `${screening.status === 'overdue' ? 'Overdue' : isDueSoon(screening.dueDate) ? 'Due soon' : 'Upcoming'}`,
         dueDate: relatedAppointment ? relatedAppointment.date.toString() : screening.dueDate || '',
         dueDateFormatted: relatedAppointment
           ? formatDate(relatedAppointment.date.toString())
@@ -267,7 +295,7 @@ const HealthScreenings: React.FC<HealthScreeningsProps> = ({
         title: appt.title,
         description: appt.description || relatedScreening?.description || '',
         status: 'completed' as const, // Explicitly type as 'completed'
-        statusText: `Completed: ${appt.title}`,
+        statusText: `Completed`,
         dueDate: appt.date.toString(),
         dueDateFormatted: formatDate(appt.date.toString()),
         durationText: '',
