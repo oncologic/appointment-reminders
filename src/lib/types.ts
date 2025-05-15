@@ -49,7 +49,7 @@ export interface Appointment {
   endTime?: string;
   doctor?: string;
   // Link to user screening
-  screeningId?: string; // Corresponds to guideline_id in user_screenings table
+  screeningId: string | null; // Corresponds to guideline_id in user_screenings table
   result?: {
     status: string;
     notes: string;

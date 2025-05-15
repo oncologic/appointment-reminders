@@ -15,7 +15,7 @@ const mapDbAppointmentToAppointment = (dbAppointment: any) => {
     notes: dbAppointment.notes || undefined,
     detailsPath: `/appointments/${dbAppointment.id}`,
     completed: dbAppointment.completed,
-    screeningId: dbAppointment.screening_id || undefined,
+    screeningId: dbAppointment.screening_id || null,
     result: dbAppointment.result
       ? {
           status: dbAppointment.result.status,

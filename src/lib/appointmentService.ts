@@ -16,7 +16,12 @@ export async function fetchAppointments(): Promise<Appointment[]> {
     }
 
     const data = await response.json();
-    return data;
+
+    // Ensure all appointments have screeningId set to at least null
+    return data.map((appointment: any) => ({
+      ...appointment,
+      screeningId: appointment.screeningId ?? null,
+    }));
   } catch (error) {
     console.error('Error fetching appointments:', error);
     throw error;
@@ -42,7 +47,12 @@ export async function fetchAppointmentById(id: string): Promise<Appointment> {
     }
 
     const data = await response.json();
-    return data;
+
+    // Ensure screeningId is at least null
+    return {
+      ...data,
+      screeningId: data.screeningId ?? null,
+    };
   } catch (error) {
     console.error(`Error fetching appointment with ID ${id}:`, error);
     throw error;
@@ -56,12 +66,18 @@ export async function createAppointment(
   appointmentData: Partial<Appointment>
 ): Promise<Appointment> {
   try {
+    // Ensure screeningId is explicitly set to null if not provided
+    const appointmentWithScreeningId = {
+      ...appointmentData,
+      screeningId: appointmentData.screeningId ?? null,
+    };
+
     const response = await fetch('/api/appointments', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(appointmentData),
+      body: JSON.stringify(appointmentWithScreeningId),
     });
 
     if (!response.ok) {
@@ -72,7 +88,12 @@ export async function createAppointment(
     }
 
     const data = await response.json();
-    return data;
+
+    // Ensure returned data always has screeningId
+    return {
+      ...data,
+      screeningId: data.screeningId ?? null,
+    };
   } catch (error) {
     console.error('Error creating appointment:', error);
     throw error;
@@ -87,12 +108,22 @@ export async function updateAppointment(
   appointmentData: Partial<Appointment>
 ): Promise<Appointment> {
   try {
+    // Ensure screeningId is explicitly included if modifying appointment
+    const appointmentWithScreeningId = {
+      ...appointmentData,
+    };
+
+    // Only explicitly set screeningId to null if it's undefined
+    if (appointmentData.screeningId === undefined && 'screeningId' in appointmentData) {
+      appointmentWithScreeningId.screeningId = null;
+    }
+
     const response = await fetch(`/api/appointments/${id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(appointmentData),
+      body: JSON.stringify(appointmentWithScreeningId),
     });
 
     if (!response.ok) {
@@ -106,7 +137,12 @@ export async function updateAppointment(
     }
 
     const data = await response.json();
-    return data;
+
+    // Ensure returned data always has screeningId
+    return {
+      ...data,
+      screeningId: data.screeningId ?? null,
+    };
   } catch (error) {
     console.error(`Error updating appointment with ID ${id}:`, error);
     throw error;

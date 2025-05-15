@@ -94,6 +94,7 @@ const Home: React.FC = () => {
   const { screenings } = useGuidelines(user);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [completedScreeningsCount, setCompletedScreeningsCount] = useState<number>(0);
+  const [scheduledScreeningsCount, setScheduledScreeningsCount] = useState<number>(0);
   const [isAppointmentsLoading, setIsAppointmentsLoading] = useState<boolean>(true);
 
   // Use the API user data or fall back to the default user
@@ -138,7 +139,36 @@ const Home: React.FC = () => {
           );
         }).length;
 
+        // Count scheduled screenings (future appointments that match screening IDs in the current year)
+        const scheduledCount = appointmentsData.filter((appt) => {
+          // Skip completed appointments (already counted above)
+          if (appt.completed) return false;
+
+          // Check if appointment has a date and it's in the current year
+          const appointmentDate = new Date(appt.date);
+          const isCurrentYear = appointmentDate.getFullYear() === currentYear;
+          if (!isCurrentYear) return false;
+
+          // Check if the appointment is in the future
+          const isInFuture = appointmentDate > new Date();
+          if (!isInFuture) return false;
+
+          // First check for direct screeningId match
+          if (
+            appt.screeningId &&
+            screenings.some((screening) => screening.id === appt.screeningId)
+          ) {
+            return true;
+          }
+
+          // Fallback to title matching if no screeningId is available
+          return screenings.some((screening) =>
+            appt.title.toLowerCase().includes(screening.name.toLowerCase())
+          );
+        }).length;
+
         setCompletedScreeningsCount(completedCount);
+        setScheduledScreeningsCount(scheduledCount);
       } catch (error) {
         console.error('Error fetching appointments:', error);
       } finally {
@@ -296,11 +326,35 @@ const Home: React.FC = () => {
                       <span className="text-xl text-blue-100">/ {totalScreenings}</span>
                     </div>
                     <p className="text-blue-100 mb-2">Screenings completed</p>
-                    <div className="w-full bg-white bg-opacity-20 rounded-full h-2">
+                    <div className="w-full bg-white bg-opacity-20 rounded-full h-2 mb-3">
                       <div
                         className="bg-white h-2 rounded-full"
                         style={{ width: `${completionPercentage}%` }}
                       ></div>
+                    </div>
+
+                    {/* Add the scheduled screenings section */}
+                    <div className="flex items-center">
+                      <div className="flex-1">
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xl font-bold text-white">
+                            {scheduledScreeningsCount}
+                          </span>
+                          <span className="text-sm text-blue-100">/ {totalScreenings}</span>
+                        </div>
+                        <p className="text-blue-100 text-sm mb-2">Screenings scheduled this year</p>
+                        <div className="w-full bg-white bg-opacity-20 rounded-full h-2">
+                          <div
+                            className="bg-white bg-opacity-50 h-2 rounded-full"
+                            style={{
+                              width: `${Math.min(100, Math.round((scheduledScreeningsCount / totalScreenings) * 100))}%`,
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                      <div className="ml-2 p-1.5 bg-white bg-opacity-20 rounded-full">
+                        <FaCalendarAlt className="text-white text-lg" />
+                      </div>
                     </div>
                   </div>
                 </div>
