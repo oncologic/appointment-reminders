@@ -309,7 +309,11 @@ const NewAppointmentPage = () => {
           `}
           onClick={() => {
             if (!isPast) {
-              setSelectedDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
+              // Create date using UTC to avoid timezone issues
+              const year = currentMonth.getFullYear();
+              const month = currentMonth.getMonth();
+              const newDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
+              setSelectedDate(newDate);
             }
           }}
         >
@@ -554,15 +558,29 @@ const NewAppointmentPage = () => {
       // Format appointment data
       const appointmentTime = selectedTime ? selectedTime.split(' ')[0] : '';
       const [hours, minutes] = appointmentTime.split(':');
-      const appointmentDate = new Date(selectedDate!);
 
-      // Set time if available
+      // Create a new date based on the selectedDate but preserve the actual date
+      // Use the UTC components of the selectedDate to avoid timezone shifts
+      const year = selectedDate!.getUTCFullYear();
+      const month = selectedDate!.getUTCMonth();
+      const day = selectedDate!.getUTCDate();
+
+      // Create a new date object with the correct date components
+      const appointmentDate = new Date(Date.UTC(year, month, day));
+
+      // Set time if available - use local time for the hours/minutes
       if (hours && minutes) {
         // Parse time (convert from 12hr to 24hr if needed)
         const isPM = selectedTime?.includes('PM') && hours !== '12';
         const isAM = selectedTime?.includes('AM') && hours === '12';
         const hour = isPM ? parseInt(hours) + 12 : isAM ? 0 : parseInt(hours);
-        appointmentDate.setHours(hour, parseInt(minutes), 0, 0);
+
+        // Set hours/minutes in the user's local timezone
+        const localAppointmentDate = new Date(appointmentDate);
+        localAppointmentDate.setHours(hour, parseInt(minutes), 0, 0);
+
+        // Use the updated date with correct time
+        appointmentDate.setTime(localAppointmentDate.getTime());
       }
 
       // Handle custom provider creation if needed
@@ -712,7 +730,7 @@ const NewAppointmentPage = () => {
           </div>
 
           {/* Step content */}
-          <div className="p-6">
+          <div className="p-6 text-gray-700">
             {/* Step 1: Select Service */}
             {step === 'service' && (
               <div>
@@ -1099,7 +1117,11 @@ const NewAppointmentPage = () => {
                       value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
                       onChange={(e) => {
                         if (e.target.value) {
-                          setSelectedDate(new Date(e.target.value));
+                          // Create date with UTC to avoid timezone issues
+                          const [year, month, day] = e.target.value.split('-').map(Number);
+                          // Use noon UTC to avoid any date shifting due to timezone
+                          const newDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+                          setSelectedDate(newDate);
                         } else {
                           setSelectedDate(null);
                         }

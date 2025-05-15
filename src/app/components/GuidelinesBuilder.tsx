@@ -161,7 +161,7 @@ const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderPro
       const updatedGuidelines = await GuidelineService.deleteGuideline(
         id,
         userProfile.userId,
-        userProfile.isAdmin
+        userProfile.isAdmin ?? false
       );
       setGuidelines(updatedGuidelines);
       toast.success('Guideline deleted successfully');
@@ -219,7 +219,7 @@ const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderPro
         updatedGuidelines = await GuidelineService.updateGuideline(
           guidelineToSave,
           userProfile.userId,
-          userProfile.isAdmin
+          userProfile.isAdmin ?? false
         );
 
         toast.success('Guideline updated successfully!');
@@ -227,7 +227,7 @@ const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderPro
         updatedGuidelines = await GuidelineService.addGuideline(
           guidelineToSave,
           userProfile.userId,
-          userProfile.isAdmin
+          userProfile.isAdmin ?? false
         );
 
         toast.success('Guideline created successfully!');
@@ -739,7 +739,7 @@ const GuidelinesBuilder = ({ userProfile, setCurrentView }: GuidelinesBuilderPro
             </div>
 
             {/* Display current resources */}
-            <div className="space-y-2 mb-4">
+            <div className="space-y-2 mb-4 text-gray-700">
               {currentGuideline.resources &&
                 currentGuideline.resources.map((resource, index) => (
                   <div

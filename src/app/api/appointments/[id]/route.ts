@@ -4,9 +4,26 @@ import { createClient } from '@/lib/supabase/server';
 
 // Transform database row to match our Appointment interface
 const mapDbAppointmentToAppointment = (dbAppointment: any) => {
+  // Create date from appointment_date, ensuring we preserve the exact date
+  let appointmentDate;
+  if (dbAppointment.appointment_date) {
+    // Parse date and ensure it's not affected by timezone
+    const dateStr = dbAppointment.appointment_date;
+    // Extract date parts from ISO string
+    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+    if (match) {
+      const [_, year, month, day, hour, minute, second] = match.map(Number);
+      // Create date with UTC to avoid timezone shifts
+      appointmentDate = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+    } else {
+      // Fallback if format doesn't match
+      appointmentDate = new Date(dateStr);
+    }
+  }
+
   return {
     id: dbAppointment.id,
-    date: new Date(dbAppointment.appointment_date),
+    date: appointmentDate || new Date(),
     title: dbAppointment.title,
     type: dbAppointment.type,
     provider: dbAppointment.provider_name,

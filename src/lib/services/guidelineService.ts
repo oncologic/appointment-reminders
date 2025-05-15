@@ -918,7 +918,7 @@ export const GuidelineService = {
         });
 
         return {
-          id: screening.guideline_id,
+          id: screening.id,
           name: guideline?.name || 'Unknown Screening',
           description: guideline?.description || '',
           frequency: guideline?.frequency || 'As recommended',

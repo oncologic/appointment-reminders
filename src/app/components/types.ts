@@ -25,6 +25,7 @@ export interface ScreeningResult {
 export interface ScreeningRecommendation {
   id: string;
   name: string;
+  guidelineId: string;
   description: string;
   frequency?: string;
   frequencyMonths?: number;
