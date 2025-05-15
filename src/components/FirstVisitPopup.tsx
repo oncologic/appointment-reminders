@@ -27,8 +27,8 @@ const FirstVisitPopup = () => {
         <h2 className="text-xl font-bold text-blue-800 mb-4">Welcome to our Hackathon Project!</h2>
         <div className="space-y-3 text-gray-700">
           <p>
-            This application was developed during OncoLogic's 2025 Hackathon and is intended for
-            demonstration purposes only.
+            This application was developed during OncoLogic&apos;s 2025 Hackathon and is intended
+            for demonstration purposes only.
           </p>
           <p>As you explore the application, please note:</p>
           <ul className="list-disc pl-5 space-y-1">
